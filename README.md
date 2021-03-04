@@ -1,2 +1,2 @@
 # Archimedes-Sassari
-Welcome to the GitHub related to the Archimedes Experiment!
+Welcome to the GitHub repository of the Archimedes Experiment!
