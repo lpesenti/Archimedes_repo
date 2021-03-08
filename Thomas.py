@@ -201,7 +201,7 @@ def rate_calculator(WorkDir, DetName):
 
 
 def main():
-    v = loading_config('./Sullivan_Thomas/configThomas.txt')
+    v = loading_config('configThomas.txt')
     G_m = thomas(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'])
     G_c = thomas(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_c'])
     G_ce = thomas(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_ce'])
@@ -213,28 +213,28 @@ def main():
     thom_ce = thomas_error_calculator(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_ce'], v['err_2X1'], v['err_2Y1'],
                                       v['err_2X2'], v['err_2Y2'], v['err_Z_ce'])
 
-    ratio_m = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'], v['err_2X1'], v['err_2Y1'],
-                      v['err_2X2'], v['err_2Y2'], v['err_Z_m'])
-    ratio_c = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_c'], v['err_2X1'], v['err_2Y1'],
-                      v['err_2X2'], v['err_2Y2'], v['err_Z_c'])
-    ratio_ce = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_ce'], v['err_2X1'], v['err_2Y1'],
-                       v['err_2X2'], v['err_2Y2'], v['err_Z_ce'])
+    # ratio_m = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'], v['err_2X1'], v['err_2Y1'],
+    #                   v['err_2X2'], v['err_2Y2'], v['err_Z_m'])
+    # ratio_c = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_c'], v['err_2X1'], v['err_2Y1'],
+    #                   v['err_2X2'], v['err_2Y2'], v['err_Z_c'])
+    # ratio_ce = ratio_G(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_ce'], v['err_2X1'], v['err_2Y1'],
+    #                    v['err_2X2'], v['err_2Y2'], v['err_Z_ce'])
 
-    rate_m = rate_calculator('./Sullivan_Thomas/Efficiency', 'Minosse')
-    mean_m = np.mean(rate_m)
-    devstd_m = np.std(rate_m)
+    # rate_m = rate_calculator('./Sullivan_Thomas/Efficiency', 'Minosse')
+    # mean_m = np.mean(rate_m)
+    # devstd_m = np.std(rate_m)
 
-    rate_c = rate_calculator('./Sullivan_Thomas/Efficiency', 'Caronte')
-    mean_c = np.mean(rate_c)
-    devstd_c = np.std(rate_c)
+    # rate_c = rate_calculator('./Sullivan_Thomas/Efficiency', 'Caronte')
+    # mean_c = np.mean(rate_c)
+    # devstd_c = np.std(rate_c)
 
-    rate_ce = rate_calculator('./Sullivan_Thomas/Efficiency', 'Cerbero')
-    mean_ce = np.mean(rate_ce)
-    devstd_ce = np.std(rate_ce)
+    # rate_ce = rate_calculator('./Sullivan_Thomas/Efficiency', 'Cerbero')
+    # mean_ce = np.mean(rate_ce)
+    # devstd_ce = np.std(rate_ce)
 
-    i_m = intensity_error_calculator(mean_m, 0.9937, 0.9938, G_m, devstd_m, 0.0013, 0.0013, thom_m['eG'])
-    i_c = intensity_error_calculator(mean_c, 0.9938, 0.9948, G_c, devstd_c, 0.0013, 0.0011, thom_c['eG'])
-    i_ce = intensity_error_calculator(mean_ce, 0.9937, 0.9948, G_ce, devstd_ce, 0.0013, 0.0011, thom_ce['eG'])
+    # i_m = intensity_error_calculator(mean_m, 0.9937, 0.9938, G_m, devstd_m, 0.0013, 0.0013, thom_m['eG'])
+    # i_c = intensity_error_calculator(mean_c, 0.9938, 0.9948, G_c, devstd_c, 0.0013, 0.0011, thom_c['eG'])
+    # i_ce = intensity_error_calculator(mean_ce, 0.9937, 0.9948, G_ce, devstd_ce, 0.0013, 0.0011, thom_ce['eG'])
 
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot()
@@ -259,59 +259,67 @@ def main():
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_ce)
     legend = ax.legend(loc='best', shadow=True, fontsize='medium')
 
-    print('------------------------ LEGEND AND UNITS -----------------------\n'
-          '|\t C is the coincidence rate expressed in [s^(-1)]\t\t\t|\n'
-          '|\t G is the geometric factor expressed in [m^(-2)*sr^(-1)]\t|\n'
-          '|\t I is the intensity expressed in [m^(-2)*s^(-1)*sr^(-1)]\t|\n'
-          '-----------------------------------------------------------------\n\n'
-          'RESULTS:\n'
-          'Minosse (centrale)\n'
-          '\t\t C = ' + str(mean_m) + ' +/- ' + str(devstd_m) + '\n'
-                                                                '\t\t G = ' + str(G_m) + ' +/- ' + str(
-        thom_m['eG']) + '\n'
-                        '\t\t I = ' + str(i_m['I']) + ' +/- ' + str(i_m['eI']) + '\n'
-                                                                                 '\t\t G_t/G_S = ' + str(
-        ratio_m['R']) + ' +/- ' + str(ratio_m['eR']) + '\n'
-                                                       'Caronte (centrale)\n'
-                                                       '\t\t C = ' + str(mean_c) + ' +/- ' + str(devstd_c) + '\n'
-                                                                                                             '\t\t G = ' + str(
-        G_c) + ' +/- ' + str(thom_c['eG']) + '\n'
-                                             '\t\t I = ' + str(i_c['I']) + ' +/- ' + str(i_c['eI']) + '\n'
-                                                                                                      '\t\t G_t/G_S = ' + str(
-        ratio_c['R']) + ' +/- ' + str(ratio_ce['eR']) + '\n'
-                                                        'Cerbero (centrale)\n'
-                                                        '\t\t C = ' + str(mean_ce) + ' +/- ' + str(devstd_ce) + '\n'
-                                                                                                                '\t\t G = ' + str(
-        G_ce) + ' +/- ' + str(thom_ce['eG']) + '\n'
-                                               '\t\t I = ' + str(i_ce['I']) + ' +/- ' + str(i_ce['eI']) + '\n'
-                                                                                                          '\t\t G_t/G_S = ' + str(
-        ratio_ce['R']) + ' +/- ' + str(ratio_ce['eR']) + '\n',
-          file=open("./Sullivan_Thomas/Thomas_output.txt", "w"))
+    # old_output = f"""
+    #         ------------------------ LEGEND AND UNITS -----------------------
+    #         |\t C is the coincidence rate expressed in [s^(-1)]\t\t\t|
+    #         |\t G is the geometric factor expressed in [m^(-2)*sr^(-1)]\t|
+    #         |\t I is the intensity expressed in [m^(-2)*s^(-1)*sr^(-1)]\t|
+    #         -----------------------------------------------------------------
+    #         RESULTS:
+    #         Minosse (centrale)
+    #         \t\t C = {mean_m} +/- {devstd_m}
+    #         \t\t G = {G_m} +/- {thom_m['eG']}
+    #         \t\t I = {i_m['I']} +/- {i_m['eI']}
+    #         \t\t G_t/G_S =  + {ratio_m['R']} +/- {ratio_m['eR']}
+    #         Caronte (centrale)
+    #         \t\t C =  + {mean_c} +/- {devstd_c}
+    #         \t\t G =  + {G_c} +/- {thom_c['eG']}
+    #         \t\t I =  + {i_c['I']} +/- {i_c['eI']}
+    #         \t\t G_t/G_S =  + {ratio_c['R']} +/- {ratio_ce['eR']}
+    #         Cerbero (centrale)
+    #         \t\t C =  + {mean_ce} +/- {devstd_ce}
+    #         \t\t G =  + {G_ce} +/- {thom_ce['eG']}
+    #         \t\t I =  + {i_ce['I']} +/- {i_ce['eI']}
+    #         \t\t G_t/G_S =  + {ratio_ce['R']} +/- {ratio_ce['eR']}
+    #     """
+    output = f"""
+G factor first detector = {G_m}
+G factor second detector = {G_c}
+G factor third detector = {G_ce}
+"""
+    print(output, file=open(os.path.abspath("Thomas_output.txt"), 'w'))
 
-    infoDict = {'C_m': round(mean_m, 2),
-                'Err_C_m': round(devstd_m, 2),
-                'G_m': round(G_m, 4),
+    # old_infoDict = {'C_m': round(mean_m, 2),
+    #             'Err_C_m': round(devstd_m, 2),
+    #             'G_m': round(G_m, 4),
+    #             'Err_G_m': round(thom_m['eG'], 4),
+    #             'i_m': round(i_m['I'], 2),
+    #             'Err_i_m': round(i_m['eI'], 2),
+    #             'R_m': round(ratio_m['R'], 4),
+    #             'Err_R_m': round(ratio_m['eR'], 4),
+    #             'C_c': round(mean_c, 2),
+    #             'Err_C_c': round(devstd_c, 2),
+    #             'G_c': round(G_c, 4),
+    #             'Err_G_c': round(thom_c['eG'], 4),
+    #             'i_c': round(i_c['I'], 2),
+    #             'Err_i_c': round(i_c['eI'], 2),
+    #             'R_c': round(ratio_c['R'], 4),
+    #             'Err_R_c': round(ratio_c['eR'], 4),
+    #             'C_ce': round(mean_ce, 2),
+    #             'Err_C_ce': round(devstd_ce, 2),
+    #             'G_ce': round(G_ce, 4),
+    #             'Err_G_ce': round(thom_ce['eG'], 4),
+    #             'i_ce': round(i_ce['I'], 2),
+    #             'Err_i_ce': round(i_ce['eI'], 2),
+    #             'R_ce': round(ratio_ce['R'], 4),
+    #             'Err_R_ce': round(ratio_ce['eR'], 4)
+    #             }
+    infoDict = {'G_m': round(G_m, 4),
                 'Err_G_m': round(thom_m['eG'], 4),
-                'i_m': round(i_m['I'], 2),
-                'Err_i_m': round(i_m['eI'], 2),
-                'R_m': round(ratio_m['R'], 4),
-                'Err_R_m': round(ratio_m['eR'], 4),
-                'C_c': round(mean_c, 2),
-                'Err_C_c': round(devstd_c, 2),
                 'G_c': round(G_c, 4),
                 'Err_G_c': round(thom_c['eG'], 4),
-                'i_c': round(i_c['I'], 2),
-                'Err_i_c': round(i_c['eI'], 2),
-                'R_c': round(ratio_c['R'], 4),
-                'Err_R_c': round(ratio_c['eR'], 4),
-                'C_ce': round(mean_ce, 2),
-                'Err_C_ce': round(devstd_ce, 2),
                 'G_ce': round(G_ce, 4),
-                'Err_G_ce': round(thom_ce['eG'], 4),
-                'i_ce': round(i_ce['I'], 2),
-                'Err_i_ce': round(i_ce['eI'], 2),
-                'R_ce': round(ratio_ce['R'], 4),
-                'Err_R_ce': round(ratio_ce['eR'], 4)
+                'Err_G_ce': round(thom_ce['eG'], 4)
                 }
     return infoDict
 
