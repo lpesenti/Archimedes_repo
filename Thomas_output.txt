@@ -1,5 +1,5 @@
 
-G factor first detector = 0.31122657793127434
-G factor second detector = 0.31122657793127434
-G factor third detector = 0.26019163344301
+G factor first detector = 0.0035468194832933963
+G factor second detector = 0.0035468194832933963
+G factor third detector = 0.0035468194832933963
 

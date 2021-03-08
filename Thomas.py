@@ -238,7 +238,7 @@ def main():
 
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot()
-    x = np.arange(0.01, 1, 0.01)
+    x = np.arange(0.0001, 0.20, 0.0001)
     f2 = np.vectorize(thomas)
 
     sul = ax.plot(x, f2(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='G', linestyle='-')
@@ -253,9 +253,9 @@ def main():
 
     arrowprops_m = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'r'}
     arrowprops_ce = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'k'}
-    ax.annotate('Z = ' + str(v['Z_m']), xy=(v['Z_m'], G_m), xytext=(10, 25), textcoords='offset points',
+    ax.annotate('Z = ' + str(v['Z_m']), xy=(v['Z_m'], G_m), xytext=(50, 10), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_m)
-    ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(10, 25), textcoords='offset points',
+    ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(50, 10), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_ce)
     legend = ax.legend(loc='best', shadow=True, fontsize='medium')
 

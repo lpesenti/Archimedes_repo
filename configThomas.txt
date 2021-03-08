@@ -10,13 +10,13 @@
 # Z_ce = Distanza tra gli scintillatori nel caso in cui Cerbero è al centro  (metri)
 # err_xxx = Errore relativo alla misura xxx (metri)
 
-2X1 = 0.800
-2Y1 = 0.300
-2X2 = 0.800
-2Y2 = 0.300
-Z_m = 0.080
-Z_c = 0.080
-Z_ce = 0.150
+2X1 = 0.050
+2Y1 = 0.050
+2X2 = 0.050
+2Y2 = 0.050
+Z_m = 0.005
+Z_c = 0.005
+Z_ce = 0.005
 err_2X1 = 0.001
 err_2Y1 = 0.001
 err_2X2 = 0.001
