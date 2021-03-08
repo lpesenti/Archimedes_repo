@@ -15,6 +15,38 @@ import matplotlib.colors as colors
 from matplotlib import cm
 
 
+def sullivan(a_1, b_1, a_2, b_2, l):
+    alfa = 0.5 * (a_1 + a_2)
+    beta = 0.5 * (b_1 + b_2)
+    gamma = 0.5 * (a_1 - a_2)
+    delta = 0.5 * (b_1 - b_2)
+
+    a2 = alfa ** 2
+    b2 = beta ** 2
+    c2 = gamma ** 2
+    d2 = delta ** 2
+    l2 = l ** 2
+
+    num_1 = l2 + a2 + d2
+    num_2 = l2 + c2 + b2
+    den_1 = l2 + a2 + b2
+    den_2 = l2 + c2 + d2
+
+    s1 = l2 * log((num_1 / den_1) * (num_2 / den_2))
+    s2 = 2 * alfa * sqrt(l2 + b2) * atan(alfa / sqrt(l2 + a2))
+    s3 = 2 * beta * sqrt(l2 + a2) * atan(beta / sqrt(l2 + b2))
+    s4 = 2 * alfa * sqrt(l2 + d2) * atan(alfa / sqrt(l2 + d2))
+    s5 = 2 * beta * sqrt(l2 + c2) * atan(beta / sqrt(l2 + c2))
+    s6 = 2 * gamma * sqrt(l2 + b2) * atan(gamma / sqrt(l2 + b2))
+    s7 = 2 * delta * sqrt(l2 + a2) * atan(delta / sqrt(l2 + a2))
+    s8 = 2 * gamma * sqrt(l2 + d2) * atan(gamma / sqrt(l2 + d2))
+    s9 = 2 * delta * sqrt(l2 + c2) * atan(delta / sqrt(l2 + c2))
+
+    G = s1 + s2 + s3 - s4 - s5 - s6 - s7 + s8 + s9
+
+    return G
+
+
 def thomas(a, b, c, d, Z):
     x1 = a / 2
     y1 = b / 2
@@ -206,6 +238,10 @@ def main():
     G_c = thomas(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_c'])
     G_ce = thomas(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_ce'])
 
+    Sullivan_m = sullivan(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'])
+    Sullivan_c = sullivan(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'])
+    Sullivan_ce = sullivan(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'])
+
     thom_m = thomas_error_calculator(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_m'], v['err_2X1'], v['err_2Y1'],
                                      v['err_2X2'], v['err_2Y2'], v['err_Z_m'])
     thom_c = thomas_error_calculator(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], v['Z_c'], v['err_2X1'], v['err_2Y1'],
@@ -240,8 +276,10 @@ def main():
     ax = fig.add_subplot()
     x = np.arange(0.0001, 0.20, 0.0001)
     f2 = np.vectorize(thomas)
+    f1 = np.vectorize(sullivan)
 
-    sul = ax.plot(x, f2(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='G', linestyle='-')
+    sul = ax.plot(x, f2(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='Thomas', linestyle='-')
+    # sullivan_plot = ax.plot(x, f1(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='Sullivan', linestyle='-')
     ax.set_title('Geometrical factor')
     ax.set_xlabel('Z $[m]$', color='black')
     ax.set_ylabel(r'G $[m^{2}\cdot sr]$', color='black')
@@ -288,9 +326,9 @@ def main():
     #         \t\t G_t/G_S =  + {ratio_ce['R']} +/- {ratio_ce['eR']}
     #     """
     output = f"""
-Z = {v['Z_m']} [m] ----> G = {round(G_m, 6)} +/- {round(thom_m['eG'], 6)} ({round(thom_m['eG']/G_m*100, 2)} %)
-Z = {v['Z_c']} [m] ----> G = {round(G_c, 6)} +/- {round(thom_c['eG'], 6)} ({round(thom_c['eG']/G_c*100, 2)} %)
-Z = {v['Z_ce']}  [m] ----> G = {round(G_ce, 6)} +/- {round(thom_ce['eG'], 6)} ({round(thom_ce['eG']/G_ce*100, 2)} %)
+Z = {v['Z_m']} [m] ----> G = {round(G_m, 6)} +/- {round(thom_m['eG'], 6)} ({round(thom_m['eG'] / G_m * 100, 2)} %)
+Z = {v['Z_c']} [m] ----> G = {round(G_c, 6)} +/- {round(thom_c['eG'], 6)} ({round(thom_c['eG'] / G_c * 100, 2)} %)
+Z = {v['Z_ce']}  [m] ----> G = {round(G_ce, 6)} +/- {round(thom_ce['eG'], 6)} ({round(thom_ce['eG'] / G_ce * 100, 2)} %)
 """
     print(output, file=open(os.path.abspath("Thomas_output.txt"), 'w'))
 
