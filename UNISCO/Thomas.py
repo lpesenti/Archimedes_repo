@@ -288,21 +288,21 @@ def main():
     ax.set_ylabel(r'G $[m^{2}\cdot sr]$', color='black')
 
     # Annotations
-    ax.vlines(x=v['Z_m'], ymin=0, ymax=G_m, color='red')
-    ax.hlines(y=G_m, xmin=0, xmax=v['Z_m'], color='red')
-    ax.vlines(x=v['Z_c'], ymin=0, ymax=G_c, color='mediumorchid')
-    ax.hlines(y=G_c, xmin=0, xmax=v['Z_c'], color='mediumorchid')
-    ax.vlines(x=v['Z_ce'], ymin=0, ymax=G_ce, color='darkorange')
-    ax.hlines(y=G_ce, xmin=0, xmax=v['Z_ce'], color='darkorange')
+    # ax.vlines(x=v['Z_m'], ymin=0, ymax=G_m, color='red')
+    # ax.hlines(y=G_m, xmin=0, xmax=v['Z_m'], color='red')
+    # ax.vlines(x=v['Z_c'], ymin=0, ymax=G_c, color='mediumorchid')
+    # ax.hlines(y=G_c, xmin=0, xmax=v['Z_c'], color='mediumorchid')
+    # ax.vlines(x=v['Z_ce'], ymin=0, ymax=G_ce, color='darkorange')
+    # ax.hlines(y=G_ce, xmin=0, xmax=v['Z_ce'], color='darkorange')
 
-    arrowprops_m = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'red'}
-    arrowprops_c = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'mediumorchid'}
-    arrowprops_ce = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'darkorange'}
-    ax.annotate('Z = ' + str(v['Z_m']), xy=(v['Z_m'], G_m), xytext=(50, 10), textcoords='offset points',
+    arrowprops_m = {'width': 1, 'headwidth': 5, 'headlength': 5, 'shrink': 0.05, 'color': 'red'}
+    arrowprops_c = {'width': 1, 'headwidth': 5, 'headlength': 5, 'shrink': 0.05, 'color': 'mediumorchid'}
+    arrowprops_ce = {'width': 1, 'headwidth': 5, 'headlength': 5, 'shrink': 0.05, 'color': 'darkorange'}
+    ax.annotate('Z = ' + str(v['Z_m']), xy=(v['Z_m'], G_m), xytext=(50, 20), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_m)
-    ax.annotate('Z = ' + str(v['Z_c']), xy=(v['Z_c'], G_c), xytext=(50, 10), textcoords='offset points',
+    ax.annotate('Z = ' + str(v['Z_c']), xy=(v['Z_c'], G_c), xytext=(50, 20), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_c)
-    ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(50, 10), textcoords='offset points',
+    ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(50, 30), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_ce)
 
     # Legend
@@ -338,7 +338,7 @@ Z = {v['Z_ce']}  [m] ----> G = {round(G_ce, 6)} +/- {round(thom_ce['eG'], 6)} ({
 """
     print(output, file=open(os.path.abspath("Thomas_output.txt"), 'w'))
 
-    # old_infoDict = {'C_m': round(mean_m, 2),
+    # infoDict = {'C_m': round(mean_m, 2),
     #             'Err_C_m': round(devstd_m, 2),
     #             'G_m': round(G_m, 4),
     #             'Err_G_m': round(thom_m['eG'], 4),
@@ -363,14 +363,7 @@ Z = {v['Z_ce']}  [m] ----> G = {round(G_ce, 6)} +/- {round(thom_ce['eG'], 6)} ({
     #             'R_ce': round(ratio_ce['R'], 4),
     #             'Err_R_ce': round(ratio_ce['eR'], 4)
     #             }
-    infoDict = {'G_m': round(G_m, 4),
-                'Err_G_m': round(thom_m['eG'], 4),
-                'G_c': round(G_c, 4),
-                'Err_G_c': round(thom_c['eG'], 4),
-                'G_ce': round(G_ce, 4),
-                'Err_G_ce': round(thom_ce['eG'], 4)
-                }
-    return infoDict
+    # return infoDict
 
 
 def show():
