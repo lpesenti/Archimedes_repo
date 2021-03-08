@@ -1,7 +1,5 @@
 import numpy as np
-from math import *
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from scipy.special import factorial
 from celluloid import Camera
 import scipy.stats as stats
@@ -18,7 +16,6 @@ for i in step:
     t = ax.plot(x, np.exp(-i) * np.power(i, x) / factorial(x))
     u = ax.plot(x, stats.norm.pdf(x, i, math.sqrt(i)), color='black')
     ax.legend((t[0], u[0]), (rf'$\lambda$ = {round(i, 2)}', 'Normal distribution'))
-    # ax.legend(loc='upper right', shadow=True, fontsize='medium')
     camera.snap()
 
 animation = camera.animate()
