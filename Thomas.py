@@ -246,15 +246,20 @@ def main():
     ax.set_xlabel('Z $[m]$', color='black')
     ax.set_ylabel(r'G $[m^{2}\cdot sr]$', color='black')
 
-    ax.vlines(x=v['Z_m'], ymin=0, ymax=G_m, color='r')
-    ax.hlines(y=G_m, xmin=0, xmax=v['Z_m'], color='r')
-    ax.vlines(x=v['Z_ce'], ymin=0, ymax=G_ce, color='k')
-    ax.hlines(y=G_ce, xmin=0, xmax=v['Z_ce'], color='k')
+    ax.vlines(x=v['Z_m'], ymin=0, ymax=G_m, color='red')
+    ax.hlines(y=G_m, xmin=0, xmax=v['Z_m'], color='red')
+    ax.vlines(x=v['Z_c'], ymin=0, ymax=G_c, color='mediumorchid')
+    ax.hlines(y=G_c, xmin=0, xmax=v['Z_c'], color='mediumorchid')
+    ax.vlines(x=v['Z_ce'], ymin=0, ymax=G_ce, color='darkorange')
+    ax.hlines(y=G_ce, xmin=0, xmax=v['Z_ce'], color='darkorange')
 
-    arrowprops_m = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'r'}
-    arrowprops_ce = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'k'}
+    arrowprops_m = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'red'}
+    arrowprops_c = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'mediumorchid'}
+    arrowprops_ce = {'width': 1, 'headwidth': 1, 'headlength': 1, 'shrink': 0.05, 'color': 'darkorange'}
     ax.annotate('Z = ' + str(v['Z_m']), xy=(v['Z_m'], G_m), xytext=(50, 10), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_m)
+    ax.annotate('Z = ' + str(v['Z_c']), xy=(v['Z_c'], G_c), xytext=(50, 10), textcoords='offset points',
+                va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_c)
     ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(50, 10), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_ce)
     legend = ax.legend(loc='best', shadow=True, fontsize='medium')
@@ -283,9 +288,9 @@ def main():
     #         \t\t G_t/G_S =  + {ratio_ce['R']} +/- {ratio_ce['eR']}
     #     """
     output = f"""
-G factor first detector = {G_m}
-G factor second detector = {G_c}
-G factor third detector = {G_ce}
+Z = {v['Z_m']} [m] ----> G = {round(G_m, 6)} +/- {round(thom_m['eG'], 6)} ({round(thom_m['eG']/G_m*100, 2)} %)
+Z = {v['Z_c']} [m] ----> G = {round(G_c, 6)} +/- {round(thom_c['eG'], 6)} ({round(thom_c['eG']/G_c*100, 2)} %)
+Z = {v['Z_ce']}  [m] ----> G = {round(G_ce, 6)} +/- {round(thom_ce['eG'], 6)} ({round(thom_ce['eG']/G_ce*100, 2)} %)
 """
     print(output, file=open(os.path.abspath("Thomas_output.txt"), 'w'))
 

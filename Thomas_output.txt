@@ -1,5 +1,7 @@
 
-G factor first detector = 0.0035468194832933963
-G factor second detector = 0.0035468194832933963
-G factor third detector = 0.0035468194832933963
+Distanza                Fattore geometrico        Errore percentuale
+---------------------------------------------------------------
+Z = 0.01 [m] | G = 0.003192 +/- 0.00037 (11.59 %)
+Z = 0.05 [m] | G = 0.001301 +/- 0.000163 (12.54 %)
+Z = 0.1  [m] | G = 0.000503 +/- 5.5e-05 (10.86 %)
 
