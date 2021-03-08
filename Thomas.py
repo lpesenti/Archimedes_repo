@@ -279,11 +279,15 @@ def main():
     f1 = np.vectorize(sullivan)
 
     sul = ax.plot(x, f2(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='Thomas', linestyle='-')
+
+    # Uncomment the line below to add the plot of the G factor obtained using Sullivan formula
     # sullivan_plot = ax.plot(x, f1(v['2X1'], v['2Y1'], v['2X2'], v['2Y2'], x), label='Sullivan', linestyle='-')
+
     ax.set_title('Geometrical factor')
     ax.set_xlabel('Z $[m]$', color='black')
     ax.set_ylabel(r'G $[m^{2}\cdot sr]$', color='black')
 
+    # Annotations
     ax.vlines(x=v['Z_m'], ymin=0, ymax=G_m, color='red')
     ax.hlines(y=G_m, xmin=0, xmax=v['Z_m'], color='red')
     ax.vlines(x=v['Z_c'], ymin=0, ymax=G_c, color='mediumorchid')
@@ -300,7 +304,9 @@ def main():
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_c)
     ax.annotate('Z = ' + str(v['Z_ce']), xy=(v['Z_ce'], G_ce), xytext=(50, 10), textcoords='offset points',
                 va='bottom', ha='center', annotation_clip=False, arrowprops=arrowprops_ce)
-    legend = ax.legend(loc='best', shadow=True, fontsize='medium')
+
+    # Legend
+    ax.legend(loc='best', shadow=True, fontsize='medium')
 
     # old_output = f"""
     #         ------------------------ LEGEND AND UNITS -----------------------
