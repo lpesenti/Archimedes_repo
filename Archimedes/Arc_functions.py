@@ -48,7 +48,7 @@ def read_data(day, month, year, col_to_save, num_d):
     expressed in UNIX
     """
 
-    print('--------------- Reading', col_to_save, 'data ---------------')
+    print('--------------- Reading', day, '/', month, '/', year, '-', col_to_save, 'data ---------------')
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
     cols = np.array(
         ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
@@ -56,12 +56,12 @@ def read_data(day, month, year, col_to_save, num_d):
     index = np.where(cols == col_to_save)[0][0] + 1
     all_data = []
     final_df = pd.DataFrame()
-    for i in range(num_d):
+    for i in range(num_d):  # Loop over number of days
         data_folder = os.path.join(path_to_data, "SosEnattos_Data_{0}{1}{2}".format(year, month, day + i))
         temp_data = glob.glob(os.path.join(data_folder, "*.lvm"))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
-    time = pd.read_table(all_data[0], sep='\t', usecols=[9], header=None)
+    time = pd.read_table(all_data[0], sep='\t', usecols=[9], header=None)  # Read the time from first data
     start_t = time[9][0].replace("\\", '')
     timestamp = datetime.datetime.timestamp(pd.to_datetime(start_t))
     i = 0
@@ -75,6 +75,13 @@ def read_data(day, month, year, col_to_save, num_d):
 
 
 def time_tick_formatter(val, pos=None):
+    """
+    Return val reformatted as a human readable date
+
+    See Also
+    --------
+    time_evolution : it is used to rewrite x-axis
+    """
     global unix_time
     if val % 1000 == 0:
         val = str(datetime.datetime.fromtimestamp(int(unix_time + val * 0.001)))
@@ -84,6 +91,43 @@ def time_tick_formatter(val, pos=None):
 
 
 def time_evolution(day, month, year, quantity, ax, ndays=1):
+    """
+        Make the plot of time evolution
+
+        Parameters
+        ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        quantity : str
+            The quantity to be read. It must be one of the following:
+
+            - 'ITF' : the signal from the interferometer expressed in V.
+            - 'Pick Off' : the signal from the pick-off expressed in V.
+            - 'Signal injected' : the signal from the waveform used expressed in V.
+            - 'Error' :
+            - 'Correction' :
+            - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
+            - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
+            - 'After Noise' :
+            - 'Time' : the timestamp of the data saved every milli second in human-readable format
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        Returns
+        -------
+        A tuple of an axes and the relative filename
+    """
     df, col_index, t = read_data(day, month, year, quantity, ndays)
     global unix_time
     unix_time = t
@@ -95,7 +139,6 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     ax.set_ylabel('Voltage [V]')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
-    # ax.xaxis.set_tick_params(rotation=30)
     return ax, filename
 
 
