@@ -1,53 +1,42 @@
-from matplotlib.mlab import cohere
-from math import *
-from matplotlib import mlab
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import Arc_functions as af
 import timeit
-import numpy as np
-import pandas as pd
-import matplotlib.gridspec as gridspec
 import os
-import glob
-import re
-import matplotlib.ticker as mticker
+
 
 mpl.rcParams['agg.path.chunksize'] = 5000000
-path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Data"
-
-
-def read_data(day, month, year, col_to_save):
-    month = '%02d' % month  # It transforms 2 -> 02
-    cols = np.array(
-        ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
-         'Time'])
-    index = np.where(cols == col_to_save)[0][0]
-    data_folder = os.path.join(path_to_data, "SosEnattos_Data_{0}{1}{2}".format(year, month, day))
-    final_df = pd.DataFrame()
-    all_data = glob.glob(os.path.join(data_folder, "*.lvm"))
-    all_data.sort(key=lambda f: int(re.sub('\D', '', f)))
-    i = 0
-    for data in all_data:
-        print(round(i / len(all_data) * 100, 1), '%')
-        a = pd.read_table(data, sep='\t', usecols=[index + 1], header=None)
-        final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-        i += 1
-    return final_df
-
-
-def time_evolution(day, month, year, quantity, ax):
-    df = read_data(day, month, year, quantity)
-    ax.plot(df.index, df[1], label=quantity)
-    ax.grid(True, linestyle='-')
-    ax.set_ylabel('Voltage [V]')
-    return ax
-
+path_to_img = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Images"
 
 if __name__ == '__main__':
     start = timeit.default_timer()
+
     fig, ax = plt.subplots()
-    ax = time_evolution(day=19, month=2, year=2021, quantity='ITF', ax=ax)
-    ax.legend(loc='best', shadow=True, fontsize='medium')
+    ax, fname = af.time_evolution(day=19, month=2, year=2021, quantity='ITF', ax=ax)
+    ax, fname1 = af.time_evolution(day=19, month=2, year=2021, quantity='Pick Off', ax=ax)
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
+
+    fig1, ax1 = plt.subplots()
+    ax1, fname2 = af.coherence(sign1='ITF', sign2='Pick Off', day=19, month=2, year=2021, ax=ax1)
+    # ax1, fname3 = af.time_evolution(day=19, month=2, year=2021, quantity='Pick Off', ax=ax1, ndays=2)
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
+
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='Signal injected', ax=ax)
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='Error', ax=ax)
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='Correction', ax=ax)
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='Actuator 1', ax=ax)
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='Actuator 2', ax=ax)
+    # ax = time_evolution(day=19, month=2, year=2021, quantity='After Noise', ax=ax)
     stop = timeit.default_timer()
-    print('Time: ', (stop - start) / 60)
+    print('Time before plt.show(): ', (stop - start), 's')
+    print('Time before plt.show(): ', (stop - start) / 60, 'min')
+    fig.savefig(os.path.join(path_to_img, fname + fname1 + '.png'))
+    fig1.savefig(os.path.join(path_to_img, fname2 + '.png'))
+    stop1 = timeit.default_timer()
+    print('Time after saving png: ', (stop1 - start), 's')
+    print('Time after saving png: ', (stop1 - start) / 60, 'min')
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
     plt.show()
