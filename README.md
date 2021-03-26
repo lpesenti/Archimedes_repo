@@ -2,15 +2,6 @@
 
 Welcome to the GitHub repository of the Archimedes Experiment!
 
-## UNISCO
-
-###### This folder contains different script used during the UNISCO project. Here you find some scripts that are not correlated to the Archimedes experiment.
-
-#### Poisson_plotter.py
-
-* This script plot an animation of the comparison between Poisson distribution and the Normal distribution.
-* The animation is saved in _.gif_ format.
-
 #### Thomas.py
 
 * The script evaluates the G factor and its error for a three plane telescope.
@@ -38,6 +29,16 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 #### Arc_Data_Analysis.py
 * This script requires _Arc_functions.py_ in order to work.
 * Be aware to change the value of the ___path_to_img___ to the directory where you want to save your images.
+
+## UNISCO
+
+###### This folder contains different script used during the UNISCO project. Here you find some scripts that are not correlated to the Archimedes experiment.
+
+#### Poisson_plotter.py
+
+* This script plot an animation of the comparison between Poisson distribution and the Normal distribution.
+* The animation is saved in _.gif_ format.
+
 
 
 
