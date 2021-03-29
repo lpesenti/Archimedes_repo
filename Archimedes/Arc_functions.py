@@ -111,7 +111,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
             - 'ITF' : the signal from the interferometer expressed in V.
             - 'Pick Off' : the signal from the pick-off expressed in V.
             - 'Signal injected' : the signal from the waveform used expressed in V.
-            - 'Error' :
+            - 'Error' : represent the ratio between ITF and the pick off signals.
             - 'Correction' :
             - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
             - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
@@ -133,10 +133,26 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     unix_time = t
     print('--------------- Building Plot! ---------------')
     lab = quantity + ' (n° days: ' + str(ndays) + ')'
-    filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays)
+    filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
     ax.plot(df.index, df[col_index], label=lab)
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
+    ax.xaxis.set_major_formatter(time_tick_formatter)
+    ax.legend(loc='best', shadow=True, fontsize='medium')
+    return ax, filename
+
+
+def derivative(day, month, year, quantity, ax, ndays=1):
+    df, col_index, t = read_data(day, month, year, quantity, ndays)
+    global unix_time
+    unix_time = t
+    print('--------------- Building Plot! ---------------')
+    data = df.to_numpy()
+    data_deriv = np.abs(np.diff(data, axis=0))
+    lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
+    filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
+    ax.plot(np.arange(1, data_deriv.size+1), data_deriv, label=lab)
+    ax.grid(True, linestyle='-')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
