@@ -94,8 +94,8 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     """
         Make the plot of time evolution
 
-        Parameters
-        ----------
+    Parameters
+    ----------
         day : int
             It refers to the first day of the data to be read
 
@@ -151,7 +151,7 @@ def derivative(day, month, year, quantity, ax, ndays=1):
     data_deriv = np.abs(np.diff(data, axis=0))
     lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
-    ax.plot(np.arange(1, data_deriv.size+1), data_deriv, label=lab)
+    ax.plot(np.arange(1, data_deriv.size + 1), data_deriv, label=lab)
     ax.grid(True, linestyle='-')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
@@ -159,6 +159,76 @@ def derivative(day, month, year, quantity, ax, ndays=1):
 
 
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True):
+    r"""
+        Make the plot of the coherence between two signal, using the matplotlib built-in function.
+        Coherence is the normalized cross spectral density:
+
+    .. math::
+
+        C_{xy} = \frac{|P_{xy}|^2}{P_{xx}P_{yy}}
+
+    Parameters
+    ----------
+        sign1 : str
+            It is the the first quantity used to evaluate the coherence. It must be one of the following:
+
+            - 'ITF' : the signal from the interferometer expressed in V.
+            - 'Pick Off' : the signal from the pick-off expressed in V.
+            - 'Signal injected' : the signal from the waveform used expressed in V.
+            - 'Error' : represent the ratio between ITF and the pick off signals.
+            - 'Correction' :
+            - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
+            - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
+            - 'After Noise' :
+            - 'Time' : the timestamp of the data saved every milli second in human-readable format
+
+        sign2 : str
+            It is the the first quantity used to evaluate the coherence. It must be one of the following:
+
+            - 'ITF' : the signal from the interferometer expressed in V.
+            - 'Pick Off' : the signal from the pick-off expressed in V.
+            - 'Signal injected' : the signal from the waveform used expressed in V.
+            - 'Error' : represent the ratio between ITF and the pick off signals.
+            - 'Correction' :
+            - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
+            - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
+            - 'After Noise' :
+            - 'Time' : the timestamp of the data saved every milli second in human-readable format
+
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        day2 : int
+            It refers to the first day of the data to be read for the second signal
+            if samedate variable is set to True
+
+        month2 : int
+            It refers to the first month of the data to be read for the second signal
+            if samedate variable is set to True
+
+        year2 : int
+            It refers to the first year of the data to be read for the second signal
+            if samedate variable is set to True
+
+        samedate : bool
+            It is needed if the two signal come from different date. By default it is set to False
+
+        Returns
+        -------
+        A tuple of an axes and the relative filename
+    """
     if samedate:
         df, col_index, t = read_data(day, month, year, sign1, ndays)
         df1, col_index1, t1 = read_data(day, month, year, sign2, ndays)
@@ -178,6 +248,6 @@ def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=Non
     ax.set_xlabel('Frequencies [Hz]')
     ax.set_ylabel('Coherence')
     ax.legend(loc='best', shadow=True, fontsize='medium')
-    # ax.xaxis.set_major_formatter(log_tick_formatter)
-    # ax.xaxis.set_tick_params(rotation=30)
+    ax.xaxis.set_major_formatter(log_tick_formatter)
+    ax.xaxis.set_tick_params(rotation=30)
     return ax, filename
