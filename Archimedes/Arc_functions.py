@@ -248,6 +248,6 @@ def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=Non
     ax.set_xlabel('Frequencies [Hz]')
     ax.set_ylabel('Coherence')
     ax.legend(loc='best', shadow=True, fontsize='medium')
-    ax.xaxis.set_major_formatter(log_tick_formatter)
+    ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.xaxis.set_tick_params(rotation=30)
     return ax, filename
