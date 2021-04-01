@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import glob
 import re
+import timeit
 
 unix_time = 0  # It is used only to make right conversion in time for time evolution analysis
 path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Data"
@@ -67,6 +68,7 @@ def read_data(day, month, year, col_to_save, num_d):
     i = 0
     for data in all_data:
         print(round(i / len(all_data) * 100, 1), '%')
+        # if i == 0:
         a = pd.read_table(data, sep='\t', usecols=[index], header=None)
         final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
         i += 1
@@ -83,6 +85,8 @@ def time_tick_formatter(val, pos=None):
     time_evolution : it is used to rewrite x-axis
     """
     global unix_time
+    # The following statement is used to change the label only every 1000 point
+    # because of time consuming.
     if val % 1000 == 0:
         val = str(datetime.datetime.fromtimestamp(int(unix_time + val * 0.001)))
     else:
@@ -134,7 +138,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     print('--------------- Building Plot! ---------------')
     lab = quantity + ' (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.plot(df.index, df[col_index], label=lab)
+    ax.plot(df.index, df[col_index], color='tab:red', label=lab)
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
     ax.xaxis.set_major_formatter(time_tick_formatter)
@@ -142,16 +146,40 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     return ax, filename
 
 
-def derivative(day, month, year, quantity, ax, ndays=1):
+def th_comparison(data_to_check, threshold, ndivision):
+    print('--------------- Starting the comparison... ---------------')
+    data_deriv = np.abs(np.diff(data_to_check, axis=0))
+    data_deriv = np.append(data_deriv, 0)
+    num_slice = int(data_deriv.size / ndivision)  # In the case of data_to_check is not a multiple of ndivision
+    data_split = np.array_split(data_deriv, num_slice)
+    lst = []
+    i = 0
+    for sub_arr in data_split:
+        print(round(i / len(data_split) * 100, 1), '%')
+        if np.amax(sub_arr) > threshold:
+            lst.append(i)
+        else:
+            pass
+        i += 1
+    for index in lst:
+        start = index * ndivision
+        data_to_check[start:start + ndivision + 1] = np.nan
+    print('--------------- Comparison completed! ---------------')
+    return data_to_check, data_deriv
+
+
+def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500):
     df, col_index, t = read_data(day, month, year, quantity, ndays)
     global unix_time
     unix_time = t
-    print('--------------- Building Plot! ---------------')
     data = df.to_numpy()
-    data_deriv = np.abs(np.diff(data, axis=0))
+    data_und_th, data_deriv = th_comparison(data, threshold, ndivision)
     lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
+    lab1 = quantity + r' cleared (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
-    ax.plot(np.arange(1, data_deriv.size + 1), data_deriv, label=lab)
+    print('--------------- Building Derivative and Data_Cleared Plot! ---------------')
+    ax.plot(df.index, data_und_th + 5, color='tab:green', linestyle='-', label=lab)
+    ax.plot(df.index, data_und_th, color='tab:blue', linestyle='-', label=lab1)
     ax.grid(True, linestyle='-')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
