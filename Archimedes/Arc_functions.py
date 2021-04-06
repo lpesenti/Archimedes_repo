@@ -1,3 +1,30 @@
+r"""
+[LAST UPDATE: 6 April 2021 - Luca Pesenti]
+
+The following functions have been built to work with the data obtained by the Archimedes experiment.
+The experiment save the data in a file .lvm containing 9 columns,
+
+| ITF | Pick Off | Signal injected | Error | Correction | Actuator 1 | Actuator 2 | After Noise | Time |
+|-----+----------+-----------------+-------+------------+------------+------------+-------------+------|
+| ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
+|-----+----------+-----------------+-------+------------+------------+------------+-------------+------|
+| ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
+
+ITF [V]            : signal from the interferometer
+Pick Off [V]       : signal from the laser before the filters
+Signal injected [?]: it has the shape of a sinusoid and it is necessary to make some operations with the signals
+Error [-]          : it is given by the ratio between the ITF and the Pick Off minus some constant in order to translate
+                     the result around the zero
+Correction [-]     :
+Actuator 1/2 [V]   : are the voltage coming from the two actuators before the amplification -> if one works, the other
+                     should be off
+After Noise [-]    :
+Time [-]           : every 10 millisecond (100 rows) the system print the datetime in the format
+                     -> 02/19/2021 20:01:11.097734\09
+
+In the current configuration the sampling rate is 1 KHz but can be increase.
+"""
+
 import datetime
 from matplotlib.mlab import cohere
 import numpy as np
@@ -5,7 +32,6 @@ import pandas as pd
 import os
 import glob
 import re
-import timeit
 
 unix_time = 0  # It is used only to make right conversion in time for time evolution analysis
 path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Data"
@@ -54,7 +80,7 @@ def read_data(day, month, year, col_to_save, num_d):
     cols = np.array(
         ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
          'Time'])
-    index = np.where(cols == col_to_save)[0][0] + 1
+    index = np.where(cols == col_to_save)[0][0] + 1  # Find the index corresponding to the the col_to_save
     all_data = []
     final_df = pd.DataFrame()
     for i in range(num_d):  # Loop over number of days
@@ -146,8 +172,40 @@ def time_evolution(day, month, year, quantity, ax, ndays=1):
     return ax, filename
 
 
-def th_comparison(data_to_check, threshold, ndivision):
-    print('--------------- Starting the comparison... ---------------')
+def th_comparison(data_frame, threshold, ndivision):
+    """
+        It performs the derivative of the data and compares it with a fixed threshold.
+        To perform this comparison it divides the data in given number of slice a check if the maximum of this lice is
+        greater than the thershold or not.
+        After the comparison it removes all the data above the threshold from the dataframe.
+
+    Parameters
+    ----------
+        data_frame : pandas.DataFrame
+            The dataframe containing the data in which perform the comparison
+
+        threshold : float
+            The threshold used to compare the data
+
+        ndivision : int
+            The number of division in which the data will be divided into.
+            The greater is, the smaller will be the number contained in each slice and so the comparison will be more
+            accurate but will require more time to perform the comparison.
+            WARNING: a big number of ndivision can cause a bad comparison due to the fluctuations in the signal.
+
+
+    See Also
+    --------
+    der_plot : it is used to perform the derivative and to plot the data cleared
+
+    Returns
+    -------
+    A tuple of a numpy array containing the data cleared, a numpy array of the data derived and
+    the rejected fraction of the data
+    """
+    # print('Starting the comparison...')
+    # print('\tThreshold:', threshold)
+    data_to_check = data_frame.to_numpy()
     data_deriv = np.abs(np.diff(data_to_check, axis=0))
     data_deriv = np.append(data_deriv, 0)
     num_slice = int(data_deriv.size / ndivision)  # In the case of data_to_check is not a multiple of ndivision
@@ -155,30 +213,79 @@ def th_comparison(data_to_check, threshold, ndivision):
     lst = []
     i = 0
     for sub_arr in data_split:
-        print(round(i / len(data_split) * 100, 1), '%')
+        # print(round(i / len(data_split) * 100, 1), '%')
         if np.amax(sub_arr) > threshold:
             lst.append(i)
         else:
             pass
         i += 1
-    for index in lst:
-        start = index * ndivision
-        data_to_check[start:start + ndivision + 1] = np.nan
-    print('--------------- Comparison completed! ---------------')
-    return data_to_check, data_deriv
+    # for index in lst:
+    #     start = index * ndivision
+    #     data_to_check[start:start + ndivision + 1] = np.nan
+    frac_rejected = len(lst) * ndivision / len(data_to_check)
+    # print('\tData rejected:', frac_rejected * 100, '%')
+    # print('Comparison completed!')
+    return data_to_check, data_deriv, frac_rejected
 
 
 def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500):
-    df, col_index, t = read_data(day, month, year, quantity, ndays)
+    """
+    Make the plot of the derivative of a given quantity
+
+    Parameters
+    ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        quantity : str
+            The quantity to be read. It must be one of the following:
+
+            - 'ITF' : the signal from the interferometer expressed in V.
+            - 'Pick Off' : the signal from the pick-off expressed in V.
+            - 'Signal injected' : the signal from the waveform used expressed in V.
+            - 'Error' : represent the ratio between ITF and the pick off signals.
+            - 'Correction' :
+            - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
+            - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
+            - 'After Noise' :
+            - 'Time' : the timestamp of the data saved every milli second in human-readable format
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        threshold : float
+            The threshold used to compare the data
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        ndivision : int
+            The number of division in which the data will be divided into.
+            The greater is, the smaller will be the number contained in each slice and so the comparison will be more
+            accurate but will require more time to perform the comparison.
+            WARNING: a big number of ndivision can cause a bad comparison due to the fluctuations in the signal.
+
+    Returns
+    -------
+    A tuple of an axes and the relative filename
+    """
+    df, _, t = read_data(day, month, year, quantity, ndays)
     global unix_time
     unix_time = t
-    data = df.to_numpy()
-    data_und_th, data_deriv = th_comparison(data, threshold, ndivision)
+    data_und_th, data_deriv, val_rej = th_comparison(df, threshold, ndivision)
     lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
     lab1 = quantity + r' cleared (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
+    th_line = np.full((len(df.index, )), threshold)
     print('--------------- Building Derivative and Data_Cleared Plot! ---------------')
-    ax.plot(df.index, data_und_th + 5, color='tab:green', linestyle='-', label=lab)
+    ax.plot(df.index, data_deriv, color='tab:green', linestyle='-', label=lab)
+    ax.plot(df.index, th_line, color='tab:red', linestyle='-', label='threshold')
     ax.plot(df.index, data_und_th, color='tab:blue', linestyle='-', label=lab1)
     ax.grid(True, linestyle='-')
     ax.xaxis.set_major_formatter(time_tick_formatter)
@@ -188,8 +295,8 @@ def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500):
 
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True):
     r"""
-        Make the plot of the coherence between two signal, using the matplotlib built-in function.
-        Coherence is the normalized cross spectral density:
+    Make the plot of the coherence between two signal, using the matplotlib built-in function.
+    Coherence is the normalized cross spectral density:
 
     .. math::
 
