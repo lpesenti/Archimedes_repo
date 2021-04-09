@@ -33,10 +33,27 @@ import os
 import glob
 import re
 import logging
+import math
 
 unix_time = 0  # It is used only to make right conversion in time for time evolution analysis
 path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Data"
 freq = 1000  # Hz
+
+
+def find_factors(n):
+    factor_lst = np.array([])
+    # Note that this loop runs till square root
+    i = 1
+    while i <= math.sqrt(n):
+        if n % i == 0:
+            # If divisors are equal, print only one
+            if n / i == i:
+                factor_lst = np.append(factor_lst, i)
+            else:
+                # Otherwise print both
+                factor_lst = np.append(factor_lst, [i, n / i])
+        i = i + 1
+    return factor_lst
 
 
 def read_data(day, month, year, col_to_save, num_d, verbose=True):
@@ -102,13 +119,15 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     start_t = time[9][0].replace("\\", '')  # Remove \\ in the data format -> it allows to be converted
     timestamp = datetime.datetime.timestamp(pd.to_datetime(start_t))  # Conversion of the time to timestamp
     i = 0
-    logging.debug('Data length: %f' % len(all_data))
+    logging.debug('Number of *.lvm: %i' % len(all_data))
     for data in all_data:
         if verbose:
             print(round(i / len(all_data) * 100, 1), '%')
-        # if i == 0:
-        a = pd.read_table(data, sep='\t', usecols=[index], header=None)  # Read only the column of interest -> [index]
-        final_df = pd.concat([final_df, a], axis=0, ignore_index=True)  # At the end we have a long column with all data
+        # if i <= 5:
+        a = pd.read_table(data, sep='\t', usecols=[index],
+                          header=None)  # Read only the column of interest -> [index]
+        final_df = pd.concat([final_df, a], axis=0,
+                             ignore_index=True)  # At the end we have a long column with all data
         i += 1
     if verbose:
         print('--------------- Reading completed! ---------------')
@@ -175,7 +194,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, verbose=True):
     -------
     A tuple of an axes and the relative filename
     """
-    df, col_index, t = read_data(day, month, year, quantity, ndays)
+    df, col_index, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
     global unix_time  # Access the global variable and
     unix_time = t  # change its value to the timestamp of the data
     if verbose:
@@ -227,30 +246,47 @@ def th_comparison(data_frame, threshold, ndivision, verbose=True):
     the rejected fraction of the data
     """
     logging.info('Comparison started')
-    logging.debug('PARAMETERS: rows_in_df=%s threshold=%i ndivision=%i verbose=%s' % (
+    logging.debug('PARAMETERS: rows_in_df=%s threshold=%f ndivision=%i verbose=%s' % (
         len(data_frame.index), threshold, ndivision, verbose))
     if verbose:
         print('Starting the comparison...')
         print('\tThreshold:', threshold)
     data_to_check = data_frame.to_numpy()
+    # data_deriv = np.array([])
+    factors = find_factors(data_to_check.size)  # The following lines are needed in the case of ndivision is not
+    indx_len = np.argmin(np.abs(factors - ndivision))  # a factor of the data_frame size
+    # print(data_to_check.size)
+    # for i in range(data_to_check.size):
+    #     if i % factors[indx_len] == 0:
+    #         data_deriv = np.append(data_deriv, np.abs((data_to_check[i] - data_to_check[i - int(factors[indx_len])])))
     data_deriv = np.abs(np.diff(data_to_check, axis=0))
     data_deriv = np.append(data_deriv, 0)
-    num_slice = int(data_deriv.size / ndivision)  # In the case of data_to_check is not a multiple of ndivision
-    data_split = np.array_split(data_deriv, num_slice)
+    num_slice = int(data_to_check.size / factors[indx_len])  # It must be an integer
+    data_split = np.array_split(data_to_check, num_slice)
     lst = []
+    # test = np.array([])
     i = 0
     for sub_arr in data_split:
+        # mean = np.mean(sub_arr)
+        # test = np.append(test, mean)
+        # for element in sub_arr:
+        # if np.amax(sub_arr) > threshold:
+        #     lst.append(i)
+        # print(sub_arr)
         # print(round(i / len(data_split) * 100, 1), '%')
-        if np.amax(sub_arr) > threshold:
+        if np.abs(np.amax(sub_arr) - np.amin(sub_arr)) > threshold:
             lst.append(i)
         else:
             pass
         i += 1
+    # test = test.repeat(int(factors[indx_len]))
+    # print(test.size)
     logging.info('Comparison completed')
-    # for index in lst:
-    #     start = index * ndivision
-    #     data_to_check[start:start + ndivision + 1] = np.nan
-    frac_rejected = len(lst) * ndivision / len(data_to_check)
+    for index in lst:
+        # print(index)
+        start = index * int(factors[indx_len])
+        data_to_check[start:start + int(factors[indx_len])] = np.nan
+    frac_rejected = len(lst) * factors[indx_len] / len(data_to_check)
     if verbose:
         print('\tData rejected:', frac_rejected * 100, '%')
         print('Comparison completed!')
@@ -313,19 +349,19 @@ def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500, 
     -------
     A tuple of an axes and the relative filename
     """
-    df, _, t = read_data(day, month, year, quantity, ndays)
+    df, _, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
     global unix_time
     unix_time = t
-    data_und_th, data_deriv, val_rej = th_comparison(df, threshold, ndivision)
+    data_und_th, _, val_rej = th_comparison(df, threshold, ndivision, verbose=verbose)
     lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
     lab1 = quantity + r' cleared (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
-    th_line = np.full((len(df.index, )), threshold)
+    # th_line = np.full(data_deriv.size, threshold)
     if verbose:
         print('--------------- Building Derivative and Data_Cleared Plot! ---------------')
-    ax.plot(df.index, data_deriv, color='tab:green', linestyle='-', label=lab)
-    ax.plot(df.index, th_line, color='tab:red', linestyle='-', label='threshold')
-    ax.plot(df.index, data_und_th, color='tab:blue', linestyle='-', label=lab1)
+    # ax.plot(df.index, data_deriv, color='tab:green', linestyle='-', label=lab)
+    # ax.plot(np.arange(data_deriv.size), th_line, color='tab:red', linestyle='-', label='threshold')
+    ax.plot(df.index, data_und_th + 5, color='tab:blue', linestyle='-', label=lab1)
     ax.grid(True, linestyle='-')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
