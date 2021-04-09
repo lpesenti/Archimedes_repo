@@ -2,12 +2,6 @@
 
 Welcome to the GitHub repository of the Archimedes Experiment!
 
-#### Thomas.py
-
-* The script evaluates the G factor and its error for a three plane telescope.
-* It requires __configThomas.txt__ to work (_see the file for further information_).
-* It produces a _.txt_ output, called __Thomas_output.txt__ where are stored every useful information
-
 ## Archimedes
 
 ###### This directory contains every scripts used to analyze the data acquired during the characterization of the experiment.
@@ -38,6 +32,12 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 
 * This script plot an animation of the comparison between Poisson distribution and the Normal distribution.
 * The animation is saved in _.gif_ format.
+
+#### Thomas.py
+
+* The script evaluates the G factor and its error for a three plane telescope.
+* It requires __configThomas.txt__ to work (_see the file for further information_).
+* It produces a _.txt_ output, called __Thomas_output.txt__ where are stored every useful information
 
 
 
