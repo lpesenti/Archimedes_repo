@@ -25,8 +25,10 @@ Time [-]           : every 10 millisecond (100 rows) the system print the dateti
 In the current configuration the sampling rate is 1 KHz but can be increase.
 """
 
-import datetime
 from matplotlib.mlab import cohere
+from matplotlib import mlab
+from itertools import groupby
+import datetime
 import numpy as np
 import pandas as pd
 import os
@@ -123,7 +125,7 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     for data in all_data:
         if verbose:
             print(round(i / len(all_data) * 100, 1), '%')
-        # if i <= 5:
+        # if i == 5:
         a = pd.read_table(data, sep='\t', usecols=[index],
                           header=None)  # Read only the column of interest -> [index]
         final_df = pd.concat([final_df, a], axis=0,
@@ -209,7 +211,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, verbose=True):
     return ax, filename
 
 
-def th_comparison(data_frame, threshold, ndivision, verbose=True):
+def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     """
     It performs the derivative of the data and compares it with a fixed threshold.
     To perform this comparison it divides the data in given number of slice and check if the maximum of the slice is
@@ -224,11 +226,11 @@ def th_comparison(data_frame, threshold, ndivision, verbose=True):
         threshold : float
             The threshold used to compare the data
 
-        ndivision : int
+        length : int
             Represent the length of each slice in whic the data will be divided into.
             The greater it is, the smaller will be the number of slice and so the comparison will be less
             accurate but will require less time to perform it.
-            WARNING: a big number of ndivision can cause a bad comparison due to the fluctuations in the signal.
+            WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
 
         verbose : bool
             If True the verbosity is enabled.
@@ -246,21 +248,24 @@ def th_comparison(data_frame, threshold, ndivision, verbose=True):
     the rejected fraction of the data
     """
     logging.info('Comparison started')
-    logging.debug('PARAMETERS: rows_in_df=%s threshold=%f ndivision=%i verbose=%s' % (
-        len(data_frame.index), threshold, ndivision, verbose))
+    logging.debug('PARAMETERS: rows_in_df=%s threshold=%f length=%i verbose=%s' % (
+        len(data_frame.index), threshold, length, verbose))
     if verbose:
         print('Starting the comparison...')
         print('\tThreshold:', threshold)
-    data_to_check = data_frame.to_numpy()
+    # print(data_frame.columns)
+    # print(data_frame.values.flatten())
+    data_to_check = data_frame.values.flatten()
+    # print(type(data_to_check))
     # data_deriv = np.array([])
-    factors = find_factors(data_to_check.size)  # The following lines are needed in the case of ndivision is not
-    indx_len = np.argmin(np.abs(factors - ndivision))  # a factor of the data_frame size
+    factors = find_factors(data_to_check.size)  # The following lines are needed in the case of length is not
+    indx_len = np.argmin(np.abs(factors - length))  # a factor of the data_frame size
     # print(data_to_check.size)
     # for i in range(data_to_check.size):
     #     if i % factors[indx_len] == 0:
     #         data_deriv = np.append(data_deriv, np.abs((data_to_check[i] - data_to_check[i - int(factors[indx_len])])))
-    data_deriv = np.abs(np.diff(data_to_check, axis=0))
-    data_deriv = np.append(data_deriv, 0)
+    # data_deriv = np.abs(np.diff(data_to_check, axis=0))
+    # data_deriv = np.append(data_deriv, 0)
     num_slice = int(data_to_check.size / factors[indx_len])  # It must be an integer
     data_split = np.array_split(data_to_check, num_slice)
     lst = []
@@ -292,10 +297,10 @@ def th_comparison(data_frame, threshold, ndivision, verbose=True):
         print('Comparison completed!')
     logging.debug('Data rejected: %f ' % frac_rejected)
     logging.info('Replacement completed')
-    return data_to_check, data_deriv, frac_rejected
+    return data_to_check, frac_rejected
 
 
-def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500, verbose=True):
+def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
     Make the derivative plot of a given quantity
 
@@ -322,11 +327,11 @@ def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500, 
         ndays : int
             How many days of data you want to analyze.
 
-        ndivision : int
-            The number of division in which the data will be divided into.
+        length : int
+            Represent the length of each slice in whic the data will be divided into.
             The greater is, the smaller will be the number contained in each slice and so the comparison will be more
             accurate but will require more time to perform the comparison.
-            WARNING: a big number of ndivision can cause a bad comparison due to the fluctuations in the signal.
+            WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
 
         verbose : bool
             If True the verbosity is enabled.
@@ -352,7 +357,7 @@ def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500, 
     df, _, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
     global unix_time
     unix_time = t
-    data_und_th, _, val_rej = th_comparison(df, threshold, ndivision, verbose=verbose)
+    data_und_th, val_rej = th_comparison(df, threshold=threshold, length=length, verbose=verbose)
     lab = r'$\partial_t$ ' + quantity + ' (n° days: ' + str(ndays) + ')'
     lab1 = quantity + r' cleared (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'der'
@@ -366,6 +371,47 @@ def der_plot(day, month, year, quantity, ax, threshold, ndays=1, ndivision=500, 
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
+
+
+def psd(day, month, year, quantity, ax, interval, threshold=0.03, ndays=1, length=10000, verbose=True):
+    df, _, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
+    global unix_time
+    unix_time = t
+    data_cleared, _ = th_comparison(df, threshold=threshold, length=length, verbose=verbose)
+    # data_first_check = np.array([])
+    data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
+    # data_first_check = []
+    outdata = []
+    len_max = 0
+    # for key, group in groupby(data_cleared, lambda x: not np.isnan(x)):
+    #     lst = list(group)
+    #     if key and len(lst) >= interval*1000:
+    #         data_first_check.append(lst)
+    for el in data_first_check:
+        if len(el) >= interval * freq and len(el) > len_max:
+            len_max = len(el)
+            outdata = el
+    print(outdata)
+    print(len(outdata))
+    num = interval * freq
+    _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq)
+    psd_f = psd_f[1:]
+    psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear")
+    psd_s = psd_s[1:]
+    lab1 = 'PSD of ' + quantity + '(' + str(interval) + ' s)'
+    # y = np.tile(outdata, int(data_cleared.size/len(outdata))+1)
+    # y = y[:48300000]
+    # print(len(y))
+    ax.plot(psd_f, psd_s, color='tab:blue', linestyle='-', label=lab1)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("f (Hz)")
+    ax.set_ylabel("PSD")
+    # ax.plot(df.index, y, color='tab:red', linestyle='-', label='Best Of')
+    ax.grid(True, linestyle='-')
+    # ax.xaxis.set_major_formatter(time_tick_formatter)
+    ax.legend(loc='best', shadow=True, fontsize='medium')
+    return ax
 
 
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True,
