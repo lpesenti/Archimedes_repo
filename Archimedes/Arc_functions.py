@@ -42,6 +42,24 @@ path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Da
 freq = 1000  # Hz
 
 
+def find_rk(seq, subseq):
+    """
+    Additional help can be found in the answer of norok2 `in this discussion
+    <https://stackoverflow.com/questions/7100242/python-numpy-first-occurrence-of-subarray>`_.
+
+    """
+    n = len(seq)
+    m = len(subseq)
+    if np.all(seq[:m] == subseq):
+        yield 0
+    hash_subseq = sum(hash(x) for x in subseq)  # compute hash
+    curr_hash = sum(hash(x) for x in seq[:m])  # compute hash
+    for i in range(1, n - m + 1):
+        curr_hash += hash(seq[i + m - 1]) - hash(seq[i - 1])  # update hash
+        if hash_subseq == curr_hash and np.all(seq[i:i + m] == subseq):
+            yield i
+
+
 def find_factors(n):
     factor_lst = np.array([])
     # Note that this loop runs till square root
@@ -56,6 +74,24 @@ def find_factors(n):
                 factor_lst = np.append(factor_lst, [i, n / i])
         i = i + 1
     return factor_lst
+
+
+def time_tick_formatter(val, pos=None):
+    """
+    Return val reformatted as a human readable date
+
+    See Also
+    --------
+    time_evolution : it is used to rewrite x-axis
+    """
+    global unix_time  # It is the method to access the global variable unix_time in order to read it
+    # The following statement is used to change the label only every 1000 point
+    # because of time consuming.
+    if val % 1000 == 0:
+        val = str(datetime.datetime.fromtimestamp(int(unix_time + val * 0.001)))
+    else:
+        val = ''
+    return val
 
 
 def read_data(day, month, year, col_to_save, num_d, verbose=True):
@@ -98,7 +134,7 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     Returns
     -------
     A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column and the timestamp
-    expressed in UNIX
+    of the first data expressed in UNIX
     """
     logging.info('Data read started')
     logging.debug('PARAMETERS: day=%i month=%i year=%i col_to_save=%s num_d=%i verbose=%s' % (
@@ -125,7 +161,7 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     for data in all_data:
         if verbose:
             print(round(i / len(all_data) * 100, 1), '%')
-        # if i == 5:
+        # if i <= 5:
         a = pd.read_table(data, sep='\t', usecols=[index],
                           header=None)  # Read only the column of interest -> [index]
         final_df = pd.concat([final_df, a], axis=0,
@@ -135,24 +171,6 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
         print('--------------- Reading completed! ---------------')
     logging.info('Data read completed')
     return final_df, index, timestamp
-
-
-def time_tick_formatter(val, pos=None):
-    """
-    Return val reformatted as a human readable date
-
-    See Also
-    --------
-    time_evolution : it is used to rewrite x-axis
-    """
-    global unix_time  # It is the method to access the global variable unix_time in order to read it
-    # The following statement is used to change the label only every 1000 point
-    # because of time consuming.
-    if val % 1000 == 0:
-        val = str(datetime.datetime.fromtimestamp(int(unix_time + val * 0.001)))
-    else:
-        val = ''
-    return val
 
 
 def time_evolution(day, month, year, quantity, ax, ndays=1, verbose=True):
@@ -373,43 +391,58 @@ def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length
     return ax, filename
 
 
-def psd(day, month, year, quantity, ax, interval, threshold=0.03, ndays=1, length=10000, verbose=True):
+def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1, length=10000,
+        verbose=True):
+    logging.info('PSD evaluator started')
+    logging.debug(
+        'PARAMETERS: day=%i month=%i year=%i quantity=%s ax=%s interval=%i'
+        ' mode=%s low_freq=%i high_freq=%i threshold=%f ndays=%i length=%i verbose=%s' % (
+            day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold, ndays, length, verbose))
     df, _, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
     global unix_time
     unix_time = t
     data_cleared, _ = th_comparison(df, threshold=threshold, length=length, verbose=verbose)
-    # data_first_check = np.array([])
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
-    # data_first_check = []
-    outdata = []
-    len_max = 0
-    # for key, group in groupby(data_cleared, lambda x: not np.isnan(x)):
-    #     lst = list(group)
-    #     if key and len(lst) >= interval*1000:
-    #         data_first_check.append(lst)
-    for el in data_first_check:
-        if len(el) >= interval * freq and len(el) > len_max:
-            len_max = len(el)
-            outdata = el
-    print(outdata)
-    print(len(outdata))
+    logging.debug('Data cleared from NaN values')
     num = interval * freq
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq)
     psd_f = psd_f[1:]
-    psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear")
-    psd_s = psd_s[1:]
+    outdata, file_index = [], []
+    len_max = 0
+    mean_min = np.inf
+    start = np.where(psd_f == low_freq)[0][0]
+    stop = np.where(psd_f == high_freq)[0][0]
+    if mode == 'max interval':
+        for el in data_first_check:
+            if len(el) >= interval * freq and len(el) > len_max:
+                len_max = len(el)
+                outdata = el
+        psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear")
+        outdata = psd_s[1:]
+    elif mode == 'low noise':
+        for el in data_first_check:
+            if len(el) >= interval * freq:
+                el_s, _ = mlab.psd(el, NFFT=num, Fs=freq, detrend="linear")
+                el_s = el_s[1:]
+                mean = np.min(el_s[start:stop])  # FIND A BETTER WAY TO EVALUATE LOW NOISE
+                if mean < mean_min:
+                    mean_min = mean
+                    file_index = list(find_rk(data_cleared, el))
+                    outdata = el_s
+    file_number = file_index[0] / 300000
+    print('File used:', file_number) if isinstance(file_number, int) else print('File used:', int(file_number), 'and',
+                                                                                int(file_number) + 1)
     lab1 = 'PSD of ' + quantity + '(' + str(interval) + ' s)'
     # y = np.tile(outdata, int(data_cleared.size/len(outdata))+1)
     # y = y[:48300000]
     # print(len(y))
-    ax.plot(psd_f, psd_s, color='tab:blue', linestyle='-', label=lab1)
+    ax.plot(psd_f, np.sqrt(outdata), linestyle='-', label=lab1)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel("f (Hz)")
-    ax.set_ylabel("PSD")
+    ax.set_xlabel("f (Hz)", fontsize=16)
+    ax.set_ylabel("PSD", fontsize=16)
     # ax.plot(df.index, y, color='tab:red', linestyle='-', label='Best Of')
     ax.grid(True, linestyle='-')
-    # ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax
 
