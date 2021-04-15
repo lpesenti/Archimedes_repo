@@ -36,10 +36,17 @@ import glob
 import re
 import logging
 import math
+import timeit
 
+cols = np.array(
+    ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
+     'Time'])
 unix_time = 0  # It is used only to make right conversion in time for time evolution analysis
-path_to_data = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Data"
+path_to_data = r"D:\Archimedes\Data"
 freq = 1000  # Hz
+lambda_laser = 532.e-9  # Meter --> 532 nanometer
+distance_mirrors = 0.1  # Length between mirrors
+first_coef = lambda_laser / (2. * np.pi * distance_mirrors)
 
 
 def find_rk(seq, subseq):
@@ -94,7 +101,7 @@ def time_tick_formatter(val, pos=None):
     return val
 
 
-def read_data(day, month, year, col_to_save, num_d, verbose=True):
+def read_data(day, month, year, col_to_save, num_d, file_start=None, file_stop=None, verbose=True):
     """
     Search data present in a specific folder and read only the column associated with the quantity you are interested in
 
@@ -114,6 +121,12 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
 
     num_d : int
         How many days of data you want to analyze.
+
+    file_start : any
+        The first file to be read.
+
+    file_stop : any
+        The last file to be read.
 
     verbose : bool
         If True the verbosity is enabled.
@@ -142,9 +155,6 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     if verbose:
         print('--------------- Reading', day, '/', month, '/', year, '-', col_to_save, 'data ---------------')
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
-    cols = np.array(
-        ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
-         'Time'])
     index = np.where(cols == col_to_save)[0][0] + 1  # Find the index corresponding to the the col_to_save
     all_data = []
     final_df = pd.DataFrame()
@@ -156,17 +166,47 @@ def read_data(day, month, year, col_to_save, num_d, verbose=True):
     time = pd.read_table(all_data[0], sep='\t', usecols=[9], header=None)  # Read the time from first data
     start_t = time[9][0].replace("\\", '')  # Remove \\ in the data format -> it allows to be converted
     timestamp = datetime.datetime.timestamp(pd.to_datetime(start_t))  # Conversion of the time to timestamp
-    i = 0
+    i = 1
     logging.debug('Number of *.lvm: %i' % len(all_data))
-    for data in all_data:
-        if verbose:
-            print(round(i / len(all_data) * 100, 1), '%')
-        # if i <= 5:
-        a = pd.read_table(data, sep='\t', usecols=[index],
-                          header=None)  # Read only the column of interest -> [index]
-        final_df = pd.concat([final_df, a], axis=0,
-                             ignore_index=True)  # At the end we have a long column with all data
-        i += 1
+    if file_start and file_stop:
+        for data in all_data:
+            if verbose:
+                print(round(i / len(all_data) * 100, 1), '%')
+            if file_start <= i <= file_stop:
+                # Read only the column of interest -> [index]
+                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                # At the end we have a long column with all data
+                final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+            i += 1
+    elif file_start and not file_stop:
+        for data in all_data:
+            if verbose:
+                print(round(i / len(all_data) * 100, 1), '%')
+            if i >= file_start:
+                # Read only the column of interest -> [index]
+                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                # At the end we have a long column with all data
+                final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+            i += 1
+    elif file_stop and not file_start:
+        for data in all_data:
+            if verbose:
+                print(round(i / len(all_data) * 100, 1), '%')
+            if i <= file_stop:
+                # Read only the column of interest -> [index]
+                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                # At the end we have a long column with all data
+                final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+            i += 1
+    else:
+        for data in all_data:
+            if verbose:
+                print(round(i / len(all_data) * 100, 1), '%')
+            # Read only the column of interest -> [index]
+            a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+            # At the end we have a long column with all data
+            final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+            i += 1
     if verbose:
         print('--------------- Reading completed! ---------------')
     logging.info('Data read completed')
@@ -318,6 +358,85 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     return data_to_check, frac_rejected
 
 
+def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1, length=10000,
+        file_start=None, file_stop=None, verbose=True):
+    logging.info('PSD evaluator started')
+    logging.debug(
+        'PARAMETERS: day=%i month=%i year=%i quantity=%s ax=%s interval=%i'
+        ' mode=%s low_freq=%i high_freq=%i threshold=%f ndays=%i length=%i verbose=%s' % (
+            day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold, ndays, length, verbose))
+
+    df_qty, _, _ = read_data(day, month, year, quantity, ndays, file_start=file_start, file_stop=file_stop,
+                             verbose=verbose)
+    df_po, _, _ = read_data(day=day, month=month, year=year, col_to_save='Pick Off', num_d=ndays, file_start=file_start,
+                            file_stop=file_stop, verbose=verbose)
+
+    data_cleared, _ = th_comparison(df_qty, threshold=threshold, length=length, verbose=verbose)
+
+    print('Removing NaN values...') if verbose else print()
+    data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
+    print('NaN values successfully removed') if verbose else print()
+
+    logging.debug('Data cleared from NaN values')
+
+    num = int(60 * freq)
+    _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
+    psd_f = psd_f[1:]
+
+    outdata, file_index = [], []
+    len_max = 0
+    integral_min = np.inf
+    start = np.where(psd_f == low_freq)[0][0]
+    stop = np.where(psd_f == high_freq)[0][0]
+    print('Number of usable array:', len(data_first_check)) if verbose else print()
+    print('Starting evaluation of', mode, 'PSD...') if verbose else print()
+    if mode == 'max interval':
+        for el in data_first_check:
+            if len(el) >= interval * freq and len(el) > len_max:
+                len_max = len(el)
+                outdata = el
+        psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
+        outdata = psd_s[1:]
+    elif mode == 'low noise':
+        i = 0
+        for el in data_first_check:
+            print(round(i / len(data_first_check) * 100, 2), '%')
+            if len(el) >= interval * freq:
+                el_s, _ = mlab.psd(el, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
+                el_s = el_s[1:]
+                integral = sum(el_s[start:stop] / num)  # Width bin = 1/num
+                if integral < integral_min:
+                    integral_min = integral
+                    file_index = list(find_rk(data_cleared, el))
+                    outdata = el_s
+            i += 1
+        if file_index:
+            file_number = file_index[0] / 300000
+            print('File used:', file_number) if isinstance(file_number, int) else print('File used:', int(file_number),
+                                                                                        'and',
+                                                                                        int(file_number) + 1)
+    print('Evaluation of', mode, 'PSD completed!') if verbose else print()
+    print('Length of data used for PSD:', len(outdata)) if verbose else print()
+    v_max = df_qty.max().values.flatten()
+    v_min = df_qty.min().values.flatten()
+    alpha = first_coef / (v_max - v_min)
+
+    pick_off_mean = np.abs(np.mean(df_po[file_index[0]:file_index[0]+len(outdata) + 1].values.flatten()))
+    data_to_plot = np.sqrt(outdata) * alpha * pick_off_mean
+    lab1 = r'$\sqrt{PSD}$ of ' + quantity + '(' + str(interval) + ' s)'
+
+    x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
+    ax.plot(x, y, linestyle='-', label='@ Virgo')
+    ax.plot(psd_f, data_to_plot, linestyle='-', label='@ Sos-Enattos')
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Frequency (Hz)", fontsize=16)
+    ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=16)
+    ax.grid(True, linestyle='-')
+    ax.legend(loc='best', shadow=True, fontsize='medium')
+    return ax
+
+
 def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
     Make the derivative plot of a given quantity
@@ -389,62 +508,6 @@ def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
-
-
-def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1, length=10000,
-        verbose=True):
-    logging.info('PSD evaluator started')
-    logging.debug(
-        'PARAMETERS: day=%i month=%i year=%i quantity=%s ax=%s interval=%i'
-        ' mode=%s low_freq=%i high_freq=%i threshold=%f ndays=%i length=%i verbose=%s' % (
-            day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold, ndays, length, verbose))
-    df, _, t = read_data(day, month, year, quantity, ndays, verbose=verbose)
-    global unix_time
-    unix_time = t
-    data_cleared, _ = th_comparison(df, threshold=threshold, length=length, verbose=verbose)
-    data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
-    logging.debug('Data cleared from NaN values')
-    num = interval * freq
-    _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq)
-    psd_f = psd_f[1:]
-    outdata, file_index = [], []
-    len_max = 0
-    mean_min = np.inf
-    start = np.where(psd_f == low_freq)[0][0]
-    stop = np.where(psd_f == high_freq)[0][0]
-    if mode == 'max interval':
-        for el in data_first_check:
-            if len(el) >= interval * freq and len(el) > len_max:
-                len_max = len(el)
-                outdata = el
-        psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear")
-        outdata = psd_s[1:]
-    elif mode == 'low noise':
-        for el in data_first_check:
-            if len(el) >= interval * freq:
-                el_s, _ = mlab.psd(el, NFFT=num, Fs=freq, detrend="linear")
-                el_s = el_s[1:]
-                mean = np.min(el_s[start:stop])  # FIND A BETTER WAY TO EVALUATE LOW NOISE
-                if mean < mean_min:
-                    mean_min = mean
-                    file_index = list(find_rk(data_cleared, el))
-                    outdata = el_s
-    file_number = file_index[0] / 300000
-    print('File used:', file_number) if isinstance(file_number, int) else print('File used:', int(file_number), 'and',
-                                                                                int(file_number) + 1)
-    lab1 = 'PSD of ' + quantity + '(' + str(interval) + ' s)'
-    # y = np.tile(outdata, int(data_cleared.size/len(outdata))+1)
-    # y = y[:48300000]
-    # print(len(y))
-    ax.plot(psd_f, np.sqrt(outdata), linestyle='-', label=lab1)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel("f (Hz)", fontsize=16)
-    ax.set_ylabel("PSD", fontsize=16)
-    # ax.plot(df.index, y, color='tab:red', linestyle='-', label='Best Of')
-    ax.grid(True, linestyle='-')
-    ax.legend(loc='best', shadow=True, fontsize='medium')
-    return ax
 
 
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True,
