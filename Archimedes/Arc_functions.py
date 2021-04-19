@@ -102,11 +102,11 @@ def time_tick_formatter(val, pos=None):
     return val
 
 
-def myfromtimestampfunction(timestamp):
+def from_timestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp)
 
 
-def myvectorizer(input_func):
+def vectorizer(input_func):
     def output_func(array_of_numbers):
         return [input_func(a) for a in array_of_numbers]
 
@@ -260,38 +260,43 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, file_start=None, fil
         quantity : str
             The quantity to be read. It must be one of the following:
 
-            - 'ITF' : the signal from the interferometer expressed in V.
-            - 'Pick Off' : the signal from the pick-off expressed in V.
-            - 'Signal injected' : the signal from the waveform used expressed in V.
-            - 'Error' : represent the ratio between ITF and the pick off signals.
-            - 'Correction' :
-            - 'Actuator 1' : the output of the actuator 1 before amplification expressed in V.
-            - 'Actuator 2' : the output of the actuator 2 before amplification expressed in V.
-            - 'After Noise' :
-            - 'Time' : the timestamp of the data saved every milli second in human-readable format
-
         ax: ax
             The ax to be given in order to have a plot
 
         ndays : int
             How many days of data you want to analyze.
 
+        file_start : any
+            The first file to be read.
+
+        file_stop : any
+            The last file to be read.
+
         verbose : bool
             If True the verbosity is enabled.
-
+    Notes
+    -----
+    *quantity* takes only one of the following parameter:
+        - ITF : the signal from the interferometer expressed in V
+        - Pick Off : the signal from the pick-off expressed in V
+        - Signal injected : the signal from the waveform used expressed in V
+        - Error :
+        - Correction :
+        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
+        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
+        - After Noise :
+        - Time : the timestamp of the data saved every milli second in human-readable format
     Returns
     -------
     A tuple of an axes and the relative filename
     """
     df, col_index, t = read_data(day, month, year, quantity, ndays, file_start=file_start, file_stop=file_stop,
                                  verbose=verbose)
-    # global unix_time  # Access the global variable and
-    # unix_time = t  # change its value to the timestamp of the data
     if verbose:
         print('Building Time Evolution Plot...')
-    date_convert = myvectorizer(myfromtimestampfunction)
-    xtimex = date_convert(t)
-    datenums = mdates.date2num(xtimex)
+    date_convert = vectorizer(from_timestamp)
+    time_x = date_convert(t)
+    datenums = mdates.date2num(time_x)  # to avoid showing second=zero by default on plot
     lab = quantity + ' (n° days: ' + str(ndays) + ')'
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
     ax.plot(datenums, df[col_index], color='tab:red', label=lab)
@@ -299,11 +304,6 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, file_start=None, fil
     ax.set_ylabel('Voltage [V]')
     xfmt = mdates.DateFormatter('%b %d %H:%M:%S')
     ax.xaxis.set_major_formatter(xfmt)
-    # ax.xaxis.set_major_formatter(time_tick_formatter)
-    # print(pd.to_datetime(t[0]))
-    # ax.set_xticks(np.arange(0, df.size, int(df.size / len(t))))
-    # ax.set_xticklabels(t)
-    # ax.xaxis.set_minor_locator(AutoMinorLocator())
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
 
