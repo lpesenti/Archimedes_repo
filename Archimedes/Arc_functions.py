@@ -23,6 +23,8 @@ Time [-]           : every 10 millisecond (100 rows) the system print the dateti
                      -> 02/19/2021 20:01:11.097734\09
 
 In the current configuration the sampling rate is 1 KHz but can be increase.
+
+Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
 """
 
 from matplotlib.mlab import cohere
@@ -42,7 +44,6 @@ import timeit
 cols = np.array(
     ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
      'Time'])
-unix_time = 0  # It is used only to make right conversion in time for time evolution analysis
 path_to_data = r"D:\Archimedes\Data"
 freq = 1000  # Hz
 lambda_laser = 532.e-9  # Meter --> 532 nanometer
@@ -92,13 +93,7 @@ def time_tick_formatter(val, pos=None):
     --------
     time_evolution : it is used to rewrite x-axis
     """
-    global unix_time  # It is the method to access the global variable unix_time in order to read it
-    # The following statement is used to change the label only every 1000 point
-    # because of time consuming.
-    if val % 1000 == 0:
-        val = str(datetime.datetime.fromtimestamp(int(unix_time + val * 0.001)))
-    else:
-        val = ''
+    val = str(datetime.datetime.fromtimestamp(val).strftime('%b %d %H:%M:%S'))
     return val
 
 
@@ -113,7 +108,7 @@ def vectorizer(input_func):
     return output_func
 
 
-def read_data(day, month, year, col_to_save, num_d=1, file_start=None, file_stop=None, verbose=True):
+def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=None, file_stop=None, verbose=True):
     """
     Search data present in a specific folder and read only the column associated with the quantity you are interested in
 
@@ -133,6 +128,9 @@ def read_data(day, month, year, col_to_save, num_d=1, file_start=None, file_stop
 
     num_d : int
         How many days of data you want to analyze.
+
+    tEvo : bool
+        If True the time column will be read.
 
     file_start : any
         The first file to be read.
@@ -184,14 +182,16 @@ def read_data(day, month, year, col_to_save, num_d=1, file_start=None, file_stop
                 print(round(i / len(all_data) * 100, 1), '%')
             if file_start <= i <= file_stop:
                 # Read only the column of interest -> [index]
-                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                                  header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', usecols=[9], header=None).replace(r'\\09', '',
-                                                                                       regex=True).values.flatten().tolist()
+                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
+                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
                 timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                for j in range(1, len(time) + 1):
-                    time_array.append(timestamp + j / freq)
+                if tEvo:
+                    for j in range(1, len(time) + 1):
+                        time_array.append(timestamp + j / freq)
             i += 1
     elif file_start and not file_stop:
         for data in all_data:
@@ -199,14 +199,16 @@ def read_data(day, month, year, col_to_save, num_d=1, file_start=None, file_stop
                 print(round(i / len(all_data) * 100, 1), '%')
             if i >= file_start:
                 # Read only the column of interest -> [index]
-                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                                  header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', usecols=[9], header=None).replace(r'\\09', '',
-                                                                                       regex=True).values.flatten().tolist()
+                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
+                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
                 timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                for j in range(1, len(time) + 1):
-                    time_array.append(timestamp + j / freq)
+                if tEvo:
+                    for j in range(1, len(time) + 1):
+                        time_array.append(timestamp + j / freq)
             i += 1
     elif file_stop and not file_start:
         for data in all_data:
@@ -214,35 +216,40 @@ def read_data(day, month, year, col_to_save, num_d=1, file_start=None, file_stop
                 print(round(i / len(all_data) * 100, 1), '%')
             if i <= file_stop:
                 # Read only the column of interest -> [index]
-                a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+                a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                                  header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', usecols=[9], header=None).replace(r'\\09', '',
-                                                                                       regex=True).values.flatten().tolist()
+                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
+                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
                 timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                for j in range(1, len(time) + 1):
-                    time_array.append(timestamp + j / freq)
+                if tEvo:
+                    for j in range(1, len(time) + 1):
+                        time_array.append(timestamp + j / freq)
             i += 1
     else:
         for data in all_data:
             if verbose:
                 print(round(i / len(all_data) * 100, 1), '%')
             # Read only the column of interest -> [index]
-            a = pd.read_table(data, sep='\t', usecols=[index], header=None)
+            a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                              header=None)
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-            time = pd.read_table(data, sep='\t', usecols=[9], header=None).replace(r'\\09', '',
-                                                                                   regex=True).values.flatten().tolist()
+            time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
+                                 header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
             timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-            for j in range(1, len(time) + 1):
-                time_array.append(timestamp + j / freq)
+            if tEvo:
+                for j in range(1, len(time) + 1):
+                    time_array.append(timestamp + j / freq)
+            i += 1
     if verbose:
         print('--------------- Reading completed! ---------------')
     logging.info('Data read completed')
     return final_df, index, time_array
 
 
-def time_evolution(day, month, year, quantity, ax, ndays=1, file_start=None, file_stop=None, verbose=True):
+def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_start=None, file_stop=None, verbose=True):
     """
     Make the plot of time evolution
 
@@ -265,6 +272,9 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, file_start=None, fil
 
         ndays : int
             How many days of data you want to analyze.
+
+        tEvo : bool
+        If True the time column will be read.
 
         file_start : any
             The first file to be read.
@@ -290,20 +300,16 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, file_start=None, fil
     -------
     A tuple of an axes and the relative filename
     """
-    df, col_index, t = read_data(day, month, year, quantity, ndays, file_start=file_start, file_stop=file_stop,
-                                 verbose=verbose)
+    df, col_index, t = read_data(day, month, year, quantity, ndays, tEvo=tEvo, file_start=file_start,
+                                 file_stop=file_stop, verbose=verbose)
     if verbose:
         print('Building Time Evolution Plot...')
-    date_convert = vectorizer(from_timestamp)
-    time_x = date_convert(t)
-    datenums = mdates.date2num(time_x)  # to avoid showing second=zero by default on plot
-    lab = quantity + ' (n° days: ' + str(ndays) + ')'
+    lab = quantity
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.plot(datenums, df[col_index], color='tab:red', label=lab)
+    ax.plot(t, df[col_index], label=lab)
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
-    xfmt = mdates.DateFormatter('%b %d %H:%M:%S')
-    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
 
