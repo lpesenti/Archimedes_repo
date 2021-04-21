@@ -29,6 +29,7 @@ Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colo
 
 from matplotlib.mlab import cohere
 from matplotlib import mlab
+from operator import itemgetter
 import matplotlib.dates as mdates
 from itertools import groupby
 import datetime
@@ -160,7 +161,7 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
     of the first data expressed in UNIX
     """
     logging.info('Data read started')
-    logging.debug('PARAMETERS: day=%i month=%i year=%i col_to_save=%s num_d=%i verbose=%s' % (
+    logging.info('PARAMETERS: day=%i month=%i year=%i col_to_save=%s num_d=%i verbose=%s' % (
         day, month, year, col_to_save, num_d, verbose))
     if verbose:
         print('--------------- Reading', day, '/', month, '/', year, '-', col_to_save, 'data ---------------')
@@ -174,8 +175,9 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
         temp_data = glob.glob(os.path.join(data_folder, "*.lvm"))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
+
     i = 1
-    logging.debug('Number of *.lvm: %i' % len(all_data))
+    logging.info('Number of *.lvm: %i' % len(all_data))
     if file_start and file_stop:
         for data in all_data:
             if verbose:
@@ -186,10 +188,12 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
-                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                 if tEvo:
+                    df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                    time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
+                                         usecols=df_col[-1:],
+                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                     for j in range(1, len(time) + 1):
                         time_array.append(timestamp + j / freq)
             i += 1
@@ -203,10 +207,11 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
-                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                 if tEvo:
+                    df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                    time = pd.read_table(data, sep='\t', low_memory=False, engine='c', usecols=df_col[-1:],
+                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                     for j in range(1, len(time) + 1):
                         time_array.append(timestamp + j / freq)
             i += 1
@@ -220,10 +225,12 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
-                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                 if tEvo:
+                    df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                    time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
+                                         usecols=df_col[-1:],
+                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                     for j in range(1, len(time) + 1):
                         time_array.append(timestamp + j / freq)
             i += 1
@@ -236,10 +243,12 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
                               header=None)
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-            time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[9],
-                                 header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-            timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
             if tEvo:
+                df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=df_col[-1:],
+                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
+                pippo = pd.read_csv(all_data[0], sep='\t', nrows=1, header=None).columns
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                 for j in range(1, len(time) + 1):
                     time_array.append(timestamp + j / freq)
             i += 1
@@ -306,7 +315,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_star
         print('Building Time Evolution Plot...')
     lab = quantity
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.plot(t, df[col_index], label=lab)
+    ax.scatter(t, df[col_index], label=lab)
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
     ax.xaxis.set_major_formatter(time_tick_formatter)
@@ -351,7 +360,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     the rejected fraction of the data
     """
     logging.info('Comparison started')
-    logging.debug('PARAMETERS: rows_in_df=%s threshold=%f length=%i verbose=%s' % (
+    logging.info('PARAMETERS: rows_in_df=%s threshold=%f length=%i verbose=%s' % (
         len(data_frame.index), threshold, length, verbose))
     if verbose:
         print('Starting the comparison...')
@@ -398,22 +407,21 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     if verbose:
         print('\tData rejected:', frac_rejected * 100, '%')
         print('Comparison completed!')
-    logging.debug('Data rejected: %f ' % frac_rejected)
+    logging.info('Data rejected: %f ' % frac_rejected)
     logging.info('Replacement completed')
     return data_to_check, frac_rejected
 
 
 def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1,
-        length=10000, ax1=None, file_start=None, file_stop=None, verbose=True):
+        length=10000, ax1=None, file_start=None, file_stop=None, tEvo=False, verbose=True):
     logging.info('PSD evaluator started')
-    logging.debug(
+    logging.info(
         'PARAMETERS: day=%i month=%i year=%i quantity=%s ax=%s interval=%i'
         ' mode=%s low_freq=%i high_freq=%i threshold=%f ndays=%i length=%i verbose=%s' % (
             day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold, ndays, length, verbose))
 
     df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, file_start=file_start,
-                                     file_stop=file_stop,
-                                     verbose=verbose)
+                                     file_stop=file_stop, tEvo=tEvo, verbose=verbose)
     df_itf, _, _ = read_data(day=day, month=month, year=year, col_to_save='ITF', num_d=ndays, file_start=None,
                              file_stop=None, verbose=verbose)
     df_po, _, _ = read_data(day=day, month=month, year=year, col_to_save='Pick Off', num_d=ndays, file_start=None,
@@ -425,13 +433,13 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
     print('NaN values successfully removed') if verbose else print()
 
-    logging.debug('Data cleared from NaN values')
+    logging.info('Data cleared from NaN values')
 
     num = int(60 * freq)
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
     psd_f = psd_f[1:]
 
-    outdata, file_index = [], []
+    outdata, file_index, out_test = [], [], []
     len_max, pick_off_mean = 0, 0
     length_data_used = 0
     integral_min = np.inf
@@ -462,6 +470,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                     integral_min = integral
                     file_index = list(find_rk(df_qty.values.flatten(), el))
                     outdata = el_s
+                    out_test = el
                     length_data_used = len(el)
                     pick_off_mean = np.abs(
                         np.mean(df_po[file_index[0]:file_index[0] + len(el) + 1].values.flatten()))
@@ -480,17 +489,51 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     alpha = first_coef / (v_max - v_min)
     print('Alpha', alpha)
     logging.info('V_max = %f, V_min = %f, alpha = %f' % (v_max, v_min, alpha))
+
+    num_slice = int(len(out_test) / 300000)  # It must be an integer
+    data_split = np.array_split(out_test, num_slice)
+    integral_list, indeces_lst = [], []
+    optimal_data = np.array([])
+    # k = -1
+    for index, chunk in enumerate(data_split):
+        chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+        chunk_s = chunk_s[1:]
+        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
+        integral_list.append(integral)
+        if not integral <= 1e-11:
+            pass
+        else:
+            indeces_lst.append(index)
+        # if index - k == 1:
+        #     optimal_data = np.append(optimal_data, chunk)
+        # else:
+        #     optimal_data = []
+        # k = index
+    index_optimal_data = [list(map(itemgetter(1), group)) for key, group in
+                          groupby(enumerate(indeces_lst), lambda ix: ix[0] - ix[1])]
+    print('Index optimal data:', len(index_optimal_data), index_optimal_data)
+    max_optimal_index = max(index_optimal_data, key=lambda elem: len(elem))
+    print('Maximum optimal index data:', len(max_optimal_index), max_optimal_index)
+    for inx in max_optimal_index:
+        optimal_data = np.append(optimal_data, data_split[inx])
+    print('Optimal data:', len(optimal_data), optimal_data)
     # if outdata:
     data_to_plot = np.sqrt(outdata) * alpha * pick_off_mean
+    opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear")
+    opt_psd = opt_psd[1:]
+    data_to_plot_opt = np.sqrt(opt_psd) * alpha * pick_off_mean
     # else:
     #    data_to_plot = np.empty(len(psd_f)) * np.nan
     lab1 = r'$\sqrt{PSD}$ of ' + quantity + '(' + str(interval) + ' s)'
 
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
-    data_used_x = df_qty.index[file_index[0]:file_index[0] + length_data_used + 1]
-    data_used_y = df_qty[file_index[0]:file_index[0] + length_data_used + 1].values.flatten()
+    x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
+
     ax.plot(x, y, linestyle='-', label='@ Virgo')
-    ax.plot(psd_f, data_to_plot, linestyle='-', label='@ Sos-Enattos')
+    # ax.plot(psd_f, data_to_plot, linestyle='-', label='@ Sos-Enattos')
+    ax.plot(psd_f, data_to_plot_opt, linestyle='-', label='@ Sos-Enattos Luca')
+    ax.plot(x_davide, y_davide, linestyle='-', label='@ Sos-Enattos Davide')
+
     ax.set_xscale("linear")
     ax.set_xlim([2, 20])
     ax.set_ylim([1.e-13, 1.e-8])
@@ -501,10 +544,15 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     ax.legend(loc='best', shadow=True, fontsize='medium')
     ax.set_title(mode)
     if ax1:
-        ax1.plot(df_qty.index, df_qty[col_index], linestyle='dotted', label='All data')
+        data_used_x = t[file_index[0]:file_index[0] + length_data_used + 1]
+        data_used_y = df_qty[file_index[0]:file_index[0] + length_data_used + 1].values.flatten()
+        opt_data_used_x = t[file_index[0]:file_index[0] + len(optimal_data) + 1]
+        opt_data_used_y = df_qty[file_index[0]:file_index[0] + len(optimal_data) + 1].values.flatten()
+        ax1.plot(t, df_qty[col_index], linestyle='dotted', label='All data')
         ax1.plot(data_used_x, data_used_y, linestyle='-', label='Data used')
+        ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Optimal data used')
         ax1.grid(True, linestyle='-')
-        # ax1.xaxis.set_major_formatter(time_tick_formatter)
+        ax1.xaxis.set_major_formatter(time_tick_formatter)
         ax1.set_ylabel(r"Voltage [V]", fontsize=16)
         ax1.legend(loc='best', shadow=True, fontsize='medium')
     return ax, ax1
