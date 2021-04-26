@@ -5,17 +5,40 @@ import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 import Arc_functions as arc
 import numpy as np
-import timeit
+import timeit, time
 import os
 import logging
+import logging.handlers
+import pickle as pkl
+
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.DEBUG)
+formatter = logging.Formatter("[%(asctime)s %(filename)s %(funcName)20s()] %(levelname)s   %(message)s")
+
+fileHandler = logging.FileHandler(r'.\logs\info.log', mode='w')
+fileHandler.setLevel(logging.INFO)
+fileHandler.setFormatter(formatter)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(logging.INFO)
+streamHandler.setFormatter(formatter)
+
+now = int(time.time())
+error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
+                                                  fromaddr="archimedes.noreply@gmail.com",
+                                                  toaddrs=["l.pesenti6@campus.unimib.it", 'drozza@uniss.it'],
+                                                  subject='Log report #' + str(now),
+                                                  credentials=('archimedes.noreply@gmail.com', 'fXV-r^kZqpZn7yBt'),
+                                                  secure=())
+error_mail_handler.setFormatter(formatter)
+error_mail_handler.setLevel(logging.WARNING)
+
+# rootLogger.addHandler(error_mail_handler)
+rootLogger.addHandler(fileHandler)
+rootLogger.addHandler(streamHandler)
 
 mpl.rcParams['agg.path.chunksize'] = 5000000
-path_to_img = r"C:\Users\lpese\PycharmProjects\Archimedes-Sassari\Archimedes\Images"
-logging.basicConfig(filename=r'.\logs\debug.log',
-                    level=logging.DEBUG,
-                    filemode='w',
-                    format='[%(asctime)s %(filename)s %(funcName)20s()] %(levelname)s   %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+path_to_img = r"D:\Archimedes\Images"
 
 
 def plot_3d(day, month, year, col_to_save, num_d, axes1, axes2, verbose=True):
@@ -33,7 +56,7 @@ def plot_3d(day, month, year, col_to_save, num_d, axes1, axes2, verbose=True):
         print(round(i / 0.01 * 100, 2), '%')
         data_to_heatmap = np.array([])
         for j in ndivision_val:
-            _, _, val_rej = arc.th_comparison(data, threshold=i, ndivision=j, verbose=False)
+            _, _, val_rej = arc.th_comparison(data, threshold=i, length=j, verbose=False)
             x = np.append(x, i)
             y = np.append(y, j)
             data_to_heatmap = np.append(data_to_heatmap, val_rej)
@@ -147,30 +170,32 @@ def nine_der_plot(day, month, year, col_to_save, title):
     ax9 = fig9.add_subplot()
     logging.debug('ax9 added')
     logging.info('Starting with der_plot')
-    ax1, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, threshold=0.001, ndivision=100)
+    ax1, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, threshold=0.001,
+                              length=100)
     logging.debug('ax1 der_plot completed')
-    ax2, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, threshold=0.0022,
-                          ndivision=100)
+    ax2, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, threshold=0.0022,
+                              length=100)
     logging.debug('ax2 der_plot completed')
-    ax3, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, threshold=0.0044,
-                          ndivision=100)
+    ax3, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, threshold=0.0044,
+                              length=100)
     logging.debug('ax3 der_plot completed')
-    ax4, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, threshold=0.001, ndivision=500)
+    ax4, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, threshold=0.001,
+                              length=500)
     logging.debug('ax4 der_plot completed')
-    ax5, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, threshold=0.0022,
-                          ndivision=500)
+    ax5, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, threshold=0.0022,
+                              length=500)
     logging.debug('ax5 der_plot completed')
-    ax6, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, threshold=0.0044,
-                          ndivision=500)
+    ax6, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, threshold=0.0044,
+                              length=500)
     logging.debug('ax6 der_plot completed')
-    ax7, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, threshold=0.001,
-                          ndivision=1000)
+    ax7, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, threshold=0.001,
+                              length=1000)
     logging.debug('ax7 der_plot completed')
-    ax8, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, threshold=0.0022,
-                          ndivision=1000)
+    ax8, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, threshold=0.0022,
+                              length=1000)
     logging.debug('ax8 der_plot completed')
-    ax9, _ = arc.der_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, threshold=0.0044,
-                          ndivision=1000)
+    ax9, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, threshold=0.0044,
+                              length=1000)
     logging.debug('ax9 der_plot completed')
     logging.info('Finished der_plot evaluation')
     logging.info('Starting with time_evolution')
@@ -222,44 +247,67 @@ if __name__ == '__main__':
     # nine_der_plot(day=28, month=2, year=2021, col_to_save='ITF', title='Data from 28/02/2021')
 
     fig1 = plt.figure()
-    fig1.suptitle('Data from 19/02/2021 - No derivative')
-
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    fig0 = plt.figure()
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    fig1.suptitle('Data from 22/11/2020')
+    fig0.suptitle('Data from 22/11/2020')
     ax1 = fig1.add_subplot()
-    ax1, _ = arc.der_plot(day=19, month=2, year=2021, quantity='ITF', ax=ax1, threshold=0.03, ndivision=10000,
-                          verbose=True)
-    ax1, _ = arc.time_evolution(day=19, month=2, year=2021, quantity='ITF', ax=ax1, verbose=False)
-    ax1.set_title('Th=0.03, ndiv=10000')
+    ax0 = fig0.add_subplot()
+    arc.psd(day=22, month=11, year=2020, quantity='Error', mode='low noise', ax=ax1, ax1=ax0, interval=300, tEvo=True)
+    # arc.time_evolution(day=22, month=11, year=2020, quantity='ITF', ax=ax1)#, file_start=10, file_stop=10)
+    # arc.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed')
-
-    fig2 = plt.figure()
-    fig2.suptitle('Data from 20/02/2021 - No derivative')
-
-    ax2 = fig2.add_subplot()
-    ax2, _ = arc.der_plot(day=20, month=2, year=2021, quantity='ITF', ax=ax2, threshold=0.03, ndivision=10000,
-                          verbose=True)
-    ax2, _ = arc.time_evolution(day=20, month=2, year=2021, quantity='ITF', ax=ax2, verbose=False)
-    ax2.set_title('Th=0.03, ndiv=10000')
-    mng = plt.get_current_fig_manager()
-    mng.window.state('zoomed')
-
-    fig3 = plt.figure()
-    fig3.suptitle('Data from 20/02/2021 - No derivative')
-
-    ax3 = fig3.add_subplot()
-    ax3, _ = arc.der_plot(day=28, month=2, year=2021, quantity='ITF', ax=ax3, threshold=0.03, ndivision=10000,
-                          verbose=True)
-    ax3, _ = arc.time_evolution(day=28, month=2, year=2021, quantity='ITF', ax=ax3, verbose=False)
-    ax3.set_title('Th=0.03, ndiv=10000')
-    mng = plt.get_current_fig_manager()
-    mng.window.state('zoomed')
-
-    fig1.savefig(os.path.join(path_to_img, r'2021219_th_003_nd_10000_noDerivative_FULL.png'))
-    fig2.savefig(os.path.join(path_to_img, r'2021220_th_003_nd_10000_noDerivative_FULL.png'))
-    fig3.savefig(os.path.join(path_to_img, r'2021228_th_003_nd_10000_noDerivative_FULL.png'))
+    # fig0.savefig(os.path.join(path_to_img, r'20201122_Data_used.png'))
+    # fig1.savefig(os.path.join(path_to_img, r'20201122_ASD.png'))
+    # pkl.dump(fig1, open(os.path.join(path_to_img, r'20201122_ASD.pickle'), 'wb'))
+    #
+    # fig2 = plt.figure()
+    # fig2.suptitle('Data from 20/02/2021')
+    # ax2 = fig2.add_subplot()
+    # arc.psd(day=20, month=2, year=2021, quantity='Error', mode='low noise', ax=ax2, interval=300)
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    # fig2.savefig(os.path.join(path_to_img, r'2021220_ASD.png'))
+    #
+    # fig3 = plt.figure()
+    # fig3.suptitle('Data from 21/02/2021')
+    # ax3 = fig3.add_subplot()
+    # arc.psd(day=21, month=2, year=2021, quantity='Error', mode='low noise', ax=ax3, interval=300)
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    # fig3.savefig(os.path.join(path_to_img, r'2021221_ASD.png'))
+    #
+    # # fig4 = plt.figure()
+    # # fig4.suptitle('Data from 28/02/2021')
+    # # ax4 = fig4.add_subplot()
+    # # arc.psd(day=28, month=2, year=2021, quantity='Error', mode='low noise', ax=ax4, interval=300)
+    # # mng = plt.get_current_fig_manager()
+    # # mng.window.state('zoomed')
+    # # fig4.savefig(os.path.join(path_to_img, r'2021228_ASD.png'))
+    #
+    # fig5 = plt.figure()
+    # fig5.suptitle('Data from 21/11/2020')
+    # ax5 = fig5.add_subplot()
+    # arc.psd(day=21, month=11, year=2020, quantity='Error', mode='low noise', ax=ax5, interval=300)
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    # fig5.savefig(os.path.join(path_to_img, r'20201121_ASD.png'))
+    #
+    # fig6 = plt.figure()
+    # fig6.suptitle('Data from 22/11/2020')
+    # ax6 = fig6.add_subplot()
+    # arc.psd(day=22, month=11, year=2020, quantity='Error', mode='low noise', ax=ax6, interval=300)
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state('zoomed')
+    # fig6.savefig(os.path.join(path_to_img, r'20201122_ASD.png'))
 
     stop = timeit.default_timer()
     print('Time before plt.show(): ', (stop - start), 's')
     print('Time before plt.show(): ', (stop - start) / 60, 'min')
+    logging.info('Analysis completed (plt.show excluded)')
     plt.show()
-    logging.info('Finished')
+    logging.info('Analysis completed (plt.show included)')
