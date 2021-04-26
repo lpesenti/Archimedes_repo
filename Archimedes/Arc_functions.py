@@ -30,7 +30,6 @@ Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colo
 from matplotlib.mlab import cohere
 from matplotlib import mlab
 from operator import itemgetter
-import matplotlib.dates as mdates
 from itertools import groupby
 import datetime
 import numpy as np
@@ -40,11 +39,13 @@ import glob
 import re
 import logging
 import math
-import timeit
+import Arc_common
+
+logger = logging.getLogger(__name__)
 
 cols = np.array(
-    ['ITF', 'Pick Off', 'Signal injected', 'Error', 'Correction', 'Actuator 1', 'Actuator 2', 'After Noise',
-     'Time'])
+    ['itf', 'pick off', 'signal injected', 'error', 'correction', 'actuator 1', 'actuator 2', 'after noise',
+     'time'])
 path_to_data = r"D:\Archimedes\Data"
 freq = 1000  # Hz
 lambda_laser = 532.e-9  # Meter --> 532 nanometer
@@ -160,13 +161,20 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
     A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column and the timestamp
     of the first data expressed in UNIX
     """
+    # logging.error("Don't worry it's just a test from Arc_functions.py script!")
+    try:
+        if not day <= 31:
+            raise NameError('day is not in range (1, 31)')
+    except NameError as err:
+        logging.error(err.args[0])
+        raise
     logging.info('Data read started')
     logging.info('PARAMETERS: day=%i month=%i year=%i col_to_save=%s num_d=%i verbose=%s' % (
         day, month, year, col_to_save, num_d, verbose))
     if verbose:
         print('--------------- Reading', day, '/', month, '/', year, '-', col_to_save, 'data ---------------')
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
-    index = np.where(cols == col_to_save)[0][0] + 1  # Find the index corresponding to the the col_to_save
+    index = np.where(cols == col_to_save.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
     all_data = []
     final_df = pd.DataFrame()
     time_array = []
@@ -175,7 +183,6 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
         temp_data = glob.glob(os.path.join(data_folder, "*.lvm"))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
-
     i = 1
     logging.info('Number of *.lvm: %i' % len(all_data))
     if file_start and file_stop:
@@ -455,6 +462,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
             if len(el) >= interval * freq and len(el) > len_max:
                 len_max = len(el)
                 outdata = el
+                file_index = list(find_rk(df_qty.values.flatten(), el))
         psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
         outdata = psd_s[1:]
     elif mode == 'low noise':
@@ -469,17 +477,19 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                 if integral < integral_min:
                     integral_min = integral
                     file_index = list(find_rk(df_qty.values.flatten(), el))
+                    print('Start index data chosen:', file_index)
+                    print('Corresponding timestamp:',
+                          datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%b-%d %H:%M:%S'))
                     outdata = el_s
                     out_test = el
                     length_data_used = len(el)
                     pick_off_mean = np.abs(
                         np.mean(df_po[file_index[0]:file_index[0] + len(el) + 1].values.flatten()))
             i += 1
-        if file_index:
-            file_number = file_index[0] / 300000
-            print('File used:', file_number) if isinstance(file_number, int) else print('File used:', int(file_number),
-                                                                                        'and',
-                                                                                        int(file_number) + 1)
+    if file_index:
+        print('Data selected: from', datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%b-%d %H:%M:%S'),
+              'to', datetime.datetime.fromtimestamp(t[file_index[0]] + (length_data_used - 1) * 0.001).strftime(
+                '%b-%d %H:%M:%S'))
     print('Evaluation of', mode, 'PSD completed!') if verbose else print()
     # print('Length of data used for PSD:', len(outdata)) if verbose else print()
     v_max = df_itf.max().values.flatten()
@@ -509,6 +519,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         # else:
         #     optimal_data = []
         # k = index
+    print(indeces_lst)
     index_optimal_data = [list(map(itemgetter(1), group)) for key, group in
                           groupby(enumerate(indeces_lst), lambda ix: ix[0] - ix[1])]
     print('Index optimal data:', len(index_optimal_data), index_optimal_data)
@@ -516,10 +527,16 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     print('Maximum optimal index data:', len(max_optimal_index), max_optimal_index)
     for inx in max_optimal_index:
         optimal_data = np.append(optimal_data, data_split[inx])
+    opt_index_used = list(find_rk(df_qty.values.flatten(), optimal_data))
     print('Optimal data:', len(optimal_data), optimal_data)
+    print('Optimal data selected: from',
+          datetime.datetime.fromtimestamp(t[opt_index_used[0]]).strftime(
+              '%b-%d %H:%M:%S'), 'to', datetime.datetime.fromtimestamp(
+            t[opt_index_used[0]] + (len(optimal_data) - 1) * 0.001).strftime(
+            '%b-%d %H:%M:%S'))
     # if outdata:
     data_to_plot = np.sqrt(outdata) * alpha * pick_off_mean
-    opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear")
+    opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
     opt_psd = opt_psd[1:]
     data_to_plot_opt = np.sqrt(opt_psd) * alpha * pick_off_mean
     # else:
@@ -529,30 +546,35 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
-    ax.plot(x, y, linestyle='-', label='@ Virgo')
+    ax.plot(x, y, linestyle='-', color='tab:red', label='@ Virgo')
     # ax.plot(psd_f, data_to_plot, linestyle='-', label='@ Sos-Enattos')
-    ax.plot(psd_f, data_to_plot_opt, linestyle='-', label='@ Sos-Enattos Luca')
-    ax.plot(x_davide, y_davide, linestyle='-', label='@ Sos-Enattos Davide')
-
+    ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
+    ax.plot(psd_f, data_to_plot_opt, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca')
+    # diff = (y-data_to_plot_opt)/(y+data_to_plot_opt)
+    # ax.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
     ax.set_xscale("linear")
     ax.set_xlim([2, 20])
     ax.set_ylim([1.e-13, 1.e-8])
     ax.set_yscale("log")
     ax.set_xlabel("Frequency (Hz)", fontsize=16)
     ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=16)
+    ax.tick_params(axis='x', labelsize=20, which='both')
+    ax.tick_params(axis='y', labelsize=20, which='both')
     ax.grid(True, linestyle='-')
     ax.legend(loc='best', shadow=True, fontsize='medium')
     ax.set_title(mode)
     if ax1:
         data_used_x = t[file_index[0]:file_index[0] + length_data_used + 1]
         data_used_y = df_qty[file_index[0]:file_index[0] + length_data_used + 1].values.flatten()
-        opt_data_used_x = t[file_index[0]:file_index[0] + len(optimal_data) + 1]
-        opt_data_used_y = df_qty[file_index[0]:file_index[0] + len(optimal_data) + 1].values.flatten()
+        opt_data_used_x = t[opt_index_used[0]:opt_index_used[0] + len(optimal_data) + 1]
+        opt_data_used_y = df_qty[opt_index_used[0]:opt_index_used[0] + len(optimal_data) + 1].values.flatten()
         ax1.plot(t, df_qty[col_index], linestyle='dotted', label='All data')
         ax1.plot(data_used_x, data_used_y, linestyle='-', label='Data used')
         ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Optimal data used')
         ax1.grid(True, linestyle='-')
         ax1.xaxis.set_major_formatter(time_tick_formatter)
+        ax1.tick_params(axis='x', labelsize=16, which='both')
+        ax1.tick_params(axis='y', labelsize=16, which='both')
         ax1.set_ylabel(r"Voltage [V]", fontsize=16)
         ax1.legend(loc='best', shadow=True, fontsize='medium')
     return ax, ax1
