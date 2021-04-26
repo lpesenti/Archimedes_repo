@@ -24,20 +24,20 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 * This script requires _Arc_functions.py_ in order to work.
 * Be aware to change the value of the ___path_to_img___ to the directory where you want to save your images.
 
-## UNISCO
+## ET_sensors
 
-###### This folder contains different script used during the UNISCO project. Here you find some scripts that are not correlated to the Archimedes experiment.
+###### This folder contains different script used for the characterization of the Sardinia site of ET.
 
-#### Poisson_plotter.py
+#### Analysis.py
 
-* This script plot an animation of the comparison between Poisson distribution and the Normal distribution.
-* The animation is saved in _.gif_ format.
+* This module contains different functions used for the analysis of the seismometer.
+* See _GUI_Analysis.py_ in which this module is used.
 
-#### Thomas.py
+#### GUI_Analysis.py
 
-* The script evaluates the G factor and its error for a three plane telescope.
-* It requires __configThomas.txt__ to work (_see the file for further information_).
-* It produces a _.txt_ output, called __Thomas_output.txt__ where are stored every useful information
+* This is the Gui used fo the analysis of the sensors placed in the site.
+* Please note that this script requires _Analysis.py_ in order to work.
+
 
 
 
