@@ -41,7 +41,7 @@ import logging
 import math
 import Arc_common
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('data_analysis.functions')
 
 cols = np.array(
     ['itf', 'pick off', 'signal injected', 'error', 'correction', 'actuator 1', 'actuator 2', 'after noise',
@@ -110,7 +110,7 @@ def vectorizer(input_func):
     return output_func
 
 
-def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=None, file_stop=None, verbose=True):
+def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, file_stop=None, verbose=False):
     """
     Search data present in a specific folder and read only the column associated with the quantity you are interested in
 
@@ -125,13 +125,13 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
     year : int
         It refers to the first year of the data to be read
 
-    col_to_save : str
+    quantity : str
         The quantity to be read.
 
     num_d : int
         How many days of data you want to analyze.
 
-    tEvo : bool
+    tevo : bool
         If True the time column will be read.
 
     file_start : any
@@ -161,20 +161,32 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
     A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column and the timestamp
     of the first data expressed in UNIX
     """
-    # logging.error("Don't worry it's just a test from Arc_functions.py script!")
     try:
-        if not day <= 31:
-            raise NameError('day is not in range (1, 31)')
-    except NameError as err:
-        logging.error(err.args[0])
+        if not 1 <= day <= 31:
+            raise AttributeError('Day must be in range (1, 31), you inserted: {0}'.format(day))
+        if not 1 <= month <= 12:
+            raise AttributeError('Month must be in range (1, 12), you inserted: {0}'.format(month))
+        if not quantity.lower() in cols:
+            raise AttributeError("The quantity '{0}' does not exist.".format(quantity))
+    except AttributeError as err:
+        logger.error(err.args[0])
         raise
-    logging.info('Data read started')
-    logging.info('PARAMETERS: day=%i month=%i year=%i col_to_save=%s num_d=%i verbose=%s' % (
-        day, month, year, col_to_save, num_d, verbose))
-    if verbose:
-        print('--------------- Reading', day, '/', month, '/', year, '-', col_to_save, 'data ---------------')
+    if file_stop is not None and file_start is not None:
+        if file_stop < file_start:
+            logger.warning("file_stop must be greater or equal than file_start")
+    logger.warning("num_d must be greater than 0") if num_d == 0 else ''
+    logger.info("'{0}' data read started".format(quantity.lower()))
+    logger.info("Data from {0}/{1}/{2} selected".format(day, month, year))
+    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} num_d={4} tevo={5} '
+                 'file_start={6} file_stop={7} verbose={8}'
+                 .format(day, month, year, quantity, num_d, tevo, file_start, file_stop, verbose))
+
+    print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
-    index = np.where(cols == col_to_save.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
+    index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
+
+    logger.debug('index={0}'.format(index))
+
     all_data = []
     final_df = pd.DataFrame()
     time_array = []
@@ -184,18 +196,17 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
     i = 1
-    logging.info('Number of *.lvm: %i' % len(all_data))
+    logger.info('Number of *.lvm found: %i' % len(all_data))
     if file_start and file_stop:
         for data in all_data:
-            if verbose:
-                print(round(i / len(all_data) * 100, 1), '%')
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             if file_start <= i <= file_stop:
                 # Read only the column of interest -> [index]
                 a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                if tEvo:
+                if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
                     time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
                                          usecols=df_col[-1:],
@@ -206,15 +217,14 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
             i += 1
     elif file_start and not file_stop:
         for data in all_data:
-            if verbose:
-                print(round(i / len(all_data) * 100, 1), '%')
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             if i >= file_start:
                 # Read only the column of interest -> [index]
                 a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                if tEvo:
+                if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
                     time = pd.read_table(data, sep='\t', low_memory=False, engine='c', usecols=df_col[-1:],
                                          header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
@@ -224,15 +234,14 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
             i += 1
     elif file_stop and not file_start:
         for data in all_data:
-            if verbose:
-                print(round(i / len(all_data) * 100, 1), '%')
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             if i <= file_stop:
                 # Read only the column of interest -> [index]
                 a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-                if tEvo:
+                if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
                     time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
                                          usecols=df_col[-1:],
@@ -243,29 +252,36 @@ def read_data(day, month, year, col_to_save, num_d=1, tEvo=False, file_start=Non
             i += 1
     else:
         for data in all_data:
-            if verbose:
-                print(round(i / len(all_data) * 100, 1), '%')
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             # Read only the column of interest -> [index]
             a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
                               header=None)
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
-            if tEvo:
+            if tevo:
                 df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
                 time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=df_col[-1:],
                                      header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                pippo = pd.read_csv(all_data[0], sep='\t', nrows=1, header=None).columns
                 timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
                 for j in range(1, len(time) + 1):
                     time_array.append(timestamp + j / freq)
             i += 1
-    if verbose:
-        print('--------------- Reading completed! ---------------')
-    logging.info('Data read completed')
+    if not verbose:
+        pass
+    else:
+        print('#### Reading completed! ####')
+    logger.info("'{0}' data read successfully completed".format(quantity.lower()))
+    logger.warning("The time array is empty!") if not time_array else ''
+    try:
+        if final_df.empty:
+            raise NameError('The data frame is empty. No data found!')
+    except NameError as err:
+        logger.error(err.args[0])
+        raise
     return final_df, index, time_array
 
 
-def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_start=None, file_stop=None, verbose=True):
+def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_start=None, file_stop=None, verbose=False):
     """
     Make the plot of time evolution
 
@@ -289,7 +305,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_star
         ndays : int
             How many days of data you want to analyze.
 
-        tEvo : bool
+        tevo : bool
         If True the time column will be read.
 
         file_start : any
@@ -316,9 +332,18 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_star
     -------
     A tuple of an axes and the relative filename
     """
-    df, col_index, t = read_data(day, month, year, quantity, ndays, tEvo=tEvo, file_start=file_start,
+    try:
+        if not ax:
+            raise AttributeError("ax can not be a 'NoneType' object")
+    except AttributeError as err:
+        logger.error(err.args[0])
+        raise
+    df, col_index, t = read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
                                  file_stop=file_stop, verbose=verbose)
-    if verbose:
+    logger.info("Building plot")
+    if not verbose:
+        pass
+    else:
         print('Building Time Evolution Plot...')
     lab = quantity
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
@@ -327,6 +352,8 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tEvo=True, file_star
     ax.set_ylabel('Voltage [V]')
     ax.xaxis.set_major_formatter(time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
+
+    logger.info("Plot successfully built")
     return ax, filename
 
 
@@ -366,19 +393,30 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     A tuple of a numpy array containing the data cleared, a numpy array of the data derived and
     the rejected fraction of the data
     """
-    logging.info('Comparison started')
-    logging.info('PARAMETERS: rows_in_df=%s threshold=%f length=%i verbose=%s' % (
+    try:
+        if data_frame.empty:
+            raise NameError('The data frame is empty. No data found!')
+    except NameError as err:
+        logger.error(err.args[0])
+        raise
+    logger.info('Comparison started')
+    logger.debug('PARAMETERS: rows_in_df={0} threshold={1} length={2} verbose={3}'.format(
         len(data_frame.index), threshold, length, verbose))
-    if verbose:
+    if not verbose:
+        pass
+    else:
         print('Starting the comparison...')
         print('\tThreshold:', threshold)
     # print(data_frame.columns)
     # print(data_frame.values.flatten())
     data_to_check = data_frame.values.flatten()
+    logger.debug("Size of data_to_check = {0}".format(data_to_check.size))
     # print(type(data_to_check))
     # data_deriv = np.array([])
     factors = find_factors(data_to_check.size)  # The following lines are needed in the case of length is not
     indx_len = np.argmin(np.abs(factors - length))  # a factor of the data_frame size
+    logger.debug("Factor={0}".format(factors[indx_len]))
+
     # print(data_to_check.size)
     # for i in range(data_to_check.size):
     #     if i % factors[indx_len] == 0:
@@ -386,8 +424,11 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     # data_deriv = np.abs(np.diff(data_to_check, axis=0))
     # data_deriv = np.append(data_deriv, 0)
     num_slice = int(data_to_check.size / factors[indx_len])  # It must be an integer
+    logger.debug("num_slice={0}".format(num_slice))
+    logger.info("Number of slices = {0}".format(num_slice))
+
     data_split = np.array_split(data_to_check, num_slice)
-    lst = []
+    index_data_rej = []
     # test = np.array([])
     i = 0
     for sub_arr in data_split:
@@ -395,54 +436,77 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
         # test = np.append(test, mean)
         # for element in sub_arr:
         # if np.amax(sub_arr) > threshold:
-        #     lst.append(i)
+        #     index_data_rej.append(i)
         # print(sub_arr)
         # print(round(i / len(data_split) * 100, 1), '%')
         if np.abs(np.amax(sub_arr) - np.amin(sub_arr)) > threshold:
-            lst.append(i)
+            index_data_rej.append(i)
         else:
             pass
         i += 1
     # test = test.repeat(int(factors[indx_len]))
     # print(test.size)
-    logging.info('Comparison completed')
-    for index in lst:
-        # print(index)
+
+    logger.debug("len(index_data_rej)={0}".format(len(index_data_rej)))
+    logger.info("Number of index of data rejected = {0}".format(len(index_data_rej)))
+    logger.info('Comparison successfully completed')
+    for index in index_data_rej:
         start = index * int(factors[indx_len])
         data_to_check[start:start + int(factors[indx_len])] = np.nan
-    frac_rejected = len(lst) * factors[indx_len] / len(data_to_check)
-    if verbose:
+    frac_rejected = len(index_data_rej) * factors[indx_len] / len(data_to_check)
+    logger.debug("frac_rejected={0}".format(frac_rejected))
+    logger.info('Data rejected {0}%'.format(frac_rejected * 100))
+    if not verbose:
+        pass
+    else:
         print('\tData rejected:', frac_rejected * 100, '%')
         print('Comparison completed!')
-    logging.info('Data rejected: %f ' % frac_rejected)
-    logging.info('Replacement completed')
+    logger.info('Replacement successfully completed')
+    logger.warning("All data are above the threshold") if frac_rejected == 1 else ''
     return data_to_check, frac_rejected
 
 
 def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1,
-        length=10000, ax1=None, file_start=None, file_stop=None, tEvo=False, verbose=True):
-    logging.info('PSD evaluator started')
-    logging.info(
-        'PARAMETERS: day=%i month=%i year=%i quantity=%s ax=%s interval=%i'
-        ' mode=%s low_freq=%i high_freq=%i threshold=%f ndays=%i length=%i verbose=%s' % (
-            day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold, ndays, length, verbose))
-
-    df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, file_start=file_start,
-                                     file_stop=file_stop, tEvo=tEvo, verbose=verbose)
-    df_itf, _, _ = read_data(day=day, month=month, year=year, col_to_save='ITF', num_d=ndays, file_start=None,
+        length=10000, ax1=None, file_start=None, file_stop=None, tevo=False, verbose=False):
+    try:
+        if not ax:
+            raise AttributeError("Ax can not be a 'NoneType' object")
+        if mode not in ['low noise', 'max interval']:
+            raise AttributeError("Mode must be either 'low noise' or 'max interval'. You insert {0}".format(mode))
+        if not low_freq < high_freq:
+            raise ValueError("high_freq must be greater or equal than low_freq")
+    except AttributeError as err:
+        logger.error(err.args[0])
+        raise
+    except ValueError as err:
+        logger.error(err.args[0])
+        raise
+    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} ax={4} interval={5} mode={6} low_freq={7} '
+                 'high_freq={8} threshold={9} ndays={10} length={11} ax1={12} file_start={13} file_stop={14} tevo={15} '
+                 'verbose={16}'.format(day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold,
+                                       ndays, length, ax1, file_start, file_stop, tevo, verbose))
+    logger.info("Evaluation of the PSD on '{}' started".format(quantity))
+    df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, tevo=tevo, file_start=file_start,
+                                     file_stop=file_stop, verbose=verbose)
+    df_itf, _, _ = read_data(day=day, month=month, year=year, quantity='ITF', num_d=ndays, file_start=None,
                              file_stop=None, verbose=verbose)
-    df_po, _, _ = read_data(day=day, month=month, year=year, col_to_save='Pick Off', num_d=ndays, file_start=None,
+    df_po, _, _ = read_data(day=day, month=month, year=year, quantity='Pick Off', num_d=ndays, file_start=None,
                             file_stop=None, verbose=verbose)
-
+    logger.debug('rows_in_df_{0}={1} rows_in_df_itf={2} rows_in_df_pickoff={3}'.format(quantity, len(df_qty.index),
+                                                                                       len(df_itf.index),
+                                                                                       len(df_po.index)))
     data_cleared, _ = th_comparison(df_qty, threshold=threshold, length=length, verbose=verbose)
-
-    print('Removing NaN values...') if verbose else print()
+    if not verbose:
+        pass
+    else:
+        print('Removing NaN values...')
+        print('NaN values successfully removed')
+    logger.info('Start cleaning from NaN values')
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
-    print('NaN values successfully removed') if verbose else print()
 
-    logging.info('Data cleared from NaN values')
-
+    logger.info('Cleaning from NaN values successfully completed')
     num = int(60 * freq)
+
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
     psd_f = psd_f[1:]
 
@@ -453,11 +517,13 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
 
     start = np.where(psd_f == low_freq)[0][0]
     stop = np.where(psd_f == high_freq)[0][0]
+    if not verbose:
+        pass
+    else:
+        print('Number of usable array:', len(data_first_check))
+        print('Starting evaluation of', mode, 'PSD...')
 
-    print('Number of usable array:', len(data_first_check)) if verbose else print()
-    print('Starting evaluation of', mode, 'PSD...') if verbose else print()
-
-    if mode == 'max interval':
+    if mode.lower() == 'max interval':
         for el in data_first_check:
             if len(el) >= interval * freq and len(el) > len_max:
                 len_max = len(el)
@@ -465,7 +531,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                 file_index = list(find_rk(df_qty.values.flatten(), el))
         psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
         outdata = psd_s[1:]
-    elif mode == 'low noise':
+    elif mode.lower() == 'low noise':
         i = 0
         for el in data_first_check:
             print(round(i / len(data_first_check) * 100, 2), '%')
@@ -486,11 +552,16 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                     pick_off_mean = np.abs(
                         np.mean(df_po[file_index[0]:file_index[0] + len(el) + 1].values.flatten()))
             i += 1
-    if file_index:
+    if not file_index:
+        pass
+    else:
         print('Data selected: from', datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%b-%d %H:%M:%S'),
               'to', datetime.datetime.fromtimestamp(t[file_index[0]] + (length_data_used - 1) * 0.001).strftime(
                 '%b-%d %H:%M:%S'))
-    print('Evaluation of', mode, 'PSD completed!') if verbose else print()
+    if not verbose:
+        pass
+    else:
+        print('Evaluation of', mode, 'PSD completed!')
     # print('Length of data used for PSD:', len(outdata)) if verbose else print()
     v_max = df_itf.max().values.flatten()
     v_min = df_itf.min().values.flatten()
@@ -498,7 +569,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     print('Voltage min', v_min)
     alpha = first_coef / (v_max - v_min)
     print('Alpha', alpha)
-    logging.info('V_max = %f, V_min = %f, alpha = %f' % (v_max, v_min, alpha))
+    logger.info('V_max = %f, V_min = %f, alpha = %f' % (v_max, v_min, alpha))
 
     num_slice = int(len(out_test) / 300000)  # It must be an integer
     data_split = np.array_split(out_test, num_slice)
@@ -580,6 +651,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     return ax, ax1
 
 
+# TO BE REVIEWED...
 def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
     Make the derivative plot of a given quantity
@@ -654,6 +726,7 @@ def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length
     return ax, filename
 
 
+# WORK IN PROGRESS...
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True,
               verbose=True):
     r"""
