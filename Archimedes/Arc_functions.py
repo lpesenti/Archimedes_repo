@@ -1,14 +1,16 @@
 r"""
-[LAST UPDATE: 7 April 2021 - Luca Pesenti]
+[LAST UPDATE: 27 April 2021 - Luca Pesenti]
 
 The following functions have been built to work with the data obtained by the Archimedes experiment.
-The experiment save the data in a file .lvm containing 9 columns,
+The experiment save the data in a file .lvm containing 9 columns*,
 
 | ITF | Pick Off | Signal injected | Error | Correction | Actuator 1 | Actuator 2 | After Noise | Time |
 |-----+----------+-----------------+-------+------------+------------+------------+-------------+------|
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
-|-----+----------+-----------------+-------+------------+------------+------------+-------------+------|
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
+| ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
+
+*data up to February 2021 have only 8 columns, the injected signal has not been saved.
 
 ITF [V]            : signal from the interferometer
 Pick Off [V]       : signal from the laser before the filters
@@ -22,7 +24,8 @@ After Noise [-]    :
 Time [-]           : every 10 millisecond (100 rows) the system print the datetime in the format
                      -> 02/19/2021 20:01:11.097734\09
 
-In the current configuration the sampling rate is 1 KHz but can be increase.
+In the current configuration the sampling rate is 1 KHz but can be increase (data saved every millisecond).
+Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
 
 Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
 """
@@ -50,11 +53,37 @@ path_to_data = r"D:\Archimedes\Data"
 freq = 1000  # Hz
 lambda_laser = 532.e-9  # Meter --> 532 nanometer
 distance_mirrors = 0.1  # Length between mirrors
-first_coef = lambda_laser / (2. * np.pi * distance_mirrors)
+first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate alpha
 
 
 def find_rk(seq, subseq):
     """
+    Find the index of the first element of a subsequence.
+
+    Parameters
+    ----------
+    seq : array_like
+        List in which search for the sub-sequence
+    subseq : array_like
+        Sub-sequence to search for
+
+    Returns
+    -------
+    out : generator.object
+        A generator containing all index where the sub-sequence has been found.
+
+    Examples
+    --------
+    >>> lst = [1,2,3,4,5,6,4,5,6]
+    >>> sub_lst = [4,5,6]
+    >>> find_rk(lst, sub_lst)
+    <generator object find_rk at 0x0000027C9F6AF9C8>
+
+    >>> list(find_rk(lst, sub_lst))
+    [3, 6]
+
+    See Also
+    --------
     Additional help can be found in the answer of norok2 `in this discussion
     <https://stackoverflow.com/questions/7100242/python-numpy-first-occurrence-of-subarray>`_.
 
@@ -72,6 +101,28 @@ def find_rk(seq, subseq):
 
 
 def find_factors(n):
+    """
+    Find all the factors of a given number 'n'
+
+    Parameters
+    ----------
+    n : int
+        is the number whose factors you want to know.
+
+    Notes
+    -----
+    This function return all the factors, not only prime factors.
+
+    Returns
+    -------
+    out : array_like
+        A list containing all the factors in the format [a,b,c,d], where a * b = c * d = n
+
+    Examples
+    --------
+    >>> find_factors(20)
+    array([ 1., 20.,  2., 10.,  4.,  5.])
+    """
     factor_lst = np.array([])
     # Note that this loop runs till square root
     i = 1
