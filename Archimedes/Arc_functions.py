@@ -209,8 +209,10 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 
     Returns
     -------
-    A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column and the timestamp
-    of the first data expressed in UNIX
+    out : tuple
+        A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column corresponding to
+        the quantity selected and the timestamp of the first data expressed in UNIX
+
     """
     try:
         if not 1 <= day <= 31:
@@ -357,7 +359,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
             How many days of data you want to analyze.
 
         tevo : bool
-        If True the time column will be read.
+            If True the time column will be read.
 
         file_start : any
             The first file to be read.
@@ -381,7 +383,8 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
         - Time : the timestamp of the data saved every milli second in human-readable format
     Returns
     -------
-    A tuple of an axes and the relative filename
+    out : tuple
+        A tuple of an axes and the relative filename
     """
     try:
         if not ax:
@@ -411,9 +414,9 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
 def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     """
     It performs the derivative of the data and compares it with a fixed threshold.
-    To perform this comparison it divides the data in given number of slice and check if the maximum of the slice is
-    greater than threshold or not.
-    After the comparison it removes all the data above the threshold from the dataframe.
+    To perform this comparison it divides the data in given number of slice and check if the delta between the maximum
+    and the minimum of the slice is greater than threshold or not.
+    After the comparison it transforms into np.nan values all the data above the threshold from the dataframe.
 
     Parameters
     ----------
@@ -424,7 +427,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
             The threshold used to compare the data
 
         length : int
-            Represent the length of each slice in whic the data will be divided into.
+            Represent the length of each slice in which the data will be divided into.
             The greater it is, the smaller will be the number of slice and so the comparison will be less
             accurate but will require less time to perform it.
             WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
@@ -438,11 +441,13 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     See Also
     --------
     der_plot : it is used to perform the derivative and to plot the data cleared
+    psd : it is used to find the best array
 
     Returns
     -------
-    A tuple of a numpy array containing the data cleared, a numpy array of the data derived and
-    the rejected fraction of the data
+    out : tuple
+        A tuple of a numpy array containing the data cleared, a numpy array of the data derived and
+        the rejected fraction of the data
     """
     try:
         if data_frame.empty:
