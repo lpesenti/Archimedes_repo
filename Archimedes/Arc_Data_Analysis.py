@@ -15,8 +15,9 @@ import pickle as pkl
 rootLogger = logging.getLogger('data_analysis')
 rootLogger.propagate = False
 rootLogger.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    "[%(asctime)s | %(filename)s %(funcName)10(), line %(lineno)d] %(levelname)s: %(message)s", '%d-%m-%y %H:%M:%S')
+output_formatter = logging.Formatter(
+    "[%(asctime)s | %(filename)s %(funcName)15s(), line %(lineno)d] %(levelname)s: %(message)s", '%d-%m-%y %H:%M:%S')
+stream_formatter = logging.Formatter('%(levelname)s: %(message)s')
 mail_formatter = logging.Formatter(
     "Process ID - name: %(process)d - %(processName)s \nThread ID - name: %(thread)d - %(threadName)s"
     "\nTime: %(asctime)10s \nDetails: \n\t%(filename)s --> [%(funcName)s():%(lineno)d]\n\t%(levelname)s: %(message)s",
@@ -24,15 +25,15 @@ mail_formatter = logging.Formatter(
 
 debug_Handler = logging.FileHandler(r'.\logs\debug.log', mode='w')
 debug_Handler.setLevel(logging.DEBUG)
-debug_Handler.setFormatter(formatter)
+debug_Handler.setFormatter(output_formatter)
 
 info_Handler = logging.FileHandler(r'.\logs\info.log', mode='w')
 info_Handler.setLevel(logging.INFO)
-info_Handler.setFormatter(formatter)
+info_Handler.setFormatter(output_formatter)
 
 streamHandler = logging.StreamHandler()
 streamHandler.setLevel(logging.INFO)
-streamHandler.setFormatter(formatter)
+streamHandler.setFormatter(stream_formatter)
 
 now = int(time.time())
 error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
@@ -268,7 +269,7 @@ if __name__ == '__main__':
     fig0.suptitle('Data from 22/11/2020')
     ax1 = fig1.add_subplot()
     ax0 = fig0.add_subplot()
-    arc.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', ax1=ax0, tevo=True, file_start=30, file_stop=30)
+    arc.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', ax1=ax0, tevo=True)
     # arc.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, file_start=1, file_stop=1)
     # arc.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
     mng = plt.get_current_fig_manager()

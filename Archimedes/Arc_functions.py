@@ -196,7 +196,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
     i = 1
-    logger.info('Number of *.lvm found: %i' % len(all_data))
+    logger.info('Number of .lvm found: %i' % len(all_data))
     if file_start and file_stop:
         for data in all_data:
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
@@ -334,8 +334,8 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
     """
     try:
         if not ax:
-            raise AttributeError("ax can not be a 'NoneType' object")
-    except AttributeError as err:
+            raise TypeError("Ax can not be a 'NoneType' object")
+    except TypeError as err:
         logger.error(err.args[0])
         raise
     df, col_index, t = read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
@@ -470,11 +470,14 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         length=10000, ax1=None, file_start=None, file_stop=None, tevo=False, verbose=False):
     try:
         if not ax:
-            raise AttributeError("Ax can not be a 'NoneType' object")
+            raise TypeError("Ax can not be a 'NoneType' object")
         if mode not in ['low noise', 'max interval']:
             raise AttributeError("Mode must be either 'low noise' or 'max interval'. You insert {0}".format(mode))
         if not low_freq < high_freq:
             raise ValueError("high_freq must be greater or equal than low_freq")
+    except TypeError as err:
+        logger.error(err.args[0])
+        raise
     except AttributeError as err:
         logger.error(err.args[0])
         raise
@@ -505,12 +508,13 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
 
     logger.info('Cleaning from NaN values successfully completed')
-    num = int(60 * freq)
-
+    num = int(60 * freq)  # Add checks for frequencies
+    logger.debug('num={0}'.format(num))
+    logger.info('Evaluating the PSD frequencies')
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+    logger.debug('psd_f obtained with N={0}, NFFT={0}, Fs={1}, detrend=linear'.format(len(np.ones(num)), num, freq))
     psd_f = psd_f[1:]
-
-    outdata, file_index, out_test = [], [], []
+    outdata, file_index = [], []
     len_max, pick_off_mean = 0, 0
     length_data_used = 0
     integral_min = np.inf
@@ -522,7 +526,8 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     else:
         print('Number of usable array:', len(data_first_check))
         print('Starting evaluation of', mode, 'PSD...')
-
+    logger.info("Start searching the optimal array")
+    # 'max interval' WORK IN PROGRESS
     if mode.lower() == 'max interval':
         for el in data_first_check:
             if len(el) >= interval * freq and len(el) > len_max:
@@ -534,91 +539,98 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     elif mode.lower() == 'low noise':
         i = 0
         for el in data_first_check:
-            print(round(i / len(data_first_check) * 100, 2), '%')
+            if not verbose:
+                pass
+            else:
+                print(round(i / len(data_first_check) * 100, 2), '%')
             if len(el) >= interval * freq:
                 el_s, _ = mlab.psd(el, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+                logger.debug('el_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(el), num, freq))
                 el_s = el_s[1:]
                 integral = sum(
                     el_s[start:stop] / len(el_s[start:stop]))  # len(el) differential in the integral to evaluate RMS
+                logger.debug('RMS integral: {0}'.format(integral))
                 if integral < integral_min:
                     integral_min = integral
                     file_index = list(find_rk(df_qty.values.flatten(), el))
-                    print('Start index data chosen:', file_index)
-                    print('Corresponding timestamp:',
-                          datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%b-%d %H:%M:%S'))
-                    outdata = el_s
-                    out_test = el
+                    outdata = el
                     length_data_used = len(el)
                     pick_off_mean = np.abs(
                         np.mean(df_po[file_index[0]:file_index[0] + len(el) + 1].values.flatten()))
             i += 1
+    logger.debug("Size of the data used: {0}".format(length_data_used))
+    logger.info('Value of the integral: {0}'.format(integral_min))
+    logger.info('Mean of the pick-off: {0}'.format(pick_off_mean))
     if not file_index:
-        pass
+        logger.warning('Data chosen is not a subset of the general data!')
     else:
-        print('Data selected: from', datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%b-%d %H:%M:%S'),
-              'to', datetime.datetime.fromtimestamp(t[file_index[0]] + (length_data_used - 1) * 0.001).strftime(
-                '%b-%d %H:%M:%S'))
+        start_date = datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%d-%m-%y %H:%M:%S')
+        end_date = datetime.datetime.fromtimestamp(t[file_index[0]] + (length_data_used - 1) * 0.001).strftime(
+            '%d-%m-%y %H:%M:%S')
+        logger.info('First index of the data chosen: {0}'.format(file_index))
+        logger.info('Data selected are from {0} to {1}'.format(start_date, end_date))
+    logger.info("Optimal array successfully found")
     if not verbose:
         pass
     else:
         print('Evaluation of', mode, 'PSD completed!')
+
     # print('Length of data used for PSD:', len(outdata)) if verbose else print()
     v_max = df_itf.max().values.flatten()
     v_min = df_itf.min().values.flatten()
-    print('Voltage max', v_max)
-    print('Voltage min', v_min)
     alpha = first_coef / (v_max - v_min)
-    print('Alpha', alpha)
-    logger.info('V_max = %f, V_min = %f, alpha = %f' % (v_max, v_min, alpha))
+    logger.info('Voltage min = {0}'.format(v_min))
+    logger.info('Voltage max = {0}'.format(v_max))
+    logger.info('Alpha = {0}'.format(alpha))
 
-    num_slice = int(len(out_test) / 300000)  # It must be an integer
-    data_split = np.array_split(out_test, num_slice)
+    num_slice = int(len(outdata) / 300000)  # It must be an integer
+    logger.debug('Number of slice for the subset: {0}'.format(num_slice))
+    data_split = np.array_split(outdata, num_slice)
     integral_list, indeces_lst = [], []
     optimal_data = np.array([])
-    # k = -1
+
     for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+        logger.debug('chunk_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(chunk), num, freq))
         chunk_s = chunk_s[1:]
         integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
+        logger.debug('RMS integral: {0}'.format(integral))
         integral_list.append(integral)
-        if not integral <= 1e-11:
+        if not integral <= 1e-11:  # Add a variable to express the quantity
             pass
         else:
             indeces_lst.append(index)
-        # if index - k == 1:
-        #     optimal_data = np.append(optimal_data, chunk)
-        # else:
-        #     optimal_data = []
-        # k = index
-    print(indeces_lst)
+    logger.debug('Chunks candidates {0}'.format(indeces_lst))
     index_optimal_data = [list(map(itemgetter(1), group)) for key, group in
                           groupby(enumerate(indeces_lst), lambda ix: ix[0] - ix[1])]
-    print('Index optimal data:', len(index_optimal_data), index_optimal_data)
+    logger.debug('Consecutive indices: {0}'.format(index_optimal_data))
     max_optimal_index = max(index_optimal_data, key=lambda elem: len(elem))
-    print('Maximum optimal index data:', len(max_optimal_index), max_optimal_index)
+    logger.info('Optimal index chosen: {0}'.format(max_optimal_index))
     for inx in max_optimal_index:
         optimal_data = np.append(optimal_data, data_split[inx])
     opt_index_used = list(find_rk(df_qty.values.flatten(), optimal_data))
-    print('Optimal data:', len(optimal_data), optimal_data)
-    print('Optimal data selected: from',
-          datetime.datetime.fromtimestamp(t[opt_index_used[0]]).strftime(
-              '%b-%d %H:%M:%S'), 'to', datetime.datetime.fromtimestamp(
-            t[opt_index_used[0]] + (len(optimal_data) - 1) * 0.001).strftime(
-            '%b-%d %H:%M:%S'))
-    # if outdata:
-    data_to_plot = np.sqrt(outdata) * alpha * pick_off_mean
+    logger.debug('Size of the optimal data: {0}'.format(len(optimal_data)))
+    start_date = datetime.datetime.fromtimestamp(t[opt_index_used[0]]).strftime(
+        '%b-%d %H:%M:%S')
+    end_date = datetime.datetime.fromtimestamp(
+        t[opt_index_used[0]] + (len(optimal_data) - 1) * 0.001).strftime(
+        '%b-%d %H:%M:%S')
+    logger.info('Optimal data selected are from {0} to {1}'.format(start_date, end_date))
     opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
+    logger.debug(
+        'opt_psd obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear, noverlap = {3}'.format(len(optimal_data), num,
+                                                                                               freq, int(num / 2)))
     opt_psd = opt_psd[1:]
     data_to_plot_opt = np.sqrt(opt_psd) * alpha * pick_off_mean
-    # else:
-    #    data_to_plot = np.empty(len(psd_f)) * np.nan
+
     lab1 = r'$\sqrt{PSD}$ of ' + quantity + '(' + str(interval) + ' s)'
+
+    logger.info("Building plot")
 
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
     ax.plot(x, y, linestyle='-', color='tab:red', label='@ Virgo')
-    # ax.plot(psd_f, data_to_plot, linestyle='-', label='@ Sos-Enattos')
     ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
     ax.plot(psd_f, data_to_plot_opt, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca')
     # diff = (y-data_to_plot_opt)/(y+data_to_plot_opt)
@@ -634,7 +646,10 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     ax.grid(True, linestyle='-')
     ax.legend(loc='best', shadow=True, fontsize='medium')
     ax.set_title(mode)
+    logger.info("Plot succesfully built")
     if ax1:
+        logger.info("Building second plot")
+
         data_used_x = t[file_index[0]:file_index[0] + length_data_used + 1]
         data_used_y = df_qty[file_index[0]:file_index[0] + length_data_used + 1].values.flatten()
         opt_data_used_x = t[opt_index_used[0]:opt_index_used[0] + len(optimal_data) + 1]
@@ -648,6 +663,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         ax1.tick_params(axis='y', labelsize=16, which='both')
         ax1.set_ylabel(r"Voltage [V]", fontsize=16)
         ax1.legend(loc='best', shadow=True, fontsize='medium')
+        logger.info("Second plot succesfully built")
     return ax, ax1
 
 
