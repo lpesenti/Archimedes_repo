@@ -11,13 +11,24 @@ import logging
 import logging.handlers
 import pickle as pkl
 
-rootLogger = logging.getLogger()
+# test_logger = logging.getLogger('data_analysis')
+rootLogger = logging.getLogger('data_analysis')
+rootLogger.propagate = False
 rootLogger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("[%(asctime)s %(filename)s %(funcName)20s()] %(levelname)s   %(message)s")
+formatter = logging.Formatter(
+    "[%(asctime)s | %(filename)s %(funcName)10(), line %(lineno)d] %(levelname)s: %(message)s", '%d-%m-%y %H:%M:%S')
+mail_formatter = logging.Formatter(
+    "Process ID - name: %(process)d - %(processName)s \nThread ID - name: %(thread)d - %(threadName)s"
+    "\nTime: %(asctime)10s \nDetails: \n\t%(filename)s --> [%(funcName)s():%(lineno)d]\n\t%(levelname)s: %(message)s",
+    '%d-%m-%y %H:%M:%S')
 
-fileHandler = logging.FileHandler(r'.\logs\info.log', mode='w')
-fileHandler.setLevel(logging.INFO)
-fileHandler.setFormatter(formatter)
+debug_Handler = logging.FileHandler(r'.\logs\debug.log', mode='w')
+debug_Handler.setLevel(logging.DEBUG)
+debug_Handler.setFormatter(formatter)
+
+info_Handler = logging.FileHandler(r'.\logs\info.log', mode='w')
+info_Handler.setLevel(logging.INFO)
+info_Handler.setFormatter(formatter)
 
 streamHandler = logging.StreamHandler()
 streamHandler.setLevel(logging.INFO)
@@ -26,15 +37,16 @@ streamHandler.setFormatter(formatter)
 now = int(time.time())
 error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
                                                   fromaddr="archimedes.noreply@gmail.com",
-                                                  toaddrs=["l.pesenti6@campus.unimib.it", 'drozza@uniss.it'],
+                                                  toaddrs=["l.pesenti6@campus.unimib.it"],
                                                   subject='Log report #' + str(now),
                                                   credentials=('archimedes.noreply@gmail.com', 'fXV-r^kZqpZn7yBt'),
                                                   secure=())
-error_mail_handler.setFormatter(formatter)
+error_mail_handler.setFormatter(mail_formatter)
 error_mail_handler.setLevel(logging.WARNING)
 
 # rootLogger.addHandler(error_mail_handler)
-rootLogger.addHandler(fileHandler)
+rootLogger.addHandler(debug_Handler)
+rootLogger.addHandler(info_Handler)
 rootLogger.addHandler(streamHandler)
 
 mpl.rcParams['agg.path.chunksize'] = 5000000
@@ -45,7 +57,7 @@ def plot_3d(day, month, year, col_to_save, num_d, axes1, axes2, verbose=True):
     # In order to work properly, comment lines 250,251,252
     # in th_comparison function
     logging.debug('Started')
-    data, _, _ = arc.read_data(day=day, month=month, year=year, col_to_save=col_to_save, num_d=num_d)
+    data, _, _ = arc.read_data(day=day, month=month, year=year, quantity=col_to_save, num_d=num_d)
 
     x, y, dz = np.array([]), np.array([]), np.array([])
     data_matrix = []
@@ -256,8 +268,8 @@ if __name__ == '__main__':
     fig0.suptitle('Data from 22/11/2020')
     ax1 = fig1.add_subplot()
     ax0 = fig0.add_subplot()
-    arc.psd(day=22, month=11, year=2020, quantity='Error', mode='low noise', ax=ax1, ax1=ax0, interval=300, tEvo=True)
-    # arc.time_evolution(day=22, month=11, year=2020, quantity='ITF', ax=ax1)#, file_start=10, file_stop=10)
+    arc.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', ax1=ax0, tevo=True, file_start=30, file_stop=30)
+    # arc.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, file_start=1, file_stop=1)
     # arc.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed')
@@ -309,5 +321,5 @@ if __name__ == '__main__':
     print('Time before plt.show(): ', (stop - start), 's')
     print('Time before plt.show(): ', (stop - start) / 60, 'min')
     logging.info('Analysis completed (plt.show excluded)')
-    plt.show()
+    # plt.show()
     logging.info('Analysis completed (plt.show included)')
