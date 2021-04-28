@@ -259,14 +259,22 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
-                                         usecols=df_col[-1:],
-                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                    for j in range(1, len(time) + 1):
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                        .replace(r'\\09', '', regex=True)
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                    for j in range(1, len(a.index) + 1):
                         time_array.append(timestamp + j / freq)
+
+                #     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                #     time = pd.read_table(data, sep='\t', nrows=1, na_filter=False, low_memory=False, engine='c',
+                #                          usecols=df_col[-1:],
+                #                          header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
+                #     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
+                #     for j in range(1, len(time) + 1):
+                #         time_array.append(timestamp + j / freq)
             i += 1
     elif file_start and not file_stop:
         for data in all_data:
@@ -277,12 +285,13 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_table(data, sep='\t', low_memory=False, engine='c', usecols=df_col[-1:],
-                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                    for j in range(1, len(time) + 1):
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                        .replace(r'\\09', '', regex=True)
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                    for j in range(1, len(a.index) + 1):
                         time_array.append(timestamp + j / freq)
             i += 1
     elif file_stop and not file_start:
@@ -294,13 +303,13 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
                                   header=None)
                 # At the end we have a long column with all data
                 final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c',
-                                         usecols=df_col[-1:],
-                                         header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                    for j in range(1, len(time) + 1):
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                        .replace(r'\\09', '', regex=True)
+                    timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                    for j in range(1, len(a.index) + 1):
                         time_array.append(timestamp + j / freq)
             i += 1
     else:
@@ -311,12 +320,13 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
                               header=None)
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
             if tevo:
                 df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                time = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=df_col[-1:],
-                                     header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                for j in range(1, len(time) + 1):
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                    .replace(r'\\09', '', regex=True)
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                for j in range(1, len(a.index) + 1):
                     time_array.append(timestamp + j / freq)
             i += 1
     if not verbose:
@@ -420,20 +430,20 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
 
     Parameters
     ----------
-        data_frame : pandas.DataFrame
-            The dataframe containing the data in which perform the comparison
+    data_frame : pandas.DataFrame
+        The dataframe containing the data in which perform the comparison
 
-        threshold : float
-            The threshold used to compare the data
+    threshold : float
+        The threshold used to compare the data
 
-        length : int
-            Represent the length of each slice in which the data will be divided into.
-            The greater it is, the smaller will be the number of slice and so the comparison will be less
-            accurate but will require less time to perform it.
-            WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
+    length : int
+        Represent the length of each slice in which the data will be divided into.
+        The greater it is, the smaller will be the number of slice and so the comparison will be less
+        accurate but will require less time to perform it.
+        WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
 
-        verbose : bool
-            If True the verbosity is enabled.
+    verbose : bool
+        If True the verbosity is enabled.
     Notes
     -----
     Choose a multiple of 300000 for the value of ndivsion. This will ensure to split the data in equal size.
@@ -504,7 +514,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     # print(test.size)
 
     logger.debug("len(index_data_rej)={0}".format(len(index_data_rej)))
-    logger.info("Number of index of data rejected = {0}".format(len(index_data_rej)))
+    logger.info("Slices rejected = {0}".format(len(index_data_rej)))
     logger.info('Comparison successfully completed')
     for index in index_data_rej:
         start = index * int(factors[indx_len])
@@ -711,7 +721,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         opt_data_used_x = t[opt_index_used[0]:opt_index_used[0] + len(optimal_data) + 1]
         opt_data_used_y = df_qty[opt_index_used[0]:opt_index_used[0] + len(optimal_data) + 1].values.flatten()
         ax1.plot(t, df_qty[col_index], linestyle='dotted', label='All data')
-        ax1.plot(data_used_x, data_used_y, linestyle='-', label='Data used')
+        ax1.plot(data_used_x, data_used_y, linestyle='-', label='Array chosen')
         ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Optimal data used')
         ax1.grid(True, linestyle='-')
         ax1.xaxis.set_major_formatter(time_tick_formatter)
