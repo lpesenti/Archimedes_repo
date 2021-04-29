@@ -42,7 +42,7 @@ import glob
 import re
 import logging
 import math
-import Arc_common
+import Arc_common as ac
 
 logger = logging.getLogger('data_analysis.functions')
 
@@ -54,111 +54,6 @@ freq = 1000  # Hz
 lambda_laser = 532.e-9  # Meter --> 532 nanometer
 distance_mirrors = 0.1  # Length between mirrors
 first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate alpha
-
-
-def find_rk(seq, subseq):
-    """
-    Find the index of the first element of a subsequence.
-
-    Parameters
-    ----------
-    seq : array_like
-        List in which search for the sub-sequence
-    subseq : array_like
-        Sub-sequence to search for
-
-    Returns
-    -------
-    out : generator.object
-        A generator containing all index where the sub-sequence has been found.
-
-    Examples
-    --------
-    >>> lst = [1,2,3,4,5,6,4,5,6]
-    >>> sub_lst = [4,5,6]
-    >>> find_rk(lst, sub_lst)
-    <generator object find_rk at 0x0000027C9F6AF9C8>
-
-    >>> list(find_rk(lst, sub_lst))
-    [3, 6]
-
-    See Also
-    --------
-    Additional help can be found in the answer of norok2 `in this discussion
-    <https://stackoverflow.com/questions/7100242/python-numpy-first-occurrence-of-subarray>`_.
-
-    """
-    n = len(seq)
-    m = len(subseq)
-    if np.all(seq[:m] == subseq):
-        yield 0
-    hash_subseq = sum(hash(x) for x in subseq)  # compute hash
-    curr_hash = sum(hash(x) for x in seq[:m])  # compute hash
-    for i in range(1, n - m + 1):
-        curr_hash += hash(seq[i + m - 1]) - hash(seq[i - 1])  # update hash
-        if hash_subseq == curr_hash and np.all(seq[i:i + m] == subseq):
-            yield i
-
-
-def find_factors(n):
-    """
-    Find all the factors of a given number 'n'
-
-    Parameters
-    ----------
-    n : int
-        is the number whose factors you want to know.
-
-    Notes
-    -----
-    This function return all the factors, not only prime factors.
-
-    Returns
-    -------
-    out : array_like
-        A list containing all the factors in the format [a,b,c,d], where a * b = c * d = n
-
-    Examples
-    --------
-    >>> find_factors(20)
-    array([ 1., 20.,  2., 10.,  4.,  5.])
-    """
-    factor_lst = np.array([])
-    # Note that this loop runs till square root
-    i = 1
-    while i <= math.sqrt(n):
-        if n % i == 0:
-            # If divisors are equal, print only one
-            if n / i == i:
-                factor_lst = np.append(factor_lst, i)
-            else:
-                # Otherwise print both
-                factor_lst = np.append(factor_lst, [i, n / i])
-        i = i + 1
-    return factor_lst
-
-
-def time_tick_formatter(val, pos=None):
-    """
-    Return val reformatted as a human readable date
-
-    See Also
-    --------
-    time_evolution : it is used to rewrite x-axis
-    """
-    val = str(datetime.datetime.fromtimestamp(val).strftime('%b %d %H:%M:%S'))
-    return val
-
-
-def from_timestamp(timestamp):
-    return datetime.datetime.fromtimestamp(timestamp)
-
-
-def vectorizer(input_func):
-    def output_func(array_of_numbers):
-        return [input_func(a) for a in array_of_numbers]
-
-    return output_func
 
 
 def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, file_stop=None, verbose=False):
@@ -262,7 +157,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
                         .replace(r'\\09', '', regex=True)
                     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
                     for j in range(1, len(a.index) + 1):
@@ -288,7 +183,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
                         .replace(r'\\09', '', regex=True)
                     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
                     for j in range(1, len(a.index) + 1):
@@ -306,7 +201,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 
                 if tevo:
                     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                    time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
                         .replace(r'\\09', '', regex=True)
                     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
                     for j in range(1, len(a.index) + 1):
@@ -323,7 +218,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 
             if tevo:
                 df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None)\
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
                     .replace(r'\\09', '', regex=True)
                 timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
                 for j in range(1, len(a.index) + 1):
@@ -414,7 +309,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
     ax.scatter(t, df[col_index], label=lab)
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
-    ax.xaxis.set_major_formatter(time_tick_formatter)
+    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
 
     logger.info("Plot successfully built")
@@ -479,7 +374,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     logger.debug("Size of data_to_check = {0}".format(data_to_check.size))
     # print(type(data_to_check))
     # data_deriv = np.array([])
-    factors = find_factors(data_to_check.size)  # The following lines are needed in the case of length is not
+    factors = ac.find_factors(data_to_check.size)  # The following lines are needed in the case of length is not
     indx_len = np.argmin(np.abs(factors - length))  # a factor of the data_frame size
     logger.debug("Factor={0}".format(factors[indx_len]))
 
@@ -599,7 +494,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
             if len(el) >= interval * freq and len(el) > len_max:
                 len_max = len(el)
                 outdata = el
-                file_index = list(find_rk(df_qty.values.flatten(), el))
+                file_index = list(ac.find_rk(df_qty.values.flatten(), el))
         psd_s, _ = mlab.psd(outdata, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
         outdata = psd_s[1:]
     elif mode.lower() == 'low noise':
@@ -618,7 +513,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                 logger.debug('RMS integral: {0}'.format(integral))
                 if integral < integral_min:
                     integral_min = integral
-                    file_index = list(find_rk(df_qty.values.flatten(), el))
+                    file_index = list(ac.find_rk(df_qty.values.flatten(), el))
                     outdata = el
                     length_data_used = len(el)
                     pick_off_mean = np.abs(
@@ -648,7 +543,6 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     logger.info('Voltage min = {0}'.format(v_min))
     logger.info('Voltage max = {0}'.format(v_max))
     logger.info('Alpha = {0}'.format(alpha))
-
     num_slice = int(len(outdata) / 300000)  # It must be an integer
     logger.debug('Number of slice for the subset: {0}'.format(num_slice))
     data_split = np.array_split(outdata, num_slice)
@@ -674,7 +568,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     logger.info('Optimal index chosen: {0}'.format(max_optimal_index))
     for inx in max_optimal_index:
         optimal_data = np.append(optimal_data, data_split[inx])
-    opt_index_used = list(find_rk(df_qty.values.flatten(), optimal_data))
+    opt_index_used = list(ac.find_rk(df_qty.values.flatten(), optimal_data))
     logger.debug('Size of the optimal data: {0}'.format(len(optimal_data)))
     start_date = datetime.datetime.fromtimestamp(t[opt_index_used[0]]).strftime(
         '%b-%d %H:%M:%S')
@@ -724,7 +618,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         ax1.plot(data_used_x, data_used_y, linestyle='-', label='Array chosen')
         ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Optimal data used')
         ax1.grid(True, linestyle='-')
-        ax1.xaxis.set_major_formatter(time_tick_formatter)
+        ax1.xaxis.set_major_formatter(ac.time_tick_formatter)
         ax1.tick_params(axis='x', labelsize=16, which='both')
         ax1.tick_params(axis='y', labelsize=16, which='both')
         ax1.set_ylabel(r"Voltage [V]", fontsize=16)
@@ -803,7 +697,7 @@ def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length
     ax.plot(df.index, df[col_index], color='tab:red', label='Data')
     ax.plot(df.index, data_und_th + 5, color='tab:blue', linestyle='-', label='Under threshold')
     ax.grid(True, linestyle='-')
-    ax.xaxis.set_major_formatter(time_tick_formatter)
+    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
     ax.legend(loc='best', shadow=True, fontsize='medium')
     return ax, filename
 
@@ -896,6 +790,6 @@ def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=Non
     ax.set_xlabel('Frequencies [Hz]')
     ax.set_ylabel('Coherence')
     ax.legend(loc='best', shadow=True, fontsize='medium')
-    ax.xaxis.set_major_formatter(time_tick_formatter)
+    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
     ax.xaxis.set_tick_params(rotation=30)
     return ax, filename
