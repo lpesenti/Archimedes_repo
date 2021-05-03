@@ -239,7 +239,8 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
     return final_df, index, time_array
 
 
-def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_start=None, file_stop=None, verbose=False):
+def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, tevo=True, file_start=None,
+                   file_stop=None, verbose=False):
     """
     Make the plot of time evolution
 
@@ -262,6 +263,9 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
 
         ndays : int
             How many days of data you want to analyze.
+
+        show_extra : bool
+            If True, data over threshold are displayed with a translation in the same plot.
 
         tevo : bool
             If True the time column will be read.
@@ -297,6 +301,9 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
     except TypeError as err:
         logger.error(err.args[0])
         raise
+    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} ax={4} ndays={5} show_extra={6} tevo={7} '
+                 'file_start={8} file_stop={9} verbose={10}'
+                 .format(day, month, year, quantity, ax, ndays, show_extra,tevo, file_start, file_stop, verbose))
     df, col_index, t = read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
                                  file_stop=file_stop, verbose=verbose)
     logger.info("Building plot")
@@ -306,7 +313,13 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, tevo=True, file_star
         print('Building Time Evolution Plot...')
     lab = quantity
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.scatter(t, df[col_index], label=lab)
+    ax.plot(t, df[col_index], linestyle='dotted', label=lab)
+    if show_extra:
+        logger.info("Building data-cleared plot")
+        lab1 = quantity + ' cleared'
+        data_und_th, _ = th_comparison(df, verbose=verbose)
+        ax.plot(t, data_und_th + 5, linestyle='-', label=lab1)
+        logger.info("Data-cleared plot successfully built")
     ax.grid(True, linestyle='-')
     ax.set_ylabel('Voltage [V]')
     ax.xaxis.set_major_formatter(ac.time_tick_formatter)
@@ -416,7 +429,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
         data_to_check[start:start + int(factors[indx_len])] = np.nan
     frac_rejected = len(index_data_rej) * factors[indx_len] / len(data_to_check)
     logger.debug("frac_rejected={0}".format(frac_rejected))
-    logger.info('Data rejected {0}%'.format(frac_rejected * 100))
+    logger.info('Data rejected {0} %'.format(round(frac_rejected * 100, 3)))
     if not verbose:
         pass
     else:
@@ -525,9 +538,9 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     if not file_index:
         logger.warning('Data chosen is not a subset of the general data!')
     else:
-        start_date = datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%d-%m-%y %H:%M:%S')
+        start_date = datetime.datetime.fromtimestamp(t[file_index[0]]).strftime('%d/%m/%y %H:%M:%S')
         end_date = datetime.datetime.fromtimestamp(t[file_index[0]] + (length_data_used - 1) * 0.001).strftime(
-            '%d-%m-%y %H:%M:%S')
+            '%d/%m/%y %H:%M:%S')
         logger.info('First index of the data chosen: {0}'.format(file_index))
         logger.info('Data selected are from {0} to {1}'.format(start_date, end_date))
     logger.info("Optimal array successfully found")
@@ -571,10 +584,10 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     opt_index_used = list(ac.find_rk(df_qty.values.flatten(), optimal_data))
     logger.debug('Size of the optimal data: {0}'.format(len(optimal_data)))
     start_date = datetime.datetime.fromtimestamp(t[opt_index_used[0]]).strftime(
-        '%b-%d %H:%M:%S')
+        '%d/%m/%y %H:%M:%S')
     end_date = datetime.datetime.fromtimestamp(
         t[opt_index_used[0]] + (len(optimal_data) - 1) * 0.001).strftime(
-        '%b-%d %H:%M:%S')
+        '%d/%m/%y %H:%M:%S')
     logger.info('Optimal data selected are from {0} to {1}'.format(start_date, end_date))
     opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
     logger.debug(
@@ -590,8 +603,8 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
-    ax.plot(x, y, linestyle='-', color='tab:red', label='@ Virgo')
-    ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
+    ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
+    ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
     ax.plot(psd_f, data_to_plot_opt, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca')
     # diff = (y-data_to_plot_opt)/(y+data_to_plot_opt)
     # ax.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
@@ -627,7 +640,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     return ax, ax1
 
 
-# TO BE REVIEWED...
+# OLD VERSION (TO BE REVIEWED...)
 def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
     Make the derivative plot of a given quantity
