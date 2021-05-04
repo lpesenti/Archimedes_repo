@@ -25,7 +25,7 @@ Welcome to the GitHub repository of the Archimedes Experiment!
     * _SosEnattos_Data_yyyymmdd_ (n)
       * *.lvm
   
-#### Arc_functions.py
+#### Arc_common.py
 
 * Thi script contains all the common and useful functions that are not strictly related to the data analysis.
 
