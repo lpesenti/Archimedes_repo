@@ -1,3 +1,10 @@
+__author__ = "Luca Pesenti"
+__credits__ = ["Luca Pesenti", "Davide Rozza"]
+__version__ = "1.0.1"
+__maintainer__ = "Luca Pesenti"
+__email__ = "l.pesenti6@campus.unimib.it"
+__status__ = "Production"
+
 r"""
 [LAST UPDATE: 27 April 2021 - Luca Pesenti]
 
@@ -29,7 +36,6 @@ Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
 
 Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
 """
-
 from matplotlib.mlab import cohere
 from matplotlib import mlab
 from operator import itemgetter
@@ -41,18 +47,20 @@ import os
 import glob
 import re
 import logging
-import math
+import configparser
 import Arc_common as ac
 
 logger = logging.getLogger('data_analysis.functions')
 
-cols = np.array(
-    ['itf', 'pick off', 'signal injected', 'error', 'correction', 'actuator 1', 'actuator 2', 'after noise',
-     'time'])
-path_to_data = r"D:\Archimedes\Data"
-freq = 1000  # Hz
-lambda_laser = 532.e-9  # Meter --> 532 nanometer
-distance_mirrors = 0.1  # Length between mirrors
+config = configparser.ConfigParser()
+config.read('config.ini')
+lvm_headers = [x for x in config['lvm_properties']['headers'].split(',')]
+cols = np.array(lvm_headers)
+path_to_data = config['Paths']['data_dir']
+freq = int(config['Quantities']['sampling_rate'])
+lambda_laser = float(config['Quantities']['laser_wavelength'])
+distance_mirrors = float(config['Quantities']['distance_mirrors'])
+
 first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate alpha
 
 
