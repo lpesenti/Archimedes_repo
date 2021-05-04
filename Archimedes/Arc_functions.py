@@ -36,18 +36,20 @@ Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
 
 Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
 """
-from matplotlib.mlab import cohere
-from matplotlib import mlab
-from operator import itemgetter
-from itertools import groupby
+import configparser
 import datetime
+import glob
+import logging
+import os
+import re
+from itertools import groupby
+from operator import itemgetter
+
 import numpy as np
 import pandas as pd
-import os
-import glob
-import re
-import logging
-import configparser
+from matplotlib import mlab
+from matplotlib.mlab import cohere
+
 import Arc_common as ac
 
 logger = logging.getLogger('data_analysis.functions')
@@ -170,14 +172,6 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
                     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
                     for j in range(1, len(a.index) + 1):
                         time_array.append(timestamp + j / freq)
-
-                #     df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
-                #     time = pd.read_table(data, sep='\t', nrows=1, na_filter=False, low_memory=False, engine='c',
-                #                          usecols=df_col[-1:],
-                #                          header=None).replace(r'\\09', '', regex=True).values.flatten().tolist()
-                #     timestamp = datetime.datetime.timestamp(pd.to_datetime(time[0]))
-                #     for j in range(1, len(time) + 1):
-                #         time_array.append(timestamp + j / freq)
             i += 1
     elif file_start and not file_stop:
         for data in all_data:
@@ -389,46 +383,24 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     else:
         print('Starting the comparison...')
         print('\tThreshold:', threshold)
-    # print(data_frame.columns)
-    # print(data_frame.values.flatten())
     data_to_check = data_frame.values.flatten()
     logger.debug("Size of data_to_check = {0}".format(data_to_check.size))
-    # print(type(data_to_check))
-    # data_deriv = np.array([])
     factors = ac.find_factors(data_to_check.size)  # The following lines are needed in the case of length is not
     indx_len = np.argmin(np.abs(factors - length))  # a factor of the data_frame size
     logger.debug("Factor={0}".format(factors[indx_len]))
-
-    # print(data_to_check.size)
-    # for i in range(data_to_check.size):
-    #     if i % factors[indx_len] == 0:
-    #         data_deriv = np.append(data_deriv, np.abs((data_to_check[i] - data_to_check[i - int(factors[indx_len])])))
-    # data_deriv = np.abs(np.diff(data_to_check, axis=0))
-    # data_deriv = np.append(data_deriv, 0)
     num_slice = int(data_to_check.size / factors[indx_len])  # It must be an integer
     logger.debug("num_slice={0}".format(num_slice))
     logger.info("Number of slices = {0}".format(num_slice))
 
     data_split = np.array_split(data_to_check, num_slice)
     index_data_rej = []
-    # test = np.array([])
     i = 0
     for sub_arr in data_split:
-        # mean = np.mean(sub_arr)
-        # test = np.append(test, mean)
-        # for element in sub_arr:
-        # if np.amax(sub_arr) > threshold:
-        #     index_data_rej.append(i)
-        # print(sub_arr)
-        # print(round(i / len(data_split) * 100, 1), '%')
         if np.abs(np.amax(sub_arr) - np.amin(sub_arr)) > threshold:
             index_data_rej.append(i)
         else:
             pass
         i += 1
-    # test = test.repeat(int(factors[indx_len]))
-    # print(test.size)
-
     logger.debug("len(index_data_rej)={0}".format(len(index_data_rej)))
     logger.info("Slices rejected = {0}".format(len(index_data_rej)))
     logger.info('Comparison successfully completed')
@@ -556,8 +528,6 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         pass
     else:
         print('Evaluation of', mode, 'PSD completed!')
-
-    # print('Length of data used for PSD:', len(outdata)) if verbose else print()
     v_max = df_itf.max().values.flatten()
     v_min = df_itf.min().values.flatten()
     alpha = first_coef / (v_max - v_min)
