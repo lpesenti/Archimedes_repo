@@ -3,7 +3,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
 import matplotlib as mpl
-import Arc_functions as arc
+import Arc_functions as af
 import numpy as np
 import timeit, time
 import os
@@ -58,7 +58,7 @@ def plot_3d(day, month, year, col_to_save, num_d, axes1, axes2, verbose=True):
     # In order to work properly, comment lines 250,251,252
     # in th_comparison function
     logging.debug('Started')
-    data, _, _ = arc.read_data(day=day, month=month, year=year, quantity=col_to_save, num_d=num_d)
+    data, _, _ = af.read_data(day=day, month=month, year=year, quantity=col_to_save, num_d=num_d)
 
     x, y, dz = np.array([]), np.array([]), np.array([])
     data_matrix = []
@@ -69,7 +69,7 @@ def plot_3d(day, month, year, col_to_save, num_d, axes1, axes2, verbose=True):
         print(round(i / 0.01 * 100, 2), '%')
         data_to_heatmap = np.array([])
         for j in ndivision_val:
-            _, _, val_rej = arc.th_comparison(data, threshold=i, length=j, verbose=False)
+            _, _, val_rej = af.th_comparison(data, threshold=i, length=j, verbose=False)
             x = np.append(x, i)
             y = np.append(y, j)
             data_to_heatmap = np.append(data_to_heatmap, val_rej)
@@ -183,52 +183,52 @@ def nine_der_plot(day, month, year, col_to_save, title):
     ax9 = fig9.add_subplot()
     logging.debug('ax9 added')
     logging.info('Starting with der_plot')
-    ax1, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, threshold=0.001,
-                              length=100)
+    ax1, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, threshold=0.001,
+                             length=100)
     logging.debug('ax1 der_plot completed')
-    ax2, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, threshold=0.0022,
-                              length=100)
+    ax2, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, threshold=0.0022,
+                             length=100)
     logging.debug('ax2 der_plot completed')
-    ax3, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, threshold=0.0044,
-                              length=100)
+    ax3, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, threshold=0.0044,
+                             length=100)
     logging.debug('ax3 der_plot completed')
-    ax4, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, threshold=0.001,
-                              length=500)
+    ax4, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, threshold=0.001,
+                             length=500)
     logging.debug('ax4 der_plot completed')
-    ax5, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, threshold=0.0022,
-                              length=500)
+    ax5, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, threshold=0.0022,
+                             length=500)
     logging.debug('ax5 der_plot completed')
-    ax6, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, threshold=0.0044,
-                              length=500)
+    ax6, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, threshold=0.0044,
+                             length=500)
     logging.debug('ax6 der_plot completed')
-    ax7, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, threshold=0.001,
-                              length=1000)
+    ax7, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, threshold=0.001,
+                             length=1000)
     logging.debug('ax7 der_plot completed')
-    ax8, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, threshold=0.0022,
-                              length=1000)
+    ax8, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, threshold=0.0022,
+                             length=1000)
     logging.debug('ax8 der_plot completed')
-    ax9, _ = arc.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, threshold=0.0044,
-                              length=1000)
+    ax9, _ = af.cleared_plot(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, threshold=0.0044,
+                             length=1000)
     logging.debug('ax9 der_plot completed')
     logging.info('Finished der_plot evaluation')
     logging.info('Starting with time_evolution')
-    ax1, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, verbose=False)
+    ax1, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax1, verbose=False)
     logging.debug('ax1 time_evolution completed')
-    ax2, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, verbose=False)
+    ax2, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax2, verbose=False)
     logging.debug('ax2 time_evolution completed')
-    ax3, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, verbose=False)
+    ax3, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax3, verbose=False)
     logging.debug('ax3 time_evolution completed')
-    ax4, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, verbose=False)
+    ax4, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax4, verbose=False)
     logging.debug('ax4 time_evolution completed')
-    ax5, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, verbose=False)
+    ax5, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax5, verbose=False)
     logging.debug('ax5 time_evolution completed')
-    ax6, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, verbose=False)
+    ax6, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax6, verbose=False)
     logging.debug('ax6 time_evolution completed')
-    ax7, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, verbose=False)
+    ax7, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax7, verbose=False)
     logging.debug('ax7 time_evolution completed')
-    ax8, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, verbose=False)
+    ax8, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax8, verbose=False)
     logging.debug('ax8 time_evolution completed')
-    ax9, _ = arc.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, verbose=False)
+    ax9, _ = af.time_evolution(day=day, month=month, year=year, quantity=col_to_save, ax=ax9, verbose=False)
     logging.debug('ax9 time_evolution completed')
     ax1.set_title('Th=0.001, ndiv=100')
     ax2.set_title('Th=0.0022, ndiv=100')
@@ -269,11 +269,12 @@ if __name__ == '__main__':
     fig0.suptitle('Data from 22/11/2020')
     ax1 = fig1.add_subplot()
     ax0 = fig0.add_subplot()
-    arc.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', ax1=ax0, tevo=True)
-    # arc.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, file_start=1, file_stop=1)
-    # arc.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
-    mng = plt.get_current_fig_manager()
-    mng.window.state('zoomed')
+    # af.read_data(day=22, month=11, year=2020, quantity='Error',file_start=1, file_stop=1)
+    af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', tevo=True)
+    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, show_extra=True)
+    # af.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
+    # mng = plt.get_current_fig_manager
+    # mng.window.state('zoomed')
     # fig0.savefig(os.path.join(path_to_img, r'20201122_Data_used.png'))
     # fig1.savefig(os.path.join(path_to_img, r'20201122_ASD.png'))
     # pkl.dump(fig1, open(os.path.join(path_to_img, r'20201122_ASD.pickle'), 'wb'))
@@ -281,7 +282,7 @@ if __name__ == '__main__':
     # fig2 = plt.figure()
     # fig2.suptitle('Data from 20/02/2021')
     # ax2 = fig2.add_subplot()
-    # arc.psd(day=20, month=2, year=2021, quantity='Error', mode='low noise', ax=ax2, interval=300)
+    # af.psd(day=20, month=2, year=2021, quantity='Error', mode='low noise', ax=ax2, interval=300)
     # mng = plt.get_current_fig_manager()
     # mng.window.state('zoomed')
     # fig2.savefig(os.path.join(path_to_img, r'2021220_ASD.png'))
@@ -289,7 +290,7 @@ if __name__ == '__main__':
     # fig3 = plt.figure()
     # fig3.suptitle('Data from 21/02/2021')
     # ax3 = fig3.add_subplot()
-    # arc.psd(day=21, month=2, year=2021, quantity='Error', mode='low noise', ax=ax3, interval=300)
+    # af.psd(day=21, month=2, year=2021, quantity='Error', mode='low noise', ax=ax3, interval=300)
     # mng = plt.get_current_fig_manager()
     # mng.window.state('zoomed')
     # fig3.savefig(os.path.join(path_to_img, r'2021221_ASD.png'))
@@ -297,7 +298,7 @@ if __name__ == '__main__':
     # # fig4 = plt.figure()
     # # fig4.suptitle('Data from 28/02/2021')
     # # ax4 = fig4.add_subplot()
-    # # arc.psd(day=28, month=2, year=2021, quantity='Error', mode='low noise', ax=ax4, interval=300)
+    # # af.psd(day=28, month=2, year=2021, quantity='Error', mode='low noise', ax=ax4, interval=300)
     # # mng = plt.get_current_fig_manager()
     # # mng.window.state('zoomed')
     # # fig4.savefig(os.path.join(path_to_img, r'2021228_ASD.png'))
@@ -305,7 +306,7 @@ if __name__ == '__main__':
     # fig5 = plt.figure()
     # fig5.suptitle('Data from 21/11/2020')
     # ax5 = fig5.add_subplot()
-    # arc.psd(day=21, month=11, year=2020, quantity='Error', mode='low noise', ax=ax5, interval=300)
+    # af.psd(day=21, month=11, year=2020, quantity='Error', mode='low noise', ax=ax5, interval=300)
     # mng = plt.get_current_fig_manager()
     # mng.window.state('zoomed')
     # fig5.savefig(os.path.join(path_to_img, r'20201121_ASD.png'))
@@ -313,7 +314,7 @@ if __name__ == '__main__':
     # fig6 = plt.figure()
     # fig6.suptitle('Data from 22/11/2020')
     # ax6 = fig6.add_subplot()
-    # arc.psd(day=22, month=11, year=2020, quantity='Error', mode='low noise', ax=ax6, interval=300)
+    # af.psd(day=22, month=11, year=2020, quantity='Error', mode='low noise', ax=ax6, interval=300)
     # mng = plt.get_current_fig_manager()
     # mng.window.state('zoomed')
     # fig6.savefig(os.path.join(path_to_img, r'20201122_ASD.png'))
@@ -322,5 +323,5 @@ if __name__ == '__main__':
     print('Time before plt.show(): ', (stop - start), 's')
     print('Time before plt.show(): ', (stop - start) / 60, 'min')
     logging.info('Analysis completed (plt.show excluded)')
-    # plt.show()
+    plt.show()
     logging.info('Analysis completed (plt.show included)')
