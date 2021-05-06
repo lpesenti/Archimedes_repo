@@ -3,7 +3,7 @@ __credits__ = ["Luca Pesenti", "Davide Rozza"]
 __version__ = "1.1.0"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
-__status__ = "Production"
+__status__ = "Developing"
 
 r"""
 [LAST UPDATE: 27 April 2021 - Luca Pesenti]
@@ -487,7 +487,6 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         print('Starting evaluation of', mode, 'PSD...')
     logger.info("Searching the optimal array")
 
-    # 'max interval' WORK IN PROGRESS
     if mode.lower() == 'max interval':
         for el in data_first_check:
             if len(el) >= interval * freq and len(el) > len_max:
@@ -496,6 +495,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                 file_index = list(ac.find_rk(df_qty.values.flatten(), el))
 
         data_size = len(outdata)
+        logger.info('Length of the array chosen: {0}'.format(data_size))
 
         v_max = df_itf.max().values.flatten()
         v_min = df_itf.min().values.flatten()
@@ -519,7 +519,8 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
             np.mean(df_po[file_index[0]:file_index[0] + data_size + 1].values.flatten()))
         data_to_plot = np.sqrt(psd_s) * alpha * pick_off_mean
 
-        ax.set_xscale("linear")
+        ax.set_xscale("log")
+        ax.set_xlim([psd_f[0], psd_f[-1]])
         ax.set_yscale("log")
 
     elif mode.lower() == 'low noise':
@@ -639,7 +640,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=16)
     ax.tick_params(axis='x', labelsize=20, which='both')
     ax.tick_params(axis='y', labelsize=20, which='both')
-    ax.grid(True, linestyle='-')
+    ax.grid(True, linestyle='--', which='both')
     ax.legend(loc='best', shadow=True, fontsize='large')
     ax.set_title(mode)
     logger.info("Plot succesfully built")
