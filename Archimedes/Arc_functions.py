@@ -636,8 +636,8 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     # diff = (y-data_to_plot)/(y+data_to_plot)
     # ax.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
 
-    ax.set_xlabel("Frequency (Hz)", fontsize=16)
-    ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=16)
+    ax.set_xlabel("Frequency (Hz)", fontsize=20)
+    ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
     ax.tick_params(axis='x', labelsize=20, which='both')
     ax.tick_params(axis='y', labelsize=20, which='both')
     ax.grid(True, linestyle='--', which='both')
