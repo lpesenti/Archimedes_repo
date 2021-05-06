@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import configparser
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
@@ -11,7 +12,10 @@ import logging
 import logging.handlers
 import pickle as pkl
 
-# test_logger = logging.getLogger('data_analysis')
+config = configparser.ConfigParser()
+config.read('config.ini')
+mailing_list = [x for x in config['DEFAULT']['mail_list'].split(',')]
+
 rootLogger = logging.getLogger('data_analysis')
 rootLogger.propagate = False
 rootLogger.setLevel(logging.DEBUG)
@@ -38,14 +42,14 @@ streamHandler.setFormatter(stream_formatter)
 now = int(time.time())
 error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
                                                   fromaddr="archimedes.noreply@gmail.com",
-                                                  toaddrs=["l.pesenti6@campus.unimib.it"],
+                                                  toaddrs=mailing_list,
                                                   subject='Log report #' + str(now),
                                                   credentials=('archimedes.noreply@gmail.com', 'fXV-r^kZqpZn7yBt'),
                                                   secure=())
 error_mail_handler.setFormatter(mail_formatter)
 error_mail_handler.setLevel(logging.WARNING)
 
-# rootLogger.addHandler(error_mail_handler)
+rootLogger.addHandler(error_mail_handler)
 rootLogger.addHandler(debug_Handler)
 rootLogger.addHandler(info_Handler)
 rootLogger.addHandler(streamHandler)
@@ -270,7 +274,7 @@ if __name__ == '__main__':
     ax1 = fig1.add_subplot()
     ax0 = fig0.add_subplot()
     # af.read_data(day=22, month=11, year=2020, quantity='Error',file_start=1, file_stop=1)
-    af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise', tevo=True)
+    af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='max interval', tevo=True, file_start=53, file_stop=60)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, show_extra=True)
     # af.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
     # mng = plt.get_current_fig_manager
