@@ -5,19 +5,15 @@ __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Prototype"
 
-import matplotlib.pyplot as plt
 import configparser
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-import matplotlib.gridspec as gridspec
-import matplotlib as mpl
-import Arc_functions as af
-import numpy as np
-import timeit, time
-import os
-import logging
 import logging.handlers
-import pickle as pkl
+import timeit
+from time import time
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+import Arc_functions as af
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -46,7 +42,7 @@ streamHandler = logging.StreamHandler()
 streamHandler.setLevel(logging.INFO)
 streamHandler.setFormatter(stream_formatter)
 
-now = int(time.time())
+now = int(time())
 error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
                                                   fromaddr="archimedes.noreply@gmail.com",
                                                   toaddrs=mailing_list,

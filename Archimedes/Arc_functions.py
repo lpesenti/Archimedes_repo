@@ -17,7 +17,7 @@ The experiment save the data in a file .lvm containing 9 columns*,
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 
-*data up to 22 November 2021 have only 8 columns, the 'After Noise' has not been saved.
+*data up to 22 November 2020 have only 8 columns, the 'After Noise' has not been saved.
 
 ITF [V]            : signal from the interferometer
 Pick Off [V]       : signal from the laser before the filters
