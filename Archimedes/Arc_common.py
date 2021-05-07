@@ -1,3 +1,10 @@
+__author__ = "Luca Pesenti"
+__credits__ = ["Luca Pesenti", "Davide Rozza"]
+__version__ = "1.2.0"
+__maintainer__ = "Luca Pesenti"
+__email__ = "l.pesenti6@campus.unimib.it"
+__status__ = "Production"
+
 from matplotlib.mlab import cohere
 from matplotlib import mlab
 from operator import itemgetter

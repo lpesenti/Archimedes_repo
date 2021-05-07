@@ -1,12 +1,12 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
-__status__ = "Developing"
+__status__ = "Production"
 
 r"""
-[LAST UPDATE: 27 April 2021 - Luca Pesenti]
+[LAST UPDATE: 7 May 2021 - Luca Pesenti]
 
 The following functions have been built to work with the data obtained by the Archimedes experiment.
 The experiment save the data in a file .lvm containing 9 columns*,
@@ -17,7 +17,7 @@ The experiment save the data in a file .lvm containing 9 columns*,
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 
-*data up to February 2021 have only 8 columns, the injected signal has not been saved.
+*data up to 22 November 2021 have only 8 columns, the 'After Noise' has not been saved.
 
 ITF [V]            : signal from the interferometer
 Pick Off [V]       : signal from the laser before the filters
@@ -27,11 +27,11 @@ Error [-]          : it is given by the ratio between the ITF and the Pick Off m
 Correction [-]     :
 Actuator 1/2 [V]   : are the voltage coming from the two actuators before the amplification -> if one works, the other
                      should be off
-After Noise [-]    :
+After Noise [-]    : signal from the noise after the Butterworth filter
 Time [-]           : every 10 millisecond (100 rows) the system print the datetime in the format
                      -> 02/19/2021 20:01:11.097734\09
 
-In the current configuration the sampling rate is 1 KHz but can be increase (data saved every millisecond).
+In the current configuration the sampling rate is 1 KHz but can be increased  (data saved every millisecond).
 Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
 
 Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
@@ -52,6 +52,8 @@ from matplotlib import mlab
 from matplotlib.mlab import cohere
 
 import Arc_common as ac
+
+# TODO: add matplotlib style (.mplstyle) both for internal meeting and for official plots.
 
 logger = logging.getLogger('data_analysis.functions')
 
@@ -422,7 +424,7 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
 
 
 def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1,
-        length=10000, ax1=None, file_start=None, file_stop=None, tevo=False, verbose=False):
+        length=10000, ax1=None, file_start=None, file_stop=None, verbose=False):
     try:
         if not ax:
             raise TypeError("Ax can not be a 'NoneType' object")
@@ -440,11 +442,11 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         logger.error(err.args[0])
         raise
     logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} ax={4} interval={5} mode={6} low_freq={7} '
-                 'high_freq={8} threshold={9} ndays={10} length={11} ax1={12} file_start={13} file_stop={14} tevo={15} '
-                 'verbose={16}'.format(day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold,
-                                       ndays, length, ax1, file_start, file_stop, tevo, verbose))
+                 'high_freq={8} threshold={9} ndays={10} length={11} ax1={12} file_start={13} file_stop={14} '
+                 'verbose={15}'.format(day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold,
+                                       ndays, length, ax1, file_start, file_stop, verbose))
     logger.info("Evaluation of the PSD on '{}' started".format(quantity))
-    df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, tevo=tevo, file_start=file_start,
+    df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                      file_stop=file_stop, verbose=verbose)
     df_itf, _, _ = read_data(day=day, month=month, year=year, quantity='ITF', num_d=ndays, file_start=None,
                              file_stop=None, verbose=verbose)
@@ -463,7 +465,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
 
     logger.info('Cleaning from NaN values successfully completed')
-    num = int(60 * freq)  # Add checks for frequencies
+    num = int(60 * freq)  # TODO: Add checks for frequencies and add variable instead of fixed number (60)
     logger.debug('num={0}'.format(num))
     logger.info('Evaluating the PSD frequencies')
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
@@ -575,6 +577,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         integral_list, indeces_lst = [], []
         optimal_data = np.array([])
 
+        # TODO: optimize the code -> try to merge the following cycle with the previous one
         for index, chunk in enumerate(data_split):
             chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
             logger.debug('chunk_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(chunk), num, freq))
@@ -582,7 +585,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
             integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
             logger.debug('RMS integral: {0}'.format(integral))
             integral_list.append(integral)
-            if not integral <= 1e-11:  # Add a variable to express the quantity
+            if not integral <= 1e-11:  # TODO: Add a variable instead of 1e-11
                 pass
             else:
                 indeces_lst.append(index)
@@ -633,6 +636,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
     ax.plot(psd_f, data_to_plot, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca')
 
+    # TODO: plot difference between Virgo and our results
     # diff = (y-data_to_plot)/(y+data_to_plot)
     # ax.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
 
