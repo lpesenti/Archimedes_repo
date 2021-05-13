@@ -1,37 +1,37 @@
-[07-05-21 10:33:56 | Arc_functions.py             psd(), line 448] INFO: Evaluation of the PSD on 'Error' started
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 139] INFO: 'error' data read started
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:33:59 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 236] INFO: 'error' data read successfully completed
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 139] INFO: 'itf' data read started
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:36:24 | Arc_functions.py       read_data(), line 236] INFO: 'itf' data read successfully completed
-[07-05-21 10:36:24 | Arc_functions.py       read_data(), line 237] WARNING: The time array is empty!
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 139] INFO: 'pick off' data read started
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:37:08 | Arc_functions.py       read_data(), line 236] INFO: 'pick off' data read successfully completed
-[07-05-21 10:37:08 | Arc_functions.py       read_data(), line 237] WARNING: The time array is empty!
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 381] INFO: Comparison started
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 396] INFO: Number of slices = 4100
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 408] INFO: Slices rejected = 195
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 409] INFO: Comparison successfully completed
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 415] INFO: Data rejected 4.756 %
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 421] INFO: Replacement successfully completed
-[07-05-21 10:37:23 | Arc_functions.py             psd(), line 464] INFO: Start cleaning from NaN values
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 467] INFO: Cleaning from NaN values successfully completed
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 470] INFO: Evaluating the PSD frequencies
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 490] INFO: Searching the optimal array
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 549] INFO: Value of the integral: 5.491663142581832e-11
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 550] INFO: Mean of the pick-off: 0
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 557] INFO: First index of the data chosen: [12343582]
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 558] INFO: Data selected are from 22/11/20 22:36:19 to 22/11/20 23:56:21
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 559] INFO: Optimal array successfully found
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 568] INFO: Voltage min = [-9.948893]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 569] INFO: Voltage max = [-2.86356]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 570] INFO: Alpha = [1.19500988e-07]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 600] INFO: Optimal index chosen: [13, 14, 15]
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 616] INFO: Optimal data selected are from 22/11/20 23:41:21 to 22/11/20 23:56:21
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 630] INFO: Building plot
-[07-05-21 10:40:38 | Arc_functions.py             psd(), line 650] INFO: Plot succesfully built
+[13-05-21 09:51:57 | Arc_functions.py             psd(), line 488] INFO: Evaluation of the PSD on 'Error' started
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 140] INFO: 'error' data read started
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 245] INFO: 'error' data read successfully completed
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 140] INFO: 'itf' data read started
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 245] INFO: 'itf' data read successfully completed
+[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 140] INFO: 'pick off' data read started
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 245] INFO: 'pick off' data read successfully completed
+[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 401] INFO: Comparison started
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 419] INFO: Number of slices = 330
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 431] INFO: Slices rejected = 5
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 432] INFO: Comparison successfully completed
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 438] INFO: Data rejected 1.515 %
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 444] INFO: Replacement successfully completed
+[13-05-21 09:53:24 | Arc_functions.py             psd(), line 504] INFO: Start cleaning from NaN values
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 507] INFO: Cleaning from NaN values successfully completed
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 510] INFO: Evaluating the PSD frequencies
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 530] INFO: Searching the optimal array
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 589] INFO: Value of the integral: 1.2658950932557305e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 590] INFO: Mean of the pick-off: 0
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 597] INFO: First index of the data chosen: [0]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 598] INFO: Data selected are from 22/11/20 23:15:36 to 22/11/20 23:56:16
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 599] INFO: Optimal array successfully found
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 608] INFO: Voltage min = [-9.948893]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 609] INFO: Voltage max = [-2.86356]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 610] INFO: Alpha = [1.19500988e-07]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 640] INFO: Optimal index chosen: [5, 6, 7]
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 656] INFO: Optimal data selected are from 22/11/20 23:41:01 to 22/11/20 23:56:16
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 670] INFO: Building plot
+[13-05-21 09:53:33 | Arc_functions.py             psd(), line 696] INFO: Plot succesfully built

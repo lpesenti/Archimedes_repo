@@ -1,121 +1,128 @@
-[07-05-21 10:33:56 | Arc_functions.py             psd(), line 447] DEBUG: PARAMETERS: day=22 month=11 year=2020 quantity=Error ax=AxesSubplot(0.125,0.11;0.775x0.77) interval=300 mode=low noise low_freq=2 high_freq=10 threshold=0.03 ndays=1 length=10000 ax1=None file_start=None file_stop=None verbose=False
-[07-05-21 10:33:56 | Arc_functions.py             psd(), line 448] INFO: Evaluation of the PSD on 'Error' started
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 139] INFO: 'error' data read started
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 143] DEBUG: PARAMETERS: day=22 month=11 year=2020 quantity=Error num_d=1 tevo=True file_start=None file_stop=None verbose=False
-[07-05-21 10:33:56 | Arc_functions.py       read_data(), line 149] DEBUG: index=4
-[07-05-21 10:33:59 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 236] INFO: 'error' data read successfully completed
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 139] INFO: 'itf' data read started
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 143] DEBUG: PARAMETERS: day=22 month=11 year=2020 quantity=ITF num_d=1 tevo=False file_start=None file_stop=None verbose=False
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 149] DEBUG: index=1
-[07-05-21 10:35:37 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:36:24 | Arc_functions.py       read_data(), line 236] INFO: 'itf' data read successfully completed
-[07-05-21 10:36:24 | Arc_functions.py       read_data(), line 237] WARNING: The time array is empty!
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 139] INFO: 'pick off' data read started
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 140] INFO: Data from 22/11/2020 selected
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 143] DEBUG: PARAMETERS: day=22 month=11 year=2020 quantity=Pick Off num_d=1 tevo=False file_start=None file_stop=None verbose=False
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 149] DEBUG: index=2
-[07-05-21 10:36:26 | Arc_functions.py       read_data(), line 160] INFO: Number of .lvm found: 211
-[07-05-21 10:37:08 | Arc_functions.py       read_data(), line 236] INFO: 'pick off' data read successfully completed
-[07-05-21 10:37:08 | Arc_functions.py       read_data(), line 237] WARNING: The time array is empty!
-[07-05-21 10:37:23 | Arc_functions.py             psd(), line 457] DEBUG: rows_in_df_Error=63103100 rows_in_df_itf=63103100 rows_in_df_pickoff=63103100
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 381] INFO: Comparison started
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 383] DEBUG: PARAMETERS: rows_in_df=63103100 threshold=0.03 length=10000 verbose=False
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 390] DEBUG: Size of data_to_check = 63103100
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 393] DEBUG: Factor=15391.0
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 395] DEBUG: num_slice=4100
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 396] INFO: Number of slices = 4100
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 407] DEBUG: len(index_data_rej)=195
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 408] INFO: Slices rejected = 195
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 409] INFO: Comparison successfully completed
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 414] DEBUG: frac_rejected=0.0475609756097561
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 415] INFO: Data rejected 4.756 %
-[07-05-21 10:37:23 | Arc_functions.py   th_comparison(), line 421] INFO: Replacement successfully completed
-[07-05-21 10:37:23 | Arc_functions.py             psd(), line 464] INFO: Start cleaning from NaN values
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 467] INFO: Cleaning from NaN values successfully completed
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 469] DEBUG: num=60000
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 470] INFO: Evaluating the PSD frequencies
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 472] DEBUG: psd_f obtained with N=60000, NFFT=60000, Fs=60000, detrend=linear
-[07-05-21 10:38:47 | Arc_functions.py             psd(), line 490] INFO: Searching the optimal array
-[07-05-21 10:38:48 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=12174281, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:38:48 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.1734882190446872e-10
-[07-05-21 10:39:21 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=4801992, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:21 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 5.491663142581832e-11
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=20131428, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.6874282857862973e-10
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=4386435, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.6708286187806664e-10
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=430948, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 5.979310038748036e-10
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=369384, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 2.802646061496705e-10
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=554076, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 4.467049694635907e-10
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=769550, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:57 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.6122640353888474e-10
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=2508733, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 6.331122880380981e-10
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=615640, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.8166807748562375e-10
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=1200498, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:58 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.335018483621024e-10
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=7680109, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 1.6016436357785104e-10
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=831114, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 8.625942192568772e-11
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=430948, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 6.384828219383557e-10
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 537] DEBUG: el_s obtained with N=2354823, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 541] DEBUG: RMS integral: 2.891603900879255e-10
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 548] DEBUG: Size of the data used: 4801992
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 549] INFO: Value of the integral: 5.491663142581832e-11
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 550] INFO: Mean of the pick-off: 0
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 557] INFO: First index of the data chosen: [12343582]
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 558] INFO: Data selected are from 22/11/20 22:36:19 to 22/11/20 23:56:21
-[07-05-21 10:39:59 | Arc_functions.py             psd(), line 559] INFO: Optimal array successfully found
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 568] INFO: Voltage min = [-9.948893]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 569] INFO: Voltage max = [-2.86356]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 570] INFO: Alpha = [1.19500988e-07]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 574] DEBUG: Number of slice for the subset: 16
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 2.2110719849081876e-10
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 5.596446528263102e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 4.293636177193711e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 3.570130028703917e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 5.86137566462337e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 5.039060528516119e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 3.487642329285751e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300125, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 3.045365503046858e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 2.307918936133677e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 1.9054477786847196e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 1.5900255317448787e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 1.3870324920731434e-11
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 1.9388241463514217e-10
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 6.365173228310302e-12
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 3.482330702164205e-12
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 583] DEBUG: chunk_s obtained with N=300124, NFFT=60000, Fs=1000, detrend=linear
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 586] DEBUG: RMS integral: 1.483940952468617e-12
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 593] DEBUG: Chunks candidates [13, 14, 15]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 599] DEBUG: Consecutive indices: [[13, 14, 15]]
-[07-05-21 10:40:00 | Arc_functions.py             psd(), line 600] INFO: Optimal index chosen: [13, 14, 15]
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 610] DEBUG: Size of the optimal data: 900372
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 616] INFO: Optimal data selected are from 22/11/20 23:41:21 to 22/11/20 23:56:21
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 621] DEBUG: opt_psd obtained with N=900372, NFFT=60000, Fs=1000, detrend=linear, noverlap = 30000
-[07-05-21 10:40:35 | Arc_functions.py             psd(), line 630] INFO: Building plot
-[07-05-21 10:40:38 | Arc_functions.py             psd(), line 650] INFO: Plot succesfully built
+[13-05-21 09:51:57 | Arc_functions.py             psd(), line 487] DEBUG: Parameters:
+																			day=22
+																			month=11
+																			year=2020
+																			quantity=Error
+																			ax=AxesSubplot(0.125,0.11;0.775x0.77)
+																			time_interval=300
+																			mode=low noise
+																			ndays=1
+																			length=10000
+																			low_freq=2
+																			high_freq=10
+																			psd_len=100
+																			noise_th=0.03
+																			rms_th=1e-11
+																			ax1=None
+																			file_start=50
+																			file_stop=60
+																			verbose=False
+[13-05-21 09:51:57 | Arc_functions.py             psd(), line 488] INFO: Evaluation of the PSD on 'Error' started
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 140] INFO: 'error' data read started
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
+																			day=22
+																			month=11
+																			year=2020
+																			quantity=Error
+																			num_d=1
+																			tevo=True
+																			file_start=50
+																			file_stop=60
+																			verbose=False
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 158] DEBUG: index=4
+[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 245] INFO: 'error' data read successfully completed
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 140] INFO: 'itf' data read started
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
+																			day=22
+																			month=11
+																			year=2020
+																			quantity=ITF
+																			num_d=1
+																			tevo=False
+																			file_start=None
+																			file_stop=None
+																			verbose=False
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 158] DEBUG: index=1
+[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 245] INFO: 'itf' data read successfully completed
+[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 140] INFO: 'pick off' data read started
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
+																			day=22
+																			month=11
+																			year=2020
+																			quantity=Pick Off
+																			num_d=1
+																			tevo=False
+																			file_start=None
+																			file_stop=None
+																			verbose=False
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 158] DEBUG: index=2
+[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
+[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 245] INFO: 'pick off' data read successfully completed
+[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
+[13-05-21 09:53:24 | Arc_functions.py             psd(), line 497] DEBUG: rows_in_df_Error=3300000 rows_in_df_itf=63103100 rows_in_df_pickoff=63103100
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 401] INFO: Comparison started
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 406] DEBUG: Parameters:
+																			rows_in_df=3300000
+																			threshold=0.03
+																			length=10000
+																			verbose=False
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 413] DEBUG: Size of data_to_check = 3300000
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 416] DEBUG: Factor=10000.0
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 418] DEBUG: num_slice=330
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 419] INFO: Number of slices = 330
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 430] DEBUG: len(index_data_rej)=5
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 431] INFO: Slices rejected = 5
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 432] INFO: Comparison successfully completed
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 437] DEBUG: frac_rejected=0.015151515151515152
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 438] INFO: Data rejected 1.515 %
+[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 444] INFO: Replacement successfully completed
+[13-05-21 09:53:24 | Arc_functions.py             psd(), line 504] INFO: Start cleaning from NaN values
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 507] INFO: Cleaning from NaN values successfully completed
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 509] DEBUG: num=100000
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 510] INFO: Evaluating the PSD frequencies
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 512] DEBUG: psd_f obtained with N=100000, NFFT=100000, Fs=100000, detrend=linear
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 530] INFO: Searching the optimal array
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 577] DEBUG: el_s obtained with N=2440000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:28 | Arc_functions.py             psd(), line 581] DEBUG: RMS integral: 1.2658950932557305e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 577] DEBUG: el_s obtained with N=810000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 581] DEBUG: RMS integral: 8.018370429264799e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 588] DEBUG: Size of the data used: 2440000
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 589] INFO: Value of the integral: 1.2658950932557305e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 590] INFO: Mean of the pick-off: 0
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 597] INFO: First index of the data chosen: [0]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 598] INFO: Data selected are from 22/11/20 23:15:36 to 22/11/20 23:56:16
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 599] INFO: Optimal array successfully found
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 608] INFO: Voltage min = [-9.948893]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 609] INFO: Voltage max = [-2.86356]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 610] INFO: Alpha = [1.19500988e-07]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 614] DEBUG: Number of slice for the subset: 8
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 2.3511692894837326e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.8291696281819655e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.6462914210921585e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.5445397722809565e-11
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.6646220192920878e-10
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 6.8856861207232865e-12
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 3.72770604188961e-12
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.691080002885711e-12
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 633] DEBUG: Chunks candidates [5, 6, 7]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 639] DEBUG: Consecutive indices: [[5, 6, 7]]
+[13-05-21 09:53:30 | Arc_functions.py             psd(), line 640] INFO: Optimal index chosen: [5, 6, 7]
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 650] DEBUG: Size of the optimal data: 915000
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 656] INFO: Optimal data selected are from 22/11/20 23:41:01 to 22/11/20 23:56:16
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 661] DEBUG: opt_psd obtained with N=915000, NFFT=100000, Fs=1000, detrend=linear, noverlap = 50000
+[13-05-21 09:53:32 | Arc_functions.py             psd(), line 670] INFO: Building plot
+[13-05-21 09:53:33 | Arc_functions.py             psd(), line 696] INFO: Plot succesfully built

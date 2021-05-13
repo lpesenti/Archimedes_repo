@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Production"
@@ -65,6 +65,7 @@ path_to_data = config['Paths']['data_dir']
 freq = int(config['Quantities']['sampling_rate'])
 lambda_laser = float(config['Quantities']['laser_wavelength'])
 distance_mirrors = float(config['Quantities']['distance_mirrors'])
+tab_comm = '\t' * int(config['Comments']['num_tab'])
 
 first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate alpha
 
@@ -138,9 +139,17 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
     logger.warning("num_d must be greater than 0") if num_d == 0 else ''
     logger.info("'{0}' data read started".format(quantity.lower()))
     logger.info("Data from {0}/{1}/{2} selected".format(day, month, year))
-    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} num_d={4} tevo={5} '
-                 'file_start={6} file_stop={7} verbose={8}'
-                 .format(day, month, year, quantity, num_d, tevo, file_start, file_stop, verbose))
+    logger.debug('Parameters:'
+                 '\n{9}day={0}'
+                 '\n{9}month={1}'
+                 '\n{9}year={2}'
+                 '\n{9}quantity={3}'
+                 '\n{9}num_d={4}'
+                 '\n{9}tevo={5}'
+                 '\n{9}file_start={6}'
+                 '\n{9}file_stop={7}'
+                 '\n{9}verbose={8}'
+                 .format(day, month, year, quantity, num_d, tevo, file_start, file_stop, verbose, tab_comm))
 
     print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
@@ -306,9 +315,20 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, te
     except TypeError as err:
         logger.error(err.args[0])
         raise
-    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} ax={4} ndays={5} show_extra={6} tevo={7} '
-                 'file_start={8} file_stop={9} verbose={10}'
-                 .format(day, month, year, quantity, ax, ndays, show_extra, tevo, file_start, file_stop, verbose))
+    logger.debug('Parameters: '
+                 '\n{11}day={0}'
+                 '\n{11}month={1}'
+                 '\n{11}year={2}'
+                 '\n{11}quantity={3}'
+                 '\n{11}ax={4}'
+                 '\n{11}ndays={5}'
+                 '\n{11}show_extra={6}'
+                 '\n{11}tevo={7}'
+                 '\n{11}file_start={8}'
+                 '\n{11}file_stop={9}'
+                 '\n{11}verbose={10}'
+                 .format(day, month, year, quantity, ax, ndays, show_extra, tevo, file_start, file_stop, verbose,
+                         tab_comm))
     df, col_index, t = read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
                                  file_stop=file_stop, verbose=verbose)
     logger.info("Building plot")
@@ -379,8 +399,11 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
         logger.error(err.args[0])
         raise
     logger.info('Comparison started')
-    logger.debug('PARAMETERS: rows_in_df={0} threshold={1} length={2} verbose={3}'.format(
-        len(data_frame.index), threshold, length, verbose))
+    logger.debug('Parameters:'
+                 '\n{4}rows_in_df={0}'
+                 '\n{4}threshold={1}'
+                 '\n{4}length={2}'
+                 '\n{4}verbose={3}'.format(len(data_frame.index), threshold, length, verbose, tab_comm))
     if not verbose:
         pass
     else:
@@ -423,8 +446,8 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     return data_to_check, frac_rejected
 
 
-def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10, threshold=0.03, ndays=1,
-        length=10000, ax1=None, file_start=None, file_stop=None, verbose=False):
+def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=10000, low_freq=2, high_freq=10,
+        psd_len=60, noise_th=0.03, rms_th=1e-11, ax1=None, file_start=None, file_stop=None, verbose=False):
     try:
         if not ax:
             raise TypeError("Ax can not be a 'NoneType' object")
@@ -441,10 +464,27 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     except ValueError as err:
         logger.error(err.args[0])
         raise
-    logger.debug('PARAMETERS: day={0} month={1} year={2} quantity={3} ax={4} interval={5} mode={6} low_freq={7} '
-                 'high_freq={8} threshold={9} ndays={10} length={11} ax1={12} file_start={13} file_stop={14} '
-                 'verbose={15}'.format(day, month, year, quantity, ax, interval, mode, low_freq, high_freq, threshold,
-                                       ndays, length, ax1, file_start, file_stop, verbose))
+    logger.debug('Parameters:'
+                 '\n{18}day={0}'
+                 '\n{18}month={1}'
+                 '\n{18}year={2}'
+                 '\n{18}quantity={3}'
+                 '\n{18}ax={4}'
+                 '\n{18}time_interval={5}'
+                 '\n{18}mode={6}'
+                 '\n{18}ndays={7}'
+                 '\n{18}length={8}'
+                 '\n{18}low_freq={9}'
+                 '\n{18}high_freq={10}'
+                 '\n{18}psd_len={11}'
+                 '\n{18}noise_th={12}'
+                 '\n{18}rms_th={13}'
+                 '\n{18}ax1={14}'
+                 '\n{18}file_start={15}'
+                 '\n{18}file_stop={16}'
+                 '\n{18}verbose={17}'
+                 .format(day, month, year, quantity, ax, time_interval, mode, ndays, length, low_freq, high_freq,
+                         psd_len, noise_th, rms_th, ax1, file_start, file_stop, verbose, tab_comm))
     logger.info("Evaluation of the PSD on '{}' started".format(quantity))
     df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                      file_stop=file_stop, verbose=verbose)
@@ -455,7 +495,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     logger.debug('rows_in_df_{0}={1} rows_in_df_itf={2} rows_in_df_pickoff={3}'.format(quantity, len(df_qty.index),
                                                                                        len(df_itf.index),
                                                                                        len(df_po.index)))
-    data_cleared, _ = th_comparison(df_qty, threshold=threshold, length=length, verbose=verbose)
+    data_cleared, _ = th_comparison(df_qty, threshold=noise_th, length=length, verbose=verbose)
     if not verbose:
         pass
     else:
@@ -465,7 +505,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
 
     logger.info('Cleaning from NaN values successfully completed')
-    num = int(60 * freq)  # TODO: Add checks for frequencies and add variable instead of fixed number (60)
+    num = int(psd_len * freq)  # TODO: Add checks for frequencies
     logger.debug('num={0}'.format(num))
     logger.info('Evaluating the PSD frequencies')
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
@@ -491,7 +531,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
 
     if mode.lower() == 'max interval':
         for el in data_first_check:
-            if len(el) >= interval * freq and len(el) > len_max:
+            if len(el) >= time_interval * freq and len(el) > len_max:
                 len_max = len(el)
                 outdata = el
                 file_index = list(ac.find_rk(df_qty.values.flatten(), el))
@@ -532,7 +572,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
                 pass
             else:
                 print(round(i / len(data_first_check) * 100, 2), '%')
-            if len(el) >= interval * freq:
+            if len(el) >= time_interval * freq:
                 el_s, _ = mlab.psd(el, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
                 logger.debug('el_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(el), num, freq))
                 el_s = el_s[1:]
@@ -585,7 +625,7 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
             integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
             logger.debug('RMS integral: {0}'.format(integral))
             integral_list.append(integral)
-            if not integral <= 1e-11:  # TODO: Add a variable instead of 1e-11
+            if not integral <= rms_th:
                 pass
             else:
                 indeces_lst.append(index)
@@ -622,8 +662,8 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
         opt_psd = opt_psd[1:]
         data_to_plot = np.sqrt(opt_psd) * alpha * pick_off_mean
 
-        ax.set_xscale("linear")
-        ax.set_xlim([2, 20])
+        ax.set_xscale("linear")  # TODO : add info in the config file
+        ax.set_xlim([low_freq, high_freq])
         ax.set_ylim([1.e-13, 1.e-8])
         ax.set_yscale("log")
 
@@ -634,7 +674,13 @@ def psd(day, month, year, quantity, ax, interval, mode, low_freq=2, high_freq=10
 
     ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
     ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
-    ax.plot(psd_f, data_to_plot, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca')
+    ax.plot(psd_f, data_to_plot, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca', linewidth=2)
+
+    results_df = pd.DataFrame(np.vstack((psd_f, data_to_plot)).transpose())
+    np.savetxt(r'.\Results\Arc_data.txt', results_df.values, header="Frequency\tData")
+
+
+    # TODO : save data to txt
 
     # TODO: plot difference between Virgo and our results
     # diff = (y-data_to_plot)/(y+data_to_plot)
