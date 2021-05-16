@@ -1,21 +1,13 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Production"
 
-from matplotlib.mlab import cohere
-from matplotlib import mlab
-from operator import itemgetter
-from itertools import groupby
 import datetime
 import numpy as np
 import pandas as pd
-import os
-import glob
-import re
-import logging
 import math
 
 
@@ -122,3 +114,10 @@ def time_tick_formatter(val, pos=None):
     """
     val = str(datetime.datetime.fromtimestamp(val).strftime('%b %d %H:%M:%S'))
     return val
+
+
+def hex_converter(path_to_data):
+    data = pd.read_table(path_to_data, sep=' ', na_filter=False, low_memory=False, engine='c', usecols=[2, 3, 4],
+                         header=None, dtype = str, converters={'conv': lambda x: hex(int(str(x), 2))})
+    data[[2, 3, 4]] = data[[2, 3, 4]].applymap(lambda x: hex(int(str(x), 2)))
+    return data

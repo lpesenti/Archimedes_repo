@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Production"
@@ -446,8 +446,100 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     return data_to_check, frac_rejected
 
 
-def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=10000, low_freq=2, high_freq=10,
+def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=10000, low_freq=2, high_freq=20,
         psd_len=60, noise_th=0.03, rms_th=1e-11, ax1=None, file_start=None, file_stop=None, verbose=False):
+    """
+    Evaluate the asd of a given quantity with respect to Virgo data.
+
+    Parameters
+    ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        quantity : str
+            The quantity to be read. It must be one of the following:
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        time_interval : int
+            It is used as the minimal length (expressed in seconds)
+            for the array in which perform the first evaluation of the psd.
+
+        mode : str
+            It must be one between 'max interval' or 'low noise'.
+            The mode can be written lower, upper or with capital case.
+            See Notes for further information.
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        length : int
+            Represent the length of each slice in which the data will be divided into.
+            The greater it is, the smaller will be the number of slice and so the comparison will be less
+            accurate but will require less time to perform it.
+            WARNING: a big number of length can cause a bad comparison due to the fluctuations in the signal.
+
+        low_freq : int
+            It is the lower limit of the range in which perform
+            the comparison and choice for the best array.
+            See Notes for further information
+
+        high_freq : int
+            It is the upper limit of the range in which perform
+            the comparison and choice for the best array.
+            See Notes for further information
+
+        psd_len : int
+            The length of the psd used expressed in seconds.
+
+        noise_th : float
+            The threshold used to clear the data from noise
+            and/or unwanted behaviour
+
+        rms_th : float
+            It represents the threshold used to find the best psd with lowest noise.
+            Please note that this quantity is necessary only for the 'low noise' mode.
+
+        ax1: matplotlib.axes.Axes
+            If not None a secondary plot is given.
+            In particular, the time evolution with the data selected is shown.
+
+        file_start : any
+            The first file to be read.
+
+        file_stop : any
+            The last file to be read.
+
+        verbose : bool
+            If True the verbosity is enabled.
+    Notes
+    -----
+    *quantity* takes only one of the following parameter:
+        - ITF : the signal from the interferometer expressed in V
+        - Pick Off : the signal from the pick-off expressed in V
+        - Signal injected : the signal from the waveform used expressed in V
+        - Error :
+        - Correction :
+        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
+        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
+        - After Noise :
+        - Time : the timestamp of the data saved every milli second in human-readable format
+    This function can be perform using two different modes:
+        - 'low noise': the function search for the best array in order to find the lowest psd.
+        - 'max interval': the function search for the longest array in which perform the psd.
+    In the first case the frequency range is [*low_freq* , *high_freq*].
+    Returns
+    -------
+    out : tuple
+        A tuple of an axes and the relative filename
+    """
     try:
         if not ax:
             raise TypeError("Ax can not be a 'NoneType' object")
@@ -455,6 +547,10 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
             raise AttributeError("Mode must be either 'low noise' or 'max interval'. You insert {0}".format(mode))
         if not low_freq < high_freq:
             raise ValueError("high_freq must be greater or equal than low_freq")
+        if not psd_len >= 10 / low_freq:
+            raise ValueError("the length of the psd cannot be used to analyze the frequency range inserted. "
+                             "You insert {0} but the minimum is {1}. Remember t_min=10/freq_min".format(psd_len,
+                                                                                                        10 / low_freq))
     except TypeError as err:
         logger.error(err.args[0])
         raise
@@ -505,7 +601,7 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
     data_first_check = [list(group) for key, group in groupby(data_cleared, lambda x: not np.isnan(x)) if key]
 
     logger.info('Cleaning from NaN values successfully completed')
-    num = int(psd_len * freq)  # TODO: Add checks for frequencies
+    num = int(psd_len * freq)
     logger.debug('num={0}'.format(num))
     logger.info('Evaluating the PSD frequencies')
     _, psd_f = mlab.psd(np.ones(num), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
@@ -657,8 +753,8 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
 
         opt_psd, _ = mlab.psd(optimal_data, NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
         logger.debug(
-            'opt_psd obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear, noverlap = {3}'.format(data_size, num,
-                                                                                                   freq, int(num / 2)))
+            'opt_psd obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear, noverlap={3}'.format(data_size, num,
+                                                                                                 freq, int(num / 2)))
         opt_psd = opt_psd[1:]
         data_to_plot = np.sqrt(opt_psd) * alpha * pick_off_mean
 
@@ -676,15 +772,9 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
     ax.plot(x_davide, y_davide, linestyle='-', color='tab:blue', label='@ Sos-Enattos Davide')
     ax.plot(psd_f, data_to_plot, linestyle='-', color='tab:orange', label='@ Sos-Enattos Luca', linewidth=2)
 
-    results_df = pd.DataFrame(np.vstack((psd_f, data_to_plot)).transpose())
-    np.savetxt(r'.\Results\Arc_data.txt', results_df.values, header="Frequency\tData")
-
-
-    # TODO : save data to txt
-
-    # TODO: plot difference between Virgo and our results
-    # diff = (y-data_to_plot)/(y+data_to_plot)
-    # ax.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
+    # To save data, unccomment the following lines
+    # results_df = pd.DataFrame(np.vstack((psd_f, data_to_plot)).transpose())
+    # np.savetxt(r'.\Results\Arc_data.txt', results_df.values, header="Frequency\tData")
 
     ax.set_xlabel("Frequency (Hz)", fontsize=20)
     ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
@@ -697,15 +787,18 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
     if ax1:
         logger.info("Building second plot")
 
-        opt_data_used_x = t[opt_index_used[0]:opt_index_used[0] + data_size + 1]
-        opt_data_used_y = df_qty[opt_index_used[0]:opt_index_used[0] + data_size + 1].values.flatten()
-        ax1.plot(t, df_qty[col_index], linestyle='dotted', label='All data')
-        ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Data used')
-        ax1.grid(True, linestyle='-')
-        ax1.xaxis.set_major_formatter(ac.time_tick_formatter)
+        diff = (y_davide - data_to_plot) / y_davide
+        ax1.plot(psd_f, diff, linestyle='-', label='(a-b)/(a+b)')
+        # opt_data_used_x = t[opt_index_used[0]:opt_index_used[0] + data_size + 1]
+        # opt_data_used_y = df_qty[opt_index_used[0]:opt_index_used[0] + data_size + 1].values.flatten()
+        # ax1.plot(t, df_qty[col_index], linestyle='dotted', label='All data')
+        # ax1.plot(opt_data_used_x, opt_data_used_y, linestyle='-', label='Data used')
+        ax1.grid(True, linestyle='--')
+        # ax1.xaxis.set_major_formatter(ac.time_tick_formatter)
         ax1.tick_params(axis='x', labelsize=16, which='both')
         ax1.tick_params(axis='y', labelsize=16, which='both')
-        ax1.set_ylabel(r"Voltage [V]", fontsize=16)
+        # ax1.set_ylabel(r"Voltage [V]", fontsize=16)
+        ax1.set_xscale("log")
         ax1.legend(loc='best', shadow=True, fontsize='large')
         logger.info("Second plot succesfully built")
     return ax, ax1
