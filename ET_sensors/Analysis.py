@@ -46,7 +46,7 @@ def Read_Inv(filexml, ch, sensor, t, Twindow, verbose):
         print(invxml)
     # select sensor and channel
     invxmls = invxml.select(station=sensor, channel=ch)
-    if sensor == 'SOE0' or sensor == 'SOE1' or sensor == 'SOE2':
+    if sensor == 'SOE0' or sensor == 'SOE1' or sensor == 'SOE2' or sensor == 'P2' or sensor == :
         seed_id = "ET." + sensor + ".." + ch
     else:
         seed_id = "DR." + sensor + ".." + ch

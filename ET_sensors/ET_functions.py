@@ -1,4 +1,8 @@
 import numpy as np
+from obspy import read, read_inventory, Stream
+from obspy.signal import PPSD
+from obspy.imaging.cm import pqlx
+import glob
 
 
 def NLNM(unit):
@@ -32,7 +36,143 @@ def NLNM(unit):
     return fl, lownoise, fh, highnoise
 
 
-def psd_rms_finder(data):
+def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
+    """
+    Read Inventory (xml file) of the sensor
+
+    Parameters
+    ----------
+    filexml : str
+	path and name of the xml file to be read
+    ch : str
+	sensor's channel to be read
+    sensor : str
+	sensor's name
+    t : UTCDateTime
+	time of the analysis
+    verbose : bool
+	If True the verbosity is enabled.
+
+    Notes
+    -----
+    response output in VEL
+
+    Returns
+    -------
+	A tuple for frequency and sensor's response, the sample frequency
+    """
+
+    # read inventory
+    invxml = read_inventory(filexml)
+    if verbose:
+        print(invxml)
+    # select sensor and channel
+    invxmls = invxml.select(network=network, station=sensor, channel=channel)
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    invxmls.plot_response(1/120, label_epoch_dates=True)
+    resp = invxmls.get_response(seed_id, t)
+    gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
+    if verbose:
+        print(resp)
+        print(gain)
+    # return a nested dictionary detailing the sampling rates of each response stage
+    sa = resp.get_sampling_rates()
+    # take the last output_sampling_rate
+    fsxml = sa[len(sa)]['output_sampling_rate']
+    if verbose:
+        print('fs xml', fsxml)
+    Num = int(Twindow * fsxml)
+    # Returns frequency response and corresponding frequencies using evalresp
+    #                                        time_res,       Npoints,  output
+    sresp, fxml = resp.get_evalresp_response(t_samp=1 / fsxml, nfft=Num, output="VEL")
+    fxml = fxml[1:]  # remove first value that is 0
+    sresp = sresp[1:]  # remove first value that is 0
+    # amplitude -> absolute frequency value
+    respamp = np.absolute(sresp * np.conjugate(sresp))
+    if verbose:
+        print('len respamp', len(respamp))
+
+    return fxml, respamp, fsxml, gain
+
+
+def Evaluate_PSD(filexml, Data_path, network, sensor, location, channel, tstart, tstop, Twindow, verbose):
+    """
+    Read sensor data and evaluate PSD
+
+    Parameters
+    ----------
+    filexml : str
+        path and name of the xml file to be read
+    ch : str
+        sensor's channel to be read
+    sensor : str
+        sensor's name
+    tstart : any
+        start time of the analysis
+    tstop : any
+        stop time of the analysis
+    Twindow : float
+	time window for the PSD
+    Overlap : float
+	overlap in percentage for the PSD windows
+    verbose : bool
+        If True the verbosity is enabled.
+
+    Notes
+    -----
+    Overlap should be lower than 50 %
+
+    Returns
+    -------
+        A tuple for frequency and sensor's PSD
+    """
+
+    # Time interval
+    yi = str(tstart.year)
+    mi = str(tstart.month)
+    di = str(tstart.day)
+    hi = str(tstart.hour)
+    mii = str(tstart.minute)
+    si = str(tstart.second)
+    doyi = tstart.strftime('%j')
+    yf = str(tstop.year)
+    mf = str(tstop.month)
+    doyf = tstop.strftime('%j')
+    if verbose:
+        print("Analysis from: ", yi, mi, doyi, " to: ", yf, mf, doyf)
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+    print("res", len(respamp))
+    # read filename
+    filename_list = glob.glob(Data_path + seed_id+"*")
+    print(filename_list)
+    st_tot = Stream()
+    for file in filename_list:
+        st = read(file)#, starttime=tstart, endtime=tf)
+        print(st)
+        st_tot += st
+    if verbose:
+        print(st_tot)
+
+    return st_tot
+
+
+def ppsd(stream, filexml, sensor, Twindow, Overlap):
+    invxml = read_inventory(filexml)
+    seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow, overlap=Overlap)
+    seism_ppsd.add(stream.select(station=sensor)[0])
+    seism_ppsd.add(stream.select(station=sensor)[1])
+    seism_ppsd.add(stream.select(station=sensor)[2])
+    seism_ppsd.add(stream.select(station=sensor)[3])
+    seism_ppsd.add(stream.select(station=sensor)[4])
+    seism_ppsd.add(stream.select(station=sensor)[5])
+    seism_ppsd.add(stream.select(station=sensor)[6])
+    seism_ppsd.add(stream.select(station=sensor)[7])
+    #seism_ppsd.add(stream.select(station=sensor)[8])
+    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 50))
+
+"""def psd_rms_finder(data):
     data_split = np.array_split(outdata, num_slice)
     for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
@@ -44,4 +184,4 @@ def psd_rms_finder(data):
         if not integral <= rms_th:
             pass
         else:
-            indeces_lst.append(index)
+            indeces_lst.append(index)"""
