@@ -5,7 +5,8 @@ from obspy.imaging.cm import pqlx
 import glob
 from matplotlib import mlab
 import matplotlib.pyplot as plt
-
+import time
+import datetime
 
 
 def NLNM(unit):
@@ -75,7 +76,7 @@ def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     resp = invxmls.get_response(seed_id, t)
     gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
     if verbose:
-        invxmls.plot_response(1/120, label_epoch_dates=True)
+        invxmls.plot_response(1 / 120, label_epoch_dates=True)
         print(resp)
         print(gain)
     # return a nested dictionary detailing the sampling rates of each response stage
@@ -148,11 +149,11 @@ def Evaluate_PSD(filexml, Data_path, network, sensor, location, channel, tstart,
     fxml, respamp, fsxml, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
     print("res", len(respamp))
     # read filename
-    filename_list = glob.glob(Data_path + seed_id+"*")
+    filename_list = glob.glob(Data_path + seed_id + "*")
     print(filename_list)
     st_tot = Stream()
     for file in filename_list:
-        st = read(file)#, starttime=tstart, endtime=tf)
+        st = read(file)  # , starttime=tstart, endtime=tf)
         print(st)
         st_tot += st
     if verbose:
@@ -169,31 +170,49 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
 
     seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 50))
 
-def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap):
+
+def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap):  # , ax, ax1):
     _, _, _, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
     data = np.array([])
     vec_rms = np.array([])
     for itrace in range(len(stream)):
-        data = np.append(data, np.array(stream[itrace])/gain)
+        data = np.append(data, np.array(stream[itrace]) / gain)
     fs = stream[0].stats.sampling_rate
-    Num = int(Twindow*fs)
-    data_split = np.array_split(data, len(data)/Num)
+    Num = int(Twindow * fs)
+    data_split = np.array_split(data, len(data) / Num)
     _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=Overlap)
     f_s = f_s[1:]
     print(f_s)
     start = np.where(f_s == 1)[0][0]
     stop = np.where(f_s == 10)[0][0]
+    integral_min = np.inf
+    best_psd = np.array([])
     for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
         chunk_s = chunk_s[1:]
-        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))#* (f_s[1]-f_s[0]))
+        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
         vec_rms = np.append(vec_rms, integral)
-        '''if integral < integral_min:
+        if integral < integral_min:
             integral_min = integral
-            file_index = list(ac.find_rk(df_qty.values.flatten(), el))
-            outdata = el
-            length_data_used = len(el)'''
-    plt.hist(vec_rms, bins=200)
-    #plt.xscale('log')
-    plt.yscale('log')
+            best_psd = chunk_s
+            print(index)
+            t = tstart.datetime
+            print(time.strftime('%d/%m/%y %H:%M:%S', time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
+
+    nlnm_fl, nlnm_lownoise, nlnm_fh, nlnm_highnoise = NLNM(1)
+    fig0 = plt.figure()
+    fig1 = plt.figure()
+    ax0 = fig0.add_subplot()
+    ax1 = fig1.add_subplot()
+    ax0.plot(f_s, best_psd, linestyle='-', color='red', label='Best PSD')
+    # ax0.plot(nlnm_fl, nlnm_lownoise/gain, color='black')
+    # ax0.plot(nlnm_fh, nlnm_highnoise/gain, color='black')
+    ax0.set_xscale("log")
+    ax0.set_yscale("log")
+    ax0.grid(True, linestyle='--', which='both')
+    ax0.legend(loc='best', shadow=True, fontsize='medium')
+    ax1.hist(vec_rms, bins=200)
+    ax1.grid(True, linestyle='--', which='both')
+    # plt.xscale('log')
+    ax1.set_yscale("log")
     plt.show()
