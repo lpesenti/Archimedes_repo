@@ -3,6 +3,9 @@ from obspy import read, read_inventory, Stream
 from obspy.signal import PPSD
 from obspy.imaging.cm import pqlx
 import glob
+from matplotlib import mlab
+import matplotlib.pyplot as plt
+
 
 
 def NLNM(unit):
@@ -69,10 +72,10 @@ def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     # select sensor and channel
     invxmls = invxml.select(network=network, station=sensor, channel=channel)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
-    invxmls.plot_response(1/120, label_epoch_dates=True)
     resp = invxmls.get_response(seed_id, t)
     gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
     if verbose:
+        invxmls.plot_response(1/120, label_epoch_dates=True)
         print(resp)
         print(gain)
     # return a nested dictionary detailing the sampling rates of each response stage
@@ -161,27 +164,36 @@ def Evaluate_PSD(filexml, Data_path, network, sensor, location, channel, tstart,
 def ppsd(stream, filexml, sensor, Twindow, Overlap):
     invxml = read_inventory(filexml)
     seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow, overlap=Overlap)
-    seism_ppsd.add(stream.select(station=sensor)[0])
-    seism_ppsd.add(stream.select(station=sensor)[1])
-    seism_ppsd.add(stream.select(station=sensor)[2])
-    seism_ppsd.add(stream.select(station=sensor)[3])
-    seism_ppsd.add(stream.select(station=sensor)[4])
-    seism_ppsd.add(stream.select(station=sensor)[5])
-    seism_ppsd.add(stream.select(station=sensor)[6])
-    seism_ppsd.add(stream.select(station=sensor)[7])
-    #seism_ppsd.add(stream.select(station=sensor)[8])
+    for itrace in range(len(stream)):
+        seism_ppsd.add(stream.select(station=sensor)[itrace])
+
     seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 50))
 
-"""def psd_rms_finder(data):
-    data_split = np.array_split(outdata, num_slice)
+def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap):
+    _, _, _, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
+    data = np.array([])
+    vec_rms = np.array([])
+    for itrace in range(len(stream)):
+        data = np.append(data, np.array(stream[itrace])/gain)
+    fs = stream[0].stats.sampling_rate
+    Num = int(Twindow*fs)
+    data_split = np.array_split(data, len(data)/Num)
+    _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=Overlap)
+    f_s = f_s[1:]
+    print(f_s)
+    start = np.where(f_s == 1)[0][0]
+    stop = np.where(f_s == 10)[0][0]
     for index, chunk in enumerate(data_split):
-        chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
-        logger.debug('chunk_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(chunk), num, freq))
+        chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
         chunk_s = chunk_s[1:]
-        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
-        logger.debug('RMS integral: {0}'.format(integral))
-        integral_list.append(integral)
-        if not integral <= rms_th:
-            pass
-        else:
-            indeces_lst.append(index)"""
+        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))#* (f_s[1]-f_s[0]))
+        vec_rms = np.append(vec_rms, integral)
+        '''if integral < integral_min:
+            integral_min = integral
+            file_index = list(ac.find_rk(df_qty.values.flatten(), el))
+            outdata = el
+            length_data_used = len(el)'''
+    plt.hist(vec_rms, bins=200)
+    #plt.xscale('log')
+    plt.yscale('log')
+    plt.show()

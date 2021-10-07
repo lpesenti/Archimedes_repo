@@ -10,7 +10,7 @@ sensor = 'P2'
 location = '01'
 channel = 'HHZ'
 ti = UTCDateTime("2021-09-14T00:00:00")
-Twindow = 30
+Twindow = 300
 verbose = True
 Overlap = 0
 
@@ -19,4 +19,5 @@ if __name__ == '__main__':
     # fxml, respamp, fsxml, gain = ET.Read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
     st_tot = ET.Evaluate_PSD(XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000, Twindow,
                              verbose=verbose)
-    ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
+    #ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
+    ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap)
