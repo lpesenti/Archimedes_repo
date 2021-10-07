@@ -33,4 +33,15 @@ def NLNM(unit):
 
 
 def psd_rms_finder(data):
-    print('hi')
+    data_split = np.array_split(outdata, num_slice)
+    for index, chunk in enumerate(data_split):
+        chunk_s, _ = mlab.psd(chunk, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+        logger.debug('chunk_s obtained with N={0}, NFFT={1}, Fs={2}, detrend=linear'.format(len(chunk), num, freq))
+        chunk_s = chunk_s[1:]
+        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))
+        logger.debug('RMS integral: {0}'.format(integral))
+        integral_list.append(integral)
+        if not integral <= rms_th:
+            pass
+        else:
+            indeces_lst.append(index)
