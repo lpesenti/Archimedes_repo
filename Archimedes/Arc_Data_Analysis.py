@@ -9,6 +9,7 @@ import configparser
 import logging.handlers
 import timeit
 from time import time
+import os
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -52,36 +53,38 @@ error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 58
 error_mail_handler.setFormatter(mail_formatter)
 error_mail_handler.setLevel(logging.WARNING)
 
-rootLogger.addHandler(error_mail_handler)
+# rootLogger.addHandler(error_mail_handler)
 rootLogger.addHandler(debug_Handler)
 rootLogger.addHandler(info_Handler)
 rootLogger.addHandler(streamHandler)
 
 mpl.rcParams['agg.path.chunksize'] = 5000000
-path_to_img = r"D:\Archimedes\Images"
+path_to_img = config['Paths']['images_dir']
 
 if __name__ == '__main__':
     logging.info('Started')
     start = timeit.default_timer()
 
-    fig1 = plt.figure()
-    # mng = plt.get_current_fig_manager()
-    # mng.window.state('zoomed')
     fig0 = plt.figure()
-    # mng = plt.get_current_fig_manager()
-    # mng.window.state('zoomed')
-    fig1.suptitle('Data from 22/11/2020')
-    fig0.suptitle('Data from 22/11/2020')
-    ax1 = fig1.add_subplot()
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
+    fig1 = plt.figure()
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')
+    # fig0.suptitle('Data from 18/05/2021')
+    # fig1.suptitle('Data from 18/05/2021')
     ax0 = fig0.add_subplot()
-    # af.read_data(day=22, month=11, year=2020, quantity='Error',file_start=1, file_stop=1)
-    af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax1, interval=300, mode='low noise')
-    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax1, show_extra=True)
-    # af.time_evolution(day=22, month=11, year=2020, quantity='Pick Off', ax=ax0)
+    ax1 = fig1.add_subplot()
+    # fig2 = plt.figure()
     # mng = plt.get_current_fig_manager
     # mng.window.state('zoomed')
-    # fig0.savefig(os.path.join(path_to_img, r'20201122_Data_used.png'))
-    # fig1.savefig(os.path.join(path_to_img, r'20201122_ASD.png'))
+    # ax2 = fig2.add_subplot()
+    # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
+    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax0)
+    af.easy_psd(day=22, month=11, year=2020, quantity='error', ax=ax0, init_time='23:25:36.094358', final_time='23:55:35.994314')
+    # af.time_evolution(day=18, month=5, year=2021, quantity='itf', ax=ax0)
+    # fig0.savefig(os.path.join(path_to_img, fname1))
+    # fig1.savefig(os.path.join(path_to_img, fname2))
     # pkl.dump(fig1, open(os.path.join(path_to_img, r'20201122_ASD.pickle'), 'wb'))
     stop = timeit.default_timer()
     print('Time before plt.show(): ', (stop - start), 's')

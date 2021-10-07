@@ -581,6 +581,7 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
                          psd_len, noise_th, rms_th, ax1, file_start, file_stop, verbose, tab_comm))
     logger.info("Evaluation of the PSD on '{}' started".format(quantity))
     # TODO: add option to select data using datetime (user insert datetime and I convert in timestamp -> np.where)
+    # TODO: add the correction factor. After the correction search for the lowest psd.
     df_qty, col_index, t = read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                      file_stop=file_stop, verbose=verbose)
     df_itf, itf_index, _ = read_data(day=day, month=month, year=year, quantity='ITF', num_d=ndays, file_start=None,
@@ -816,12 +817,12 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     # data_folder = os.path.join(path_to_data, "SosEnattos_Data_{0}{1}{2}".format(year, month_str, day))
     # temp_data = glob.glob(os.path.join(data_folder, "SCI*.lvm"))
     # temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
-    start_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(23, month, year, init_time)))
+    start_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(22, month, year, init_time)))
 
     if day2:
         end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(day2, month, year, final_time)))
     else:
-        end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(23, month, year, final_time)))
+        end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(22, month, year, final_time)))
     #
     # new_lst = [x.replace(data_folder + r'\SCI_', '').replace('.lvm', '').replace('-', '/').replace('_', ' ') for x in
     #            temp_data]
@@ -853,32 +854,39 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     v_sum = v_max + v_min
     v_diff = v_max - v_min
 
+    print('first psd')
+
     psd_s, psd_f = mlab.psd(data_to_use, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
     psd_s = psd_s[1:]
     psd_f = psd_f[1:]
+    new_data = np.array([])
 
     i = 0
+    print('start for')
+    print(itf_to_use.size)
     for element in itf_to_use:
-        phi = np.arccos(2 * element / v_diff - v_sum / v_diff)
-        data_to_use[i] = data_to_use[i] / np.sin(phi)
+        theta = first_coef * np.arccos(2 * element / v_diff - v_sum / v_diff) / 2
+        data_to_use[i] = theta / po_to_use[i]
         i += 1
+    print('end for')
 
     alpha = np.abs(first_coef / v_diff)
     pick_off_mean = np.abs(np.mean(po_to_use))
 
     psd_s2, _ = mlab.psd(data_to_use, NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
     psd_s2 = psd_s2[1:]
+    print('second psd')
 
     asd = np.sqrt(psd_s) * alpha * pick_off_mean
-    asd2 = np.sqrt(psd_s2) * alpha * pick_off_mean
+    asd2 = np.sqrt(psd_s2) * pick_off_mean
 
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
     ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
     ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos article')
-    ax.plot(psd_f, asd, linestyle='-', color='tab:orange', label='@ Sos-Enattos half fringe', linewidth=2)
-    ax.plot(psd_f, asd2, linestyle='-', color='black', label='@ Sos-Enattos half fringe corrected')
+    # ax.plot(psd_f, asd, linestyle='-', color='tab:orange', label='@ Sos-Enattos normal', linewidth=2)
+    ax.plot(psd_f, asd2, linestyle='-', color='black', label='@ Sos-Enattos theta')
     # ax.plot(psd_f, np.abs((asd - asd2) / (asd + asd2)), linestyle='-', label=r'$|\frac{a-b}{a+b}|$', linewidth=2)
 
     # To save data, unccomment the following lines
@@ -893,7 +901,7 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     ax.legend(loc='best', shadow=True, fontsize='large')
     ax.set_xscale("linear")
     ax.set_xlim([2, 20])
-    ax.set_ylim([1.e-13, 1.e-8])
+    # ax.set_ylim([1.e-13, 1.e-8])
     ax.set_yscale("log")
     ax.set_title('From {0}/{1}/{2} {3} to {0}/{1}/{2} {4}'.format(day, month, year, init_time, final_time))
     if ax1:
@@ -906,12 +914,10 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
         ax1.tick_params(axis='y', labelsize=16, which='both')
         ax1.set_ylabel(r"Voltage [V]", fontsize=16)
         ax1.legend(loc='best', shadow=True, fontsize='large')
-    # filename1 = "ASD_{0}{1}{2}_{3}-{4}.png".format(year, month_str, day, init_time.replace(':', ''),
-    #                                                final_time.replace(':', ''))
-    # filename2 = "DataSel_{0}{1}{2}_{3}-{4}.png".format(year, month_str, day, init_time.replace(':', ''),
-    #                                                    final_time.replace(':', ''))
-    filename1 = 'Half_fringe_corrected_linear'
-    filename2 = 'Half_fringe_corrected_log'
+    filename1 = "ASD_{0}{1}{2}_{3}-{4}.png".format(year, month_str, day, init_time.replace(':', ''),
+                                                   final_time.replace(':', ''))
+    filename2 = "DataSel_{0}{1}{2}_{3}-{4}.png".format(year, month_str, day, init_time.replace(':', ''),
+                                                       final_time.replace(':', ''))
     return ax, filename1, filename2
 
 
