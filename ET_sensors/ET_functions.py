@@ -10,6 +10,18 @@ import datetime
 
 
 def NLNM(unit):
+    """
+    The Peterson model represents an ensemble of seismic spectra measured in a worldwide network (Peterson 1993,
+    U.S. Geol. Surv. Rept. 2 93–322). In this way it is possible to define a low noise model (NLNM) and an high noise
+    model (NHNM) representing respectively the minimum and the maximum natural seismic background that can be found
+    on Earth. Here we define these two curves.
+
+    :param unit:
+        none
+
+    :return:
+        A tuple for frequency, NLNM, freq, NHNM
+    """
     PL = np.array([0.1, 0.17, 0.4, 0.8, 1.24, 2.4, 4.3, 5, 6, 10, 12, 15.6, 21.9, 31.6, 45, 70,
                    101, 154, 328, 600, 10000])
     AL = np.array([-162.36, -166.7, -170, -166.4, -168.6, -159.98, -141.1, -71.36, -97.26,
@@ -44,26 +56,25 @@ def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     """
     Read Inventory (xml file) of the sensor
 
-    Parameters
-    ----------
-    filexml : str
-	path and name of the xml file to be read
-    ch : str
-	sensor's channel to be read
-    sensor : str
-	sensor's name
-    t : UTCDateTime
-	time of the analysis
-    verbose : bool
-	If True the verbosity is enabled.
+    :param filexml:
+        path and name of the xml file to be read
+    :param network:
+        sensor network
+    :param sensor:
+        name of the sensor
+    :param location:
+        location of the sensor
+    :param channel:
+        channel to be analysed
+    :param t:
+        UTC time of the analysis
+    :param Twindow:
+        time range for PSD
+    :param verbose:
+        If True the verbosity is enabled
 
-    Notes
-    -----
-    response output in VEL
-
-    Returns
-    -------
-	A tuple for frequency and sensor's response, the sample frequency
+    :return:
+        A tuple for frequency and sensor's response, the sample frequency
     """
 
     # read inventory
@@ -99,35 +110,32 @@ def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     return fxml, respamp, fsxml, gain
 
 
-def Evaluate_PSD(filexml, Data_path, network, sensor, location, channel, tstart, tstop, Twindow, verbose):
+def Extract_stream(filexml, Data_path, network, sensor, location, channel, tstart, tstop, Twindow, verbose):
     """
-    Read sensor data and evaluate PSD
+    Extract the stream from data file
 
-    Parameters
-    ----------
-    filexml : str
+    :param filexml:
         path and name of the xml file to be read
-    ch : str
-        sensor's channel to be read
-    sensor : str
-        sensor's name
-    tstart : any
-        start time of the analysis
-    tstop : any
-        stop time of the analysis
-    Twindow : float
-	time window for the PSD
-    Overlap : float
-	overlap in percentage for the PSD windows
-    verbose : bool
-        If True the verbosity is enabled.
+    :param Data_path:
+        path of the data file to be read
+    :param network:
+        sensor network
+    :param sensor:
+        name of the sensor
+    :param location:
+        location of the sensor
+    :param channel:
+        channel to be analysed
+    :param tstart:
+        UTC start
+    :param tstop:
+        UTC stop
+    :param Twindow:
+        time range for PSD
+    :param verbose:
+        If True the verbosity is enabled
 
-    Notes
-    -----
-    Overlap should be lower than 50 %
-
-    Returns
-    -------
+    :return:
         A tuple for frequency and sensor's PSD
     """
 
@@ -163,6 +171,23 @@ def Evaluate_PSD(filexml, Data_path, network, sensor, location, channel, tstart,
 
 
 def ppsd(stream, filexml, sensor, Twindow, Overlap):
+    """
+    Make PPSD plot
+
+    :param stream:
+        stream of data
+    :param filexml:
+        path and name of the xml file to be read
+    :param sensor:
+        name of the sensor
+    :param Twindow:
+        time range for PSD
+    :param Overlap:
+        PSD overlap should be lower than 50 %
+
+    :return:
+        PPSD plot with NoiseModel
+    """
     invxml = read_inventory(filexml)
     seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow, overlap=Overlap)
     for itrace in range(len(stream)):
@@ -172,6 +197,31 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
 
 
 def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap):  # , ax, ax1):
+    """
+    Best PSD and RMS finder function
+
+    :param stream:
+        data stream
+    :param filexml:
+        path and name of the xml file to be read
+    :param network:
+        sensor network
+    :param sensor:
+        name of the sensor
+    :param location:
+        location of the sensor
+    :param channel:
+        channel to be analysed
+    :param tstart:
+        UTC start
+    :param Twindow:
+        time range for PSD
+    :param Overlap:
+        PSD overlap should be lower than 50 %
+
+    :return:
+        PSD and RMS plots
+    """
     _, _, _, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
     data = np.array([])
     vec_rms = np.array([])
@@ -197,7 +247,8 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
             best_psd = chunk_s
             print(index)
             t = tstart.datetime
-            print(time.strftime('%d/%m/%y %H:%M:%S', time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
+            print(time.strftime('%d/%m/%y %H:%M:%S',
+                                time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
 
     nlnm_fl, nlnm_lownoise, nlnm_fh, nlnm_highnoise = NLNM(1)
     fig0 = plt.figure()
