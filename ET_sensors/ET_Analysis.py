@@ -1,23 +1,30 @@
-import obspy
 from obspy import UTCDateTime
 import ET_functions as ET
+import configparser
 
-XML_path = r'/Users/drozza/Downloads/'
-Data_path = r'/Users/drozza/Downloads/P3-P2-preliminary/BKP_Sardegna_P2/2021/09/'
-XML_file = 'cjunkk_ETScope_1.xml'
-network = 'ET'
-sensor = 'P2'
-location = '01'
-channel = 'HHZ'
-ti = UTCDateTime("2021-09-14T00:00:00")
-Twindow = 300
-verbose = False
-Overlap = 0
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+XML_path = config['Paths']['xml_path']
+Data_path = config['Paths']['data_path']
+XML_file = config['Paths']['xml_filename']
+
+network = config['Instrument']['network']
+sensor = config['Instrument']['sensor']
+location = config['Instrument']['location']
+channel = config['Instrument']['channel']
+
+ti = UTCDateTime(config['Quantities']['start_date'])
+Twindow = float(config['Quantities']['psd_window'])
+Overlap = float(config['Quantities']['psd_overlap'])
+means = float(config['Quantities']['number_of_means'])
+verbose = config['Quantities']['verbose']
+
 
 if __name__ == '__main__':
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
     st_tot = ET.extract_stream(XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000, Twindow,
                              verbose=verbose)
-    #ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
-    ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap)
+    ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
+    ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap, means, verbose)
