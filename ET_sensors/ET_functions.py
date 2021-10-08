@@ -52,7 +52,7 @@ def NLNM(unit):
     return fl, lownoise, fh, highnoise
 
 
-def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
+def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     """
     Read Inventory (xml file) of the sensor
 
@@ -110,12 +110,14 @@ def Read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     return fxml, respamp, fsxml, gain
 
 
-def Extract_stream(filexml, Data_path, network, sensor, location, channel, tstart, tstop, Twindow, verbose):
+def extract_stream(filexml, Data_path, network, sensor, location, channel, tstart, tstop, Twindow, verbose):
     """
     Extract the stream from data file
 
     :param filexml:
         path and name of the xml file to be read
+    :type filexml:
+        str
     :param Data_path:
         path of the data file to be read
     :param network:
