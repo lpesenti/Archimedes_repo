@@ -187,14 +187,18 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
         PPSD plot with NoiseModel
     """
     invxml = read_inventory(filexml)
-    seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow, overlap=Overlap)
+    fs = stream[0].stats.sampling_rate
+    Num = Twindow * fs
+    seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow,
+                      overlap=int(Overlap / 100 * Num))
     for itrace in range(len(stream)):
         seism_ppsd.add(stream.select(station=sensor)[itrace])
 
-    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 50))
+    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, fs/2))
 
 
-def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, verbose):  # , ax, ax1):
+def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, mean_number,
+                   verbose):  # , ax, ax1):
     """
     Best PSD and RMS finder function
 
@@ -228,7 +232,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     fs = stream[0].stats.sampling_rate
     Num = int(Twindow * fs)
     data_split = np.array_split(data, len(data) / Num)
-    _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=Overlap)
+    _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=int(Overlap / 100 * Num))
     f_s = f_s[1:]
     start = np.where(f_s == 1)[0][0]
     stop = np.where(f_s == 10)[0][0]
@@ -247,7 +251,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
             if verbose:
                 print(time.strftime('%d/%m/%y %H:%M:%S',
                                     time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
-    best_psd, f_best = mlab.psd(data, NFFT=int(Num/3), Fs=fs, detrend="linear", noverlap=Overlap)
+    best_psd, f_best = mlab.psd(data, NFFT=int(Num / mean_number), Fs=fs, detrend="linear", noverlap=int(Overlap / 100 * Num/mean_number))
     f_best = f_best[1:]
     best_psd = best_psd[1:]
     fl, nlnm, fh, nhnm = NLNM(2)
@@ -262,7 +266,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     ax0.plot(fh, nhnm, 'k--')
     ax0.set_xscale("log")
     ax0.set_yscale("log")
-    ax0.set_xlim([0.01, 10])
+    ax0.set_xlim([0.01, fs/2])
     ax0.set_ylim([1e-11, 1e-5])
     ax0.grid(True, linestyle='--')
     ax0.legend(loc='best', shadow=True, fontsize='medium')
