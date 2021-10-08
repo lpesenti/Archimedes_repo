@@ -17,7 +17,7 @@ def NLNM(unit):
     on Earth. Here we define these two curves.
 
     :param unit:
-        none
+        unit = 1 displacement, = 2 spped
 
     :return:
         A tuple for frequency, NLNM, freq, NHNM
@@ -156,7 +156,7 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
         print("Analysis from: ", yi, mi, doyi, " to: ", yf, mf, doyf)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     # Read Inventory and get freq array, response array, sample freq.
-    fxml, respamp, fsxml, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
     print("res", len(respamp))
     # read filename
     filename_list = glob.glob(Data_path + seed_id + "*")
@@ -224,7 +224,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     :return:
         PSD and RMS plots
     """
-    _, _, _, gain = Read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
+    _, _, _, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
     data = np.array([])
     vec_rms = np.array([])
     for itrace in range(len(stream)):
@@ -257,17 +257,23 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     fig1 = plt.figure()
     ax0 = fig0.add_subplot()
     ax1 = fig1.add_subplot()
-    ax0.plot(f_s, np.sqrt(best_psd), linestyle='-', color='red', label='Best PSD')
-    ax0.plot(fl, nlnm, 'k--')
+    ax0.tick_params(axis='both', which='both', labelsize=15)
+    ax1.tick_params(axis='both', which='both', labelsize=15)
+    ax0.plot(f_s, np.sqrt(best_psd), linestyle='-', color='tab:blue', label='Best PSD')
+    ax0.plot(fl, nlnm, 'k--', label="Noise Model")
     ax0.plot(fh, nhnm, 'k--')
     ax0.set_xscale("log")
     ax0.set_yscale("log")
     ax0.set_xlim([0.01, 10])
     ax0.set_ylim([1e-11, 1e-5])
-    ax0.grid(True, linestyle='--', which='both')
+    ax0.grid(True, linestyle='--')#, which='both')
     ax0.legend(loc='best', shadow=True, fontsize='medium')
+    ax0.set_xlabel('Frequency [Hz]', fontsize=20)
+    ax0.set_ylabel(r'Seismic [(m/s)/$\sqrt{Hz}$]', fontsize=20)
     ax1.hist(vec_rms, bins=200)
-    ax1.grid(True, linestyle='--', which='both')
+    ax1.grid(True, linestyle='--')#, which='both')
     # plt.xscale('log')
     ax1.set_yscale("log")
+    ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
+    ax1.set_ylabel(r'Counts', fontsize=20)
     plt.show()
