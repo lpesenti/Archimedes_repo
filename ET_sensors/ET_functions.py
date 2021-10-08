@@ -95,7 +95,7 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     # take the last output_sampling_rate
     fsxml = sa[len(sa)]['output_sampling_rate']
     if verbose:
-        print('fs xml', fsxml)
+        print('Sampling rate:', fsxml)
     Num = int(Twindow * fsxml)
     # Returns frequency response and corresponding frequencies using evalresp
     #                                        time_res,       Npoints,  output
@@ -105,7 +105,7 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     # amplitude -> absolute frequency value
     respamp = np.absolute(sresp * np.conjugate(sresp))
     if verbose:
-        print('len respamp', len(respamp))
+        print('Response amplitude length:', len(respamp))
 
     return fxml, respamp, fsxml, gain
 
@@ -144,10 +144,6 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
     # Time interval
     yi = str(tstart.year)
     mi = str(tstart.month)
-    di = str(tstart.day)
-    hi = str(tstart.hour)
-    mii = str(tstart.minute)
-    si = str(tstart.second)
     doyi = tstart.strftime('%j')
     yf = str(tstop.year)
     mf = str(tstop.month)
@@ -157,14 +153,14 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     # Read Inventory and get freq array, response array, sample freq.
     fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
-    print("res", len(respamp))
-    # read filename
     filename_list = glob.glob(Data_path + seed_id + "*")
-    print(filename_list)
+    if verbose:
+        print('Response amplitude length:', len(respamp))
+        print(filename_list)
+    # read filename
     st_tot = Stream()
     for file in filename_list:
         st = read(file)  # , starttime=tstart, endtime=tf)
-        print(st)
         st_tot += st
     if verbose:
         print(st_tot)
@@ -198,7 +194,7 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
     seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 50))
 
 
-def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap):  # , ax, ax1):
+def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, verbose):  # , ax, ax1):
     """
     Best PSD and RMS finder function
 
@@ -234,11 +230,10 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     data_split = np.array_split(data, len(data) / Num)
     _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=Overlap)
     f_s = f_s[1:]
-    print(f_s)
     start = np.where(f_s == 1)[0][0]
     stop = np.where(f_s == 10)[0][0]
     integral_min = np.inf
-    #best_psd = np.array([])
+
     data = np.array([])
     for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
@@ -247,12 +242,11 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
         vec_rms = np.append(vec_rms, integral)
         if integral < integral_min:
             integral_min = integral
-            #best_psd = chunk_s
             data = chunk
-            print(index)
             t = tstart.datetime
-            print(time.strftime('%d/%m/%y %H:%M:%S',
-                                time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
+            if verbose:
+                print(time.strftime('%d/%m/%y %H:%M:%S',
+                                    time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
     best_psd, f_best = mlab.psd(data, NFFT=int(Num/3), Fs=fs, detrend="linear", noverlap=Overlap)
     f_best = f_best[1:]
     best_psd = best_psd[1:]
@@ -270,13 +264,12 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     ax0.set_yscale("log")
     ax0.set_xlim([0.01, 10])
     ax0.set_ylim([1e-11, 1e-5])
-    ax0.grid(True, linestyle='--')#, which='both')
+    ax0.grid(True, linestyle='--')
     ax0.legend(loc='best', shadow=True, fontsize='medium')
     ax0.set_xlabel('Frequency [Hz]', fontsize=20)
     ax0.set_ylabel(r'Seismic [(m/s)/$\sqrt{Hz}$]', fontsize=20)
     ax1.hist(vec_rms, bins=200)
-    ax1.grid(True, linestyle='--')#, which='both')
-    # plt.xscale('log')
+    ax1.grid(True, linestyle='--')
     ax1.set_yscale("log")
     ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
     ax1.set_ylabel(r'Counts', fontsize=20)
