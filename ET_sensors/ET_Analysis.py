@@ -11,7 +11,7 @@ location = '01'
 channel = 'HHZ'
 ti = UTCDateTime("2021-09-14T00:00:00")
 Twindow = 300
-verbose = True
+verbose = False
 Overlap = 0
 
 if __name__ == '__main__':

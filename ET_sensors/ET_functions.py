@@ -238,7 +238,8 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     start = np.where(f_s == 1)[0][0]
     stop = np.where(f_s == 10)[0][0]
     integral_min = np.inf
-    best_psd = np.array([])
+    #best_psd = np.array([])
+    data = np.array([])
     for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
         chunk_s = chunk_s[1:]
@@ -246,12 +247,15 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
         vec_rms = np.append(vec_rms, integral)
         if integral < integral_min:
             integral_min = integral
-            best_psd = chunk_s
+            #best_psd = chunk_s
+            data = chunk
             print(index)
             t = tstart.datetime
             print(time.strftime('%d/%m/%y %H:%M:%S',
                                 time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
-
+    best_psd, f_best = mlab.psd(data, NFFT=int(Num/3), Fs=fs, detrend="linear", noverlap=Overlap)
+    f_best = f_best[1:]
+    best_psd = best_psd[1:]
     fl, nlnm, fh, nhnm = NLNM(2)
     fig0 = plt.figure()
     fig1 = plt.figure()
@@ -259,7 +263,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     ax1 = fig1.add_subplot()
     ax0.tick_params(axis='both', which='both', labelsize=15)
     ax1.tick_params(axis='both', which='both', labelsize=15)
-    ax0.plot(f_s, np.sqrt(best_psd), linestyle='-', color='tab:blue', label='Best PSD')
+    ax0.plot(f_best, np.sqrt(best_psd), linestyle='-', color='tab:blue', label='Best PSD')
     ax0.plot(fl, nlnm, 'k--', label="Noise Model")
     ax0.plot(fh, nhnm, 'k--')
     ax0.set_xscale("log")
