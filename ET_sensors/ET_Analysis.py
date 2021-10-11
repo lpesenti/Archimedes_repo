@@ -24,7 +24,7 @@ verbose = config['Quantities']['verbose']
 if __name__ == '__main__':
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
-    st_tot = ET.extract_stream(XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000, Twindow,
+    st_tot = ET.extract_stream(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000, Twindow,
                              verbose=verbose)
     ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
-    ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap, means, verbose)
+    # ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap, means, verbose)
