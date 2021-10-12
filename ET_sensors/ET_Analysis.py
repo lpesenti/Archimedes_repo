@@ -27,4 +27,4 @@ if __name__ == '__main__':
     st_tot = ET.extract_stream(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000, Twindow,
                              verbose=verbose)
     ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
-    # ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap, means, verbose)
+    ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel, ti, Twindow, Overlap, means, verbose)

@@ -154,6 +154,7 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
     # Read Inventory and get freq array, response array, sample freq.
     fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
     filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
     if verbose:
         print('Response amplitude length:', len(respamp))
         print(filename_list)
