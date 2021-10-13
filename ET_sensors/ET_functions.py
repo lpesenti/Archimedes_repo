@@ -4,6 +4,7 @@ from obspy.signal import PPSD
 from obspy.imaging.cm import pqlx
 import glob
 from matplotlib import mlab
+from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
 import time
 import datetime
@@ -195,7 +196,7 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
     for itrace in range(len(stream)):
         seism_ppsd.add(stream.select(station=sensor)[itrace])
 
-    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, fs/2))
+    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, fs / 2))
 
 
 def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, mean_number,
@@ -226,6 +227,7 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
         PSD and RMS plots
     """
     _, _, _, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
     data = np.array([])
     vec_rms = np.array([])
     for itrace in range(len(stream)):
@@ -252,30 +254,46 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
             if verbose:
                 print(time.strftime('%d/%m/%y %H:%M:%S',
                                     time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
-    best_psd, f_best = mlab.psd(data, NFFT=int(Num / mean_number), Fs=fs, detrend="linear", noverlap=int(Overlap / 100 * Num/mean_number))
+    best_psd, f_best = mlab.psd(data, NFFT=int(Num / mean_number), Fs=fs, detrend="linear",
+                                noverlap=int(Overlap / 100 * Num / mean_number))
     f_best = f_best[1:]
     best_psd = best_psd[1:]
+
+    return f_best, best_psd, fs, vec_rms, seed_id
+
+
+def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
     fl, nlnm, fh, nhnm = NLNM(2)
+
     fig0 = plt.figure()
-    fig1 = plt.figure()
     ax0 = fig0.add_subplot()
-    ax1 = fig1.add_subplot()
     ax0.tick_params(axis='both', which='both', labelsize=15)
-    ax1.tick_params(axis='both', which='both', labelsize=15)
-    ax0.plot(f_best, np.sqrt(best_psd), linestyle='-', color='tab:blue', label='Best PSD')
+    ax0.plot(frequency_data, np.sqrt(psd_data), linestyle='-', color='tab:blue', label='Best PSD')
     ax0.plot(fl, nlnm, 'k--', label="Noise Model")
     ax0.plot(fh, nhnm, 'k--')
     ax0.set_xscale("log")
     ax0.set_yscale("log")
-    ax0.set_xlim([0.01, fs/2])
+    ax0.set_xlim([0.005, sampling_rate / 2])
+    ax0.axvline(x=0.01, color='r', linestyle='dotted')
+    ax0.axvline(x=20, color='r', linestyle='dotted')
+    ax0.text(0.01, 1.5e-5, '0.01 Hz', fontsize=12, color='r', ha='center', va='center',
+             bbox={'facecolor': 'white', 'alpha': 1, 'edgecolor': 'r', 'boxstyle': 'round'})
+    ax0.text(20, 1.5e-5, '20 Hz', fontsize=12, color='r', ha='center', va='center',
+             bbox={'facecolor': 'white', 'alpha': 1, 'edgecolor': 'r', 'boxstyle': 'round'})
     ax0.set_ylim([1e-11, 1e-5])
     ax0.grid(True, linestyle='--')
-    ax0.legend(loc='best', shadow=True, fontsize='medium')
     ax0.set_xlabel('Frequency [Hz]', fontsize=20)
     ax0.set_ylabel(r'Seismic [(m/s)/$\sqrt{Hz}$]', fontsize=20)
-    ax1.hist(vec_rms, bins=200)
+    ax0.set_title(sensor_id, fontsize=20)
+    ax0.legend(loc='best', shadow=True, fontsize='medium')
+
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot()
+    ax1.tick_params(axis='both', which='both', labelsize=15)
+    ax1.hist(rms_data, bins=100)
     ax1.grid(True, linestyle='--')
     ax1.set_yscale("log")
     ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
     ax1.set_ylabel(r'Counts', fontsize=20)
+
     plt.show()
