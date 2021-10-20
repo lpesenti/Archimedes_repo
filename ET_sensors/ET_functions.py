@@ -4,7 +4,6 @@ from obspy.signal import PPSD
 from obspy.imaging.cm import pqlx
 import glob
 from matplotlib import mlab
-from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
 import time
 import datetime
@@ -82,8 +81,14 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     invxml = read_inventory(filexml)
     if verbose:
         print(invxml)
+        # print sensor information
+        for inet in range(0, 1):
+            for ista in range(0, 12):
+                if invxml[inet].code == network and invxml[inet][ista].code == sensor:
+                    print(invxml[inet][ista][0])
     # select sensor and channel
     invxmls = invxml.select(network=network, station=sensor, channel=channel)
+    #print(invxmls)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     resp = invxmls.get_response(seed_id, t)
     gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
