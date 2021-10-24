@@ -1,6 +1,7 @@
 from obspy import UTCDateTime
 import ET_functions as ET
 import configparser
+import datetime
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -18,15 +19,17 @@ ti = UTCDateTime(config['Quantities']['start_date'])
 Twindow = float(config['Quantities']['psd_window'])
 Overlap = float(config['Quantities']['psd_overlap'])
 means = float(config['Quantities']['number_of_means'])
-verbose = config['Quantities']['verbose']
+verbose = config.getboolean('Quantities', 'verbose')
 
 if __name__ == '__main__':
+    now = datetime.datetime.now()
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
     st_tot = ET.extract_stream(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000,
                                Twindow,
                                verbose=verbose)
     # ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
-    #freq, psd, samp_rate, rms, id = ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel,
-    #                                                  ti, Twindow, Overlap, means, verbose)
-    #ET.plot_maker(frequency_data=freq, psd_data=psd, sampling_rate=samp_rate, rms_data=rms, sensor_id=id)
+    freq, psd, samp_rate, rms, id = ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel,
+                                                      ti, Twindow, Overlap, means, verbose)
+    # ET.plot_maker(frequency_data=freq, psd_data=psd, sampling_rate=samp_rate, rms_data=rms, sensor_id=id)
+    ET.output(now=now, freq_data=freq, psd_data=psd, rms_data=rms, sampling_rate=samp_rate)
