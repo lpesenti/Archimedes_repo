@@ -205,7 +205,7 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
 
 
 def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, mean_number,
-                   verbose):  # , ax, ax1):
+                   verbose, out):  # , ax, ax1):
     """
     Best PSD and RMS finder function
 
@@ -264,7 +264,8 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     f_best = f_best[1:]
     best_psd = best_psd[1:]
 
-    return f_best, best_psd, fs, vec_rms, seed_id
+    if out:
+        output(f_best, best_psd, fs, vec_rms, seed_id)
 
 
 def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
@@ -325,41 +326,38 @@ def output(now, freq_data=np.array([]), psd_data=np.array([]), rms_data=np.array
     filename_list = glob.glob(config['Paths']['data_path'] + seed_id + "*")
     filename_list.sort()
 
-    start_doy = int(filename_list[0].split('.')[-1:][0])
-    start_year = int(filename_list[0].split('.')[-2:-1][0])
+    start_doy = int(filename_list[0].replace('.miniseed', '').split('.')[-1:][0])
+    start_year = int(filename_list[0].replace('.miniseed', '').split('.')[-2:-1][0])
     start_date_read = datetime.datetime(start_year, 1, 1) + datetime.timedelta(start_doy - 1)
     start = start_date_read.strftime('%d/%m/%y')
 
-    end_doy = int(filename_list[-1:][0].split('.')[-1:][0])
-    end_year = int(filename_list[-1:][0].split('.')[-2:-1][0])
+    end_doy = int(filename_list[-1:][0].replace('.miniseed', '').split('.')[-1:][0])
+    end_year = int(filename_list[-1:][0].replace('.miniseed', '').split('.')[-2:-1][0])
     end_date_read = datetime.datetime(end_year, 1, 1) + datetime.timedelta(end_doy - 1)
     stop = end_date_read.strftime('%d/%m/%y')
 
-    print('These are the results of the run performed at:', now.strftime('%H:%M:%S %d/%m/%y'), file=open(outfile, "w"))
-    print('######## Analysis information ########\n', file=open(outfile, "a"))
+    output_str = f"""These are the results of the run performed at: {now.strftime('%H:%M:%S %d/%m/%y')}
+{'#' * 20 : <20} {'Analysis information' : ^15} {'#' * 20: >20}
+{'': <10}{'Data path:' : <20}{config['Paths']['data_path'] : <15}
+{'': <10}{'XML file:' : <20}{config['Paths']['xml_filename'] : <15}
+{'': <10}{'Network:' : <20}{network : <15}
+{'': <10}{'Sensor:' : <20}{sensor : <15}
+{'': <10}{'Location:' : <20}{location : <15}
+{'': <10}{'Channel:' : <20}{channel : <15}
+{'': <10}{'Start date:' : <20}{str(UTCDateTime(config['Quantities']['start_date'])) : <15}
+{'': <10}{'PSD window:' : <20}{config['Quantities']['psd_window'] : <15}
+{'': <10}{'Overlap:' : <20}{config['Quantities']['psd_overlap'] : <15}
+{'': <10}{'Number of means:' : <20}{config['Quantities']['number_of_means'] : <15}
+{'': <10}{'Verbose:' : <20}{config['Quantities']['verbose'] : <15}
+{'': <10}{'Save data:' : <20}{config['Quantities']['save_data'] : <15}
+{'#' * 20 : <20} {'Data information' : ^15} {'#' * 20: >20}
+{len(filename_list)} files has been loaded
+The data taken are from {start} to {stop}
+The sampling rate of the seismometer analyzed is: {sampling_rate} Hz
+Both frequency and PSD data has been saved in {outfile_data}
+{len(rms_data)} integrals has been performed
+    """
 
-    print(2 * '\t' + 'XML path: ' + 3 * '\t' + config['Paths']['xml_path'], file=open(outfile, "a"))
-    print(2 * '\t' + 'Data path: ' + 3 * '\t' + config['Paths']['data_path'], file=open(outfile, "a"))
-    print(2 * '\t' + 'XML file: ' + 3 * '\t' + config['Paths']['xml_filename'], file=open(outfile, "a"))
+    print(output_str, file=open(outfile, "w"))
 
-    print(2 * '\t' + 'Network: ' + 3 * '\t' + network, file=open(outfile, "a"))
-    print(2 * '\t' + 'Sensor: ' + 3 * '\t' + sensor, file=open(outfile, "a"))
-    print(2 * '\t' + 'Location: ' + 3 * '\t' + location, file=open(outfile, "a"))
-    print(2 * '\t' + 'Channel: ' + 3 * '\t' + channel, file=open(outfile, "a"))
-
-    print(2 * '\t' + 'Start date: ' + 2 * '\t' + str(UTCDateTime(config['Quantities']['start_date'])),
-          file=open(outfile, "a"))
-    print(2 * '\t' + 'PSD window: ' + 2 * '\t' + config['Quantities']['psd_window'], file=open(outfile, "a"))
-    print(2 * '\t' + 'Overlap: ' + 3 * '\t' + config['Quantities']['psd_overlap'], file=open(outfile, "a"))
-    print(2 * '\t' + 'Number of means:  ' + '\t' + config['Quantities']['number_of_means'], file=open(outfile, "a"))
-    print(2 * '\t' + 'Verbose: ' + 3 * '\t' + config['Quantities']['verbose'], file=open(outfile, "a"))
-
-    print('\n######## Data information ########\n', file=open(outfile, "a"))
-
-    print('{0} files has been loaded'.format(len(filename_list)), file=open(outfile, "a"))
-    print('The data taken are from {0} to {1}'.format(start, stop), file=open(outfile, "a"))
-    print('The sampling rate of the seismometer analyzed is: {0} Hz'.format(sampling_rate), file=open(outfile, "a"))
-    print('Both frequency and PSD data has been saved in {0}'.format(outfile_data), file=open(outfile, "a"))
-    print('{0} integrals has been performed'.format(len(rms_data)), file=open(outfile, "a"))
-
-    np.savetxt(outfile_data, np.c_[freq_data, psd_data], header='# Frequency | PSD values')
+    np.savetxt(outfile_data, np.c_[freq_data, psd_data], header='Frequency | PSD values')
