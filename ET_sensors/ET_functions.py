@@ -265,7 +265,9 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     best_psd = best_psd[1:]
 
     if out:
-        output(f_best, best_psd, fs, vec_rms, seed_id)
+        output(freq_data=f_best, psd_data=best_psd, rms_data=vec_rms, sampling_rate=fs)
+
+    return f_best, best_psd, fs, vec_rms, seed_id
 
 
 def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
@@ -305,11 +307,12 @@ def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
     plt.show()
 
 
-def output(now, freq_data=np.array([]), psd_data=np.array([]), rms_data=np.array([]), sampling_rate=None):
+def output(freq_data=np.array([]), psd_data=np.array([]), rms_data=np.array([]), sampling_rate=None):
     import configparser
     from obspy import UTCDateTime
     import datetime
 
+    now = datetime.datetime.now()
     config = configparser.ConfigParser()
     config.read('config.ini')
     out_path = config['Paths']['outfile_path']
