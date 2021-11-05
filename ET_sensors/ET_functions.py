@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti and Davide Rozza "
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
@@ -13,7 +13,8 @@ import glob
 from matplotlib import mlab
 import matplotlib.pyplot as plt
 import time
-import datetime
+from datetime import datetime
+# import datetime
 
 
 def NLNM(unit):
@@ -178,7 +179,7 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
         st_tot += st
     if verbose:
         print(st_tot)
-        print(st_tot[0].times("timestamp"))
+        print(len(st_tot[0].times("timestamp")))
 
     return st_tot
 
@@ -243,19 +244,37 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     data = np.array([])
     vec_rms = np.array([])
-    for itrace in range(len(stream)):
-        data = np.append(data, np.array(stream[itrace]) / gain)
+    """for itrace in range(len(stream)):
+        data = np.append(data, np.array(stream[itrace]) / gain)"""
     fs = stream[0].stats.sampling_rate
     Num = int(Twindow * fs)
-    data_split = np.array_split(data, len(data) / Num)
+    # data_split = np.array_split(data, len(data) / Num)
     _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=int(Overlap / 100 * Num))
     f_s = f_s[1:]
     start = np.where(f_s == 1)[0][0]
     stop = np.where(f_s == 10)[0][0]
     integral_min = np.inf
+    best_time = []
+    rms_time = np.array([])
 
-    data = np.array([])
-    for index, chunk in enumerate(data_split):
+    # Num = int(Twindow * fs)
+
+    for itrace in range(len(stream)):
+        data = np.array(stream[itrace]) / gain
+        time = stream[itrace].times('timestamp')
+        data_split = np.array_split(data, len(data) / Num)
+        for index, chunk in enumerate(data_split):
+            chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
+            chunk_s = chunk_s[1:]
+            integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
+            vec_rms = np.append(vec_rms, integral)
+            rms_time = np.append(rms_time, time[index*len(chunk):len(chunk)+index*len(chunk)][0])
+            if integral < integral_min:
+                integral_min = integral
+                data = chunk
+                best_time = time[index*len(chunk):len(chunk)+index*len(chunk)]
+    # data = np.array([])
+    """for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
         chunk_s = chunk_s[1:]
         integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
@@ -266,14 +285,40 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
             t = tstart.datetime
             if verbose:
                 print(time.strftime('%d/%m/%y %H:%M:%S',
-                                    time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))
+                                    time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))"""
     best_psd, f_best = mlab.psd(data, NFFT=int(Num / mean_number), Fs=fs, detrend="linear",
                                 noverlap=int(Overlap / 100 * Num / mean_number))
     f_best = f_best[1:]
     best_psd = best_psd[1:]
+    print('Data taken from:', datetime.fromtimestamp(best_time[0]), 'to:', datetime.fromtimestamp(best_time[-1:]))
 
     if out:
         output(freq_data=f_best, psd_data=best_psd, rms_data=vec_rms, sampling_rate=fs)
+
+    # DA CANCELLARE!!
+    def myfromtimestampfunction(timestamp):
+        return datetime.fromtimestamp(timestamp)
+
+    def myvectorizer(input_func):
+        def output_func(array_of_numbers):
+            return [input_func(a) for a in array_of_numbers]
+
+        return output_func
+
+    # CANCELLARE
+    import matplotlib.dates as mdates
+    fig0 = plt.figure()
+    ax0 = fig0.add_subplot()
+    date_convert = myvectorizer(myfromtimestampfunction)
+    xtimex = date_convert(rms_time)
+    xfmt = mdates.DateFormatter('%b %d %H:%M')  #:%S')
+    ax0.xaxis.set_major_formatter(xfmt)
+    ax0.plot(xtimex, vec_rms, linestyle='-', color='tab:blue', label='RMS')
+    ax0.grid(True, linestyle='--')
+    ax0.set_xlabel('time', fontsize=20)
+    ax0.set_ylabel(r'RMS', fontsize=20)
+    ax0.legend(loc='best', shadow=True, fontsize='medium')
+    plt.show()
 
     return f_best, best_psd, fs, vec_rms, seed_id
 
