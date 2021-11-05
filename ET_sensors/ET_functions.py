@@ -1,3 +1,10 @@
+__author__ = "Luca Pesenti and Davide Rozza "
+__credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
+__version__ = "0.8.0"
+__maintainer__ = "Luca Pesenti and Davide Rozza"
+__email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
+__status__ = "Prototype"
+
 import numpy as np
 from obspy import read, read_inventory, Stream
 from obspy.signal import PPSD
@@ -171,6 +178,7 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
         st_tot += st
     if verbose:
         print(st_tot)
+        print(st_tot[0].times("timestamp"))
 
     return st_tot
 
