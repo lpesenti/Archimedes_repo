@@ -55,3 +55,15 @@ def plot_3d_ol(data_file, qty):
     cbar = fig.colorbar(im)
     cbar.set_label(qty.capitalize() + ' [mV]', rotation=270, labelpad=15)
     plt.show()
+
+
+def eval_mean(data_file):
+    for i in range(19):
+        if i < 10:
+            data_file1 = data_file + '0{0}.csv'.format(i) # + file_type
+        else:
+            data_file1 = data_file + '{0}.csv'.format(i) # + file_type
+        df = pd.read_csv(data_file1, header=None)
+        # print(df)
+        values = np.array(df[4]).mean()
+        print(data_file1, values)
