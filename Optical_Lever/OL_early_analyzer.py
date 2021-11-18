@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 fs = 1 / 2.000000e-04
 Num = int(500 * fs)
-df_col = pd.read_csv(r'D:\Archimedes\Data\Optical_Level\C1Dy00002.csv', nrows=1, header=None).columns
-data_df = pd.read_csv(r'D:\Archimedes\Data\Optical_Level\C1Dy00002.csv', usecols=[df_col[-1:][0]], header=None)
-data_df1 = pd.read_csv(r'D:\Archimedes\Data\Optical_Level\C2Sum00002.csv', usecols=[df_col[-1:][0]], header=None)
-data_df2 = pd.read_csv(r'D:\Archimedes\Data\Optical_Level\C3Dx00002.csv', usecols=[df_col[-1:][0]], header=None)
+df_col = pd.read_csv(r'D:\Archimedes\Data\Optical_Lever\Noise\C1Noise00000.csv', nrows=1, header=None).columns
+data_df = pd.read_csv(r'D:\Archimedes\Data\Optical_Lever\Noise\C1Noise00000.csv', usecols=[df_col[-1:][0]], header=None)
+data_df1 = pd.read_csv(r'D:\Archimedes\Data\Optical_Lever\Noise\C2Noise00000.csv', usecols=[df_col[-1:][0]], header=None)
+data_df2 = pd.read_csv(r'D:\Archimedes\Data\Optical_Lever\Noise\C3Noise00000.csv', usecols=[df_col[-1:][0]], header=None)
 data = data_df.values.flatten()
 data1 = data_df1.values.flatten()
 data2 = data_df2.values.flatten()
@@ -30,8 +30,8 @@ s2 = np.sqrt(s2)
 
 fig, ax1 = plt.subplots()
 ax1.plot(f, s, label="$\Delta$y")
-ax1.plot(f, s1, label="$\Sigma$")
-ax1.plot(f, s2, label="$\Delta$x")
+ax1.plot(f, s1, label="$\Delta$x")
+ax1.plot(f, s2, label="$\Sigma$")
 legend = ax1.legend(loc='best', shadow=True)  # , fontsize='x-large')
 ax1.set_xscale("log")
 ax1.set_yscale("log")
