@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as colors
+from matplotlib.colors import LogNorm
 from matplotlib import cm
 import pandas as pd
 import numpy as np
@@ -63,74 +64,76 @@ def plot_3d_oscilloscope(data_file, qty):
 
 def plot_3d_crio(file_path, file_prefix):
     file_number = len(glob.glob(file_path + '*'))
+    x_labels = np.arange(-4.5, 5, 0.5)
+    y_labels = np.arange(-4.5, 5, 0.5)
     delta_x = np.array([])
     delta_y = np.array([])
+    indeces = np.array([])
     sum = np.array([])
     for i in range(file_number):
         df = pd.read_table(file_path + file_prefix + '{0}.lvm'.format(i), sep='\t', header=None)
-        delta_x = np.append(delta_x, df[1].mean())
-        delta_y = np.append(delta_y, df[2].mean())
+        # print(file_prefix + '{0}.lvm'.format(i))
+        # print('\ty', df[1].mean())
+        # print('\tx', df[2].mean())
+        # print('\tSum', df[2].mean())
+        delta_y = np.append(delta_y, df[1].mean())
+        delta_x = np.append(delta_x, df[2].mean())
+        indeces = np.append(indeces, i)
         sum = np.append(sum, df[3].mean())
 
+    # ADDING DELTA TO MAKE ALL DATA POSITIVE FOR LOG SCALE
+    # delta_x = delta_x + 2 * np.abs(delta_x.min())
+    # delta_y = delta_y + 2 * np.abs(delta_y.min())
+
+    # CREATING 2D-NUMPY ARRAY FOR HEATMAP RESHAPING 1D-ARRAY CONTAINING DATA
     heatmap_data_x = np.reshape(delta_x, (19, 19))
     heatmap_data_y = np.reshape(delta_y, (19, 19))
     heatmap_data_sum = np.reshape(sum, (19, 19))
+    indeces_map = np.reshape(indeces, (19, 19))
 
-    heatmap_data_x[1::2, :] = heatmap_data_x[1::2, ::-1]
-
-    # SETTING SEABORN PALETTE
-
+    sns.heatmap(indeces_map, cmap=['black'], annot=True, cbar=None, linewidths=0.2, fmt='0.0f')
 
     # PLOT FOR THE DELTA X CHANNEL
     fig_x = plt.figure(figsize=(10, 5))
-    # fig_x.suptitle(r'$\Delta x$')
     # heatmap plot
     ax1_x = fig_x.add_subplot()
-    sns.heatmap(heatmap_data_x, ax=ax1_x, square=True, cbar=True, cmap='viridis', cbar_kws={'label': r'$\Delta x [mV]$'})
-    # im_x = ax1_x.imshow(heatmap_data_x.T, cmap=plt.get_cmap('jet'), aspect='auto')
-    # cbar = fig_x.colorbar(im_x)
-    # cbar.set_label(r'$\Delta x [mV]$', rotation=270, labelpad=15)
-    ax1_x.set_xticks(np.arange(heatmap_data_x.shape[0]))
-    ax1_x.set_yticks(np.arange(heatmap_data_x.shape[0]))
-    ax1_x.set_xticklabels(np.arange(-450, 500, 50))
-    ax1_x.set_yticklabels(np.arange(-450, 500, 50))
+    sns.heatmap(heatmap_data_x, ax=ax1_x, square=True, cbar=True, cmap='icefire',
+                cbar_kws={'label': r'$\Delta x$ [V]'}, xticklabels=x_labels, yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_x.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_x.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_x.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_x.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_x.set_title(r'$\Delta x$')
-    ax1_x.set_xlabel(r'$x [\mu m]$')
-    ax1_x.set_ylabel(r'$y [\mu m]$')
+    ax1_x.set_xlabel(r'$x [mm]$')
+    ax1_x.set_ylabel(r'$y [mm]$')
 
     # PLOT FOR THE DELTA Y CHANNEL
     fig_y = plt.figure(figsize=(10, 5))
-    # fig_y.suptitle(r'$\Delta y$')
     # heatmap plot
     ax1_y = fig_y.add_subplot()
-    sns.heatmap(heatmap_data_y, ax=ax1_y, square=True, cbar=True, cmap='viridis',  cbar_kws={'label': r'$\Delta y [mV]$'})
-    # im_y = ax1_y.imshow(heatmap_data_y.T, cmap=plt.get_cmap('jet'), aspect='auto')
-    # cbar = fig_y.colorbar(im_y)
-    # cbar.set_label(r'$\Delta y [V]$', rotation=270, labelpad=15)
-    ax1_y.set_xticks(np.arange(heatmap_data_y.shape[0]))
-    ax1_y.set_yticks(np.arange(heatmap_data_y.shape[0]))
-    ax1_y.set_xticklabels(np.arange(-450, 500, 50))
-    ax1_y.set_yticklabels(np.arange(-450, 500, 50))
+    sns.heatmap(heatmap_data_y, ax=ax1_y, square=True, cbar=True, cmap='icefire',
+                cbar_kws={'label': r'$\Delta y$ [V]'}, xticklabels=x_labels, yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_y.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_y.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_y.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_y.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_y.set_title(r'$\Delta y$')
-    ax1_y.set_xlabel(r'$x [\mu m]$')
-    ax1_y.set_ylabel(r'$y [\mu m]$')
+    ax1_y.set_xlabel(r'$x [mm]$')
+    ax1_y.set_ylabel(r'$y [mm]$')
 
     # # PLOT FOR THE SUM CHANNEL
     fig_sum = plt.figure(figsize=(10, 5))
-    # fig_sum.suptitle(r'$\Sigma$')
     # heatmap plot
     ax1_sum = fig_sum.add_subplot()
-    sns.heatmap(heatmap_data_sum, ax=ax1_sum, square=True, cbar=True, cmap='viridis',  cbar_kws={'label': r'$\Sigma [mV]$'})
-    # im_sum = ax1_sum.imshow(heatmap_data_sum.T, cmap=plt.get_cmap('jet'), aspect='auto')
-    # cbar = fig_sum.colorbar(im_sum)
-    # cbar.set_label(r'$\Sigma [V]$', rotation=270, labelpad=15)
-    ax1_sum.set_xticks(np.arange(heatmap_data_sum.shape[0]))
-    ax1_sum.set_yticks(np.arange(heatmap_data_sum.shape[0]))
-    ax1_sum.set_xticklabels(np.arange(-450, 500, 50))
-    ax1_sum.set_yticklabels(np.arange(-450, 500, 50))
+    sns.heatmap(heatmap_data_sum, ax=ax1_sum, square=True, cbar=True, cmap='viridis',
+                cbar_kws={'label': r'$\Sigma$ [V]'}, xticklabels=x_labels, yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_sum.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_sum.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_sum.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_sum.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_sum.set_title(r'$\Sigma$')
-    ax1_sum.set_xlabel(r'$x [\mu m]$')
-    ax1_sum.set_ylabel(r'$y [\mu m]$')
+    ax1_sum.set_xlabel(r'$x [mm]$')
+    ax1_sum.set_ylabel(r'$y [mm]$')
 
     plt.show()
 
