@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import glob
 import seaborn as sns
+from matplotlib import mlab
 
 
 def plot_3d_oscilloscope(data_file, qty):
@@ -69,7 +70,9 @@ def plot_3d_crio(file_path, file_prefix):
     delta_x = np.array([])
     delta_y = np.array([])
     indeces = np.array([])
-    sum = np.array([])
+    sum_ch = np.array([])
+    vec_rms_x, vec_rms_y, vec_rms_sum = np.array([]), np.array([]), np.array([])
+
     for i in range(file_number):
         df = pd.read_table(file_path + file_prefix + '{0}.lvm'.format(i), sep='\t', header=None)
         # print(file_prefix + '{0}.lvm'.format(i))
@@ -79,7 +82,26 @@ def plot_3d_crio(file_path, file_prefix):
         delta_y = np.append(delta_y, df[1].mean())
         delta_x = np.append(delta_x, df[2].mean())
         indeces = np.append(indeces, i)
-        sum = np.append(sum, df[3].mean())
+        sum_ch = np.append(sum_ch, df[3].mean())
+
+        # PSD EVALUATION
+        # DELTA Y channel
+        psd_y, _ = mlab.psd(df[1], NFFT=len(df[2]), Fs=1000, detrend="linear", noverlap=0)
+        psd_y = psd_y[1:]
+        integral_y = sum(psd_y / len(psd_y))  # * (f_s[1]-f_s[0]))
+        vec_rms_y = np.append(vec_rms_y, integral_y)
+
+        # DELTA X channel
+        psd_x, _ = mlab.psd(df[2], NFFT=len(df[1]), Fs=1000, detrend="linear", noverlap=0)
+        psd_x = psd_x[1:]
+        integral_x = sum(psd_x / len(psd_x))  # * (f_s[1]-f_s[0]))
+        vec_rms_x = np.append(vec_rms_x, integral_x)
+
+        # Sum channel
+        psd_sum, _ = mlab.psd(df[3], NFFT=len(df[3]), Fs=1000, detrend="linear", noverlap=0)
+        psd_sum = psd_sum[1:]
+        integral_sum = sum(psd_sum / len(psd_sum))  # * (f_s[1]-f_s[0]))
+        vec_rms_sum = np.append(vec_rms_sum, integral_sum)
 
     # ADDING DELTA TO MAKE ALL DATA POSITIVE FOR LOG SCALE
     # delta_x = delta_x + 2 * np.abs(delta_x.min())
@@ -88,8 +110,11 @@ def plot_3d_crio(file_path, file_prefix):
     # CREATING 2D-NUMPY ARRAY FOR HEATMAP RESHAPING 1D-ARRAY CONTAINING DATA
     heatmap_data_x = np.reshape(delta_x, (19, 19))
     heatmap_data_y = np.reshape(delta_y, (19, 19))
-    heatmap_data_sum = np.reshape(sum, (19, 19))
+    heatmap_data_sum = np.reshape(sum_ch, (19, 19))
     indeces_map = np.reshape(indeces, (19, 19))
+    heatmap_psd_x = np.reshape(vec_rms_x, (19, 19))
+    heatmap_psd_y = np.reshape(vec_rms_y, (19, 19))
+    heatmap_psd_sum = np.reshape(vec_rms_sum, (19, 19))
 
     sns.heatmap(indeces_map, cmap=['black'], annot=True, cbar=None, linewidths=0.2, fmt='0.0f')
 
@@ -134,6 +159,51 @@ def plot_3d_crio(file_path, file_prefix):
     ax1_sum.set_title(r'$\Sigma$')
     ax1_sum.set_xlabel(r'$x [mm]$')
     ax1_sum.set_ylabel(r'$y [mm]$')
+
+    # PLOT FOR THE PSD VALUE OF THE DELTA X CHANNEL
+    fig_x = plt.figure(figsize=(10, 5))
+    # heatmap plot
+    ax1_x_psd = fig_x.add_subplot()
+    sns.heatmap(heatmap_psd_x, ax=ax1_x_psd, square=True, cbar=True, cmap='viridis',
+                cbar_kws={'label': r'PSD integral of $\Delta x$ $[V^2/Hz)]$'}, xticklabels=x_labels,
+                yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_x_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_x_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_x_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_x_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_x_psd.set_title(r'PSD of $\Delta x$ $[V^2/Hz)]$')
+    ax1_x_psd.set_xlabel(r'$x [mm]$')
+    ax1_x_psd.set_ylabel(r'$y [mm]$')
+
+    # PLOT FOR THE PSD VALUE OF THE DELTA Y CHANNEL
+    fig_x = plt.figure(figsize=(10, 5))
+    # heatmap plot
+    ax1_y_psd = fig_x.add_subplot()
+    sns.heatmap(heatmap_psd_y, ax=ax1_y_psd, square=True, cbar=True, cmap='viridis',
+                cbar_kws={'label': r'PSD integral of $\Delta y$ $[V^2/Hz)]$'}, xticklabels=x_labels,
+                yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_y_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_y_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_y_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_y_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_y_psd.set_title(r'PSD of $\Delta y$ $[V^2/Hz)]$')
+    ax1_y_psd.set_xlabel(r'$x [mm]$')
+    ax1_y_psd.set_ylabel(r'$y [mm]$')
+
+    # PLOT FOR THE PSD VALUE OF THE SUM CHANNEL
+    fig_x = plt.figure(figsize=(10, 5))
+    # heatmap plot
+    ax1_sum_psd = fig_x.add_subplot()
+    sns.heatmap(heatmap_psd_sum, ax=ax1_sum_psd, square=True, cbar=True, cmap='viridis',
+                cbar_kws={'label': r'PSD integral of $\Sigma$ $[V^2/Hz)]$'}, xticklabels=x_labels,
+                yticklabels=y_labels)  # , norm=LogNorm())
+    ax1_sum_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_sum_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
+    ax1_sum_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_sum_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
+    ax1_sum_psd.set_title(r'PSD of $\Sigma$ $[V^2/Hz)]$')
+    ax1_sum_psd.set_xlabel(r'$x [mm]$')
+    ax1_sum_psd.set_ylabel(r'$y [mm]$')
 
     plt.show()
 
