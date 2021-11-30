@@ -73,8 +73,38 @@ def plot_3d_crio(file_path, file_prefix):
     sum_ch = np.array([])
     vec_rms_x, vec_rms_y, vec_rms_sum = np.array([]), np.array([]), np.array([])
 
+    # PSD COMPARISON
+    fig_psd = plt.figure()
+    gs = fig_psd.add_gridspec(3, hspace=0)  # set hspace=0.15 and uncomment titles to see them
+    axs = gs.subplots(sharex=True, sharey=True)
+
+    axs[0].set_xlabel('Frequency [Hz]', fontsize=20)
+    axs[0].set_xscale("log")
+    axs[0].set_yscale("log")
+    axs[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+    axs[0].grid(True, linestyle='--')
+    # axs[0].set_title(r'$\Delta y$')
+
+    axs[1].set_xlabel('Frequency [Hz]', fontsize=20)
+    axs[1].set_xscale("log")
+    axs[1].set_yscale("log")
+    axs[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+    axs[1].grid(True, linestyle='--')
+    # axs[1].set_title(r'$\Delta x$')
+
+    axs[2].set_xlabel('Frequency [Hz]', fontsize=20)
+    axs[2].set_xscale("log")
+    axs[2].set_yscale("log")
+    axs[2].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+    axs[2].grid(True, linestyle='--')
+    # axs[2].set_title(r'$\Sigma$')
+
+    for ax in axs:
+        ax.label_outer()
+
     for i in range(file_number):
         df = pd.read_table(file_path + file_prefix + '{0}.lvm'.format(i), sep='\t', header=None)
+        # SOME VERBOSITY
         # print(file_prefix + '{0}.lvm'.format(i))
         # print('\ty', df[1].mean())
         # print('\tx', df[2].mean())
@@ -86,22 +116,30 @@ def plot_3d_crio(file_path, file_prefix):
 
         # PSD EVALUATION
         # DELTA Y channel
-        psd_y, _ = mlab.psd(df[1], NFFT=len(df[2]), Fs=1000, detrend="linear", noverlap=0)
+        psd_y, f_y = mlab.psd(df[1][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
         psd_y = psd_y[1:]
         integral_y = sum(psd_y / len(psd_y))  # * (f_s[1]-f_s[0]))
         vec_rms_y = np.append(vec_rms_y, integral_y)
 
         # DELTA X channel
-        psd_x, _ = mlab.psd(df[2], NFFT=len(df[1]), Fs=1000, detrend="linear", noverlap=0)
+        psd_x, f_x = mlab.psd(df[2][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
         psd_x = psd_x[1:]
         integral_x = sum(psd_x / len(psd_x))  # * (f_s[1]-f_s[0]))
         vec_rms_x = np.append(vec_rms_x, integral_x)
 
         # Sum channel
-        psd_sum, _ = mlab.psd(df[3], NFFT=len(df[3]), Fs=1000, detrend="linear", noverlap=0)
+        psd_sum, f_sum = mlab.psd(df[3][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
         psd_sum = psd_sum[1:]
         integral_sum = sum(psd_sum / len(psd_sum))  # * (f_s[1]-f_s[0]))
         vec_rms_sum = np.append(vec_rms_sum, integral_sum)
+
+        if i == 66 or i == 174 or i == 180:
+            axs[0].plot(f_y[1:], np.sqrt(psd_y), linestyle='-', label=r'$\Delta y$ - {0}'.format(i))
+            axs[1].plot(f_x[1:], np.sqrt(psd_x), linestyle='-', label=r'$\Delta x$ - {0}'.format(i))
+            axs[2].plot(f_sum[1:], np.sqrt(psd_sum), linestyle='-', label=r'$\Sigma$ - {0}'.format(i))
+            axs[0].legend(loc='best', shadow=True, fontsize='medium')
+            axs[1].legend(loc='best', shadow=True, fontsize='medium')
+            axs[2].legend(loc='best', shadow=True, fontsize='medium')
 
     # ADDING DELTA TO MAKE ALL DATA POSITIVE FOR LOG SCALE
     # delta_x = delta_x + 2 * np.abs(delta_x.min())
@@ -116,7 +154,21 @@ def plot_3d_crio(file_path, file_prefix):
     heatmap_psd_y = np.reshape(vec_rms_y, (19, 19))
     heatmap_psd_sum = np.reshape(vec_rms_sum, (19, 19))
 
-    sns.heatmap(indeces_map, cmap=['black'], annot=True, cbar=None, linewidths=0.2, fmt='0.0f')
+    # PLOT INDECES MAP
+    # sns.heatmap(indeces_map, cmap=['black'], annot=True, cbar=None, linewidths=0.2, fmt='0.0f')
+
+    # PLOT THE LAST PSD
+    # fig_psd = plt.figure()
+    # ax_psd = fig_psd.add_subplot()
+    # ax_psd.plot(f_y[1:], np.sqrt(psd_y), linestyle='-', label=r'$\Delta y$')
+    # ax_psd.plot(f_x[1:], np.sqrt(psd_x), linestyle='-', label=r'$\Delta x$')
+    # ax_psd.plot(f_sum[1:], np.sqrt(psd_sum), linestyle='-', label=r'$\Sigma$')
+    # ax_psd.set_xlabel('Frequency [Hz]', fontsize=20)
+    # ax_psd.set_xscale("log")
+    # ax_psd.set_yscale("log")
+    # ax_psd.set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+    # ax_psd.grid(True, linestyle='--')
+    # ax_psd.legend(loc='best', shadow=True, fontsize='medium')
 
     # PLOT FOR THE DELTA X CHANNEL
     fig_x = plt.figure(figsize=(10, 5))
