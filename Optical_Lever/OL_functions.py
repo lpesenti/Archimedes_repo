@@ -64,14 +64,20 @@ def plot_3d_oscilloscope(data_file, qty):
 
 
 def plot_3d_crio(file_path, file_prefix):
+    # DEFINING VARIABLES
     file_number = len(glob.glob(file_path + '*'))
     x_labels = np.arange(-4.5, 5, 0.5)
     y_labels = np.arange(-4.5, 5, 0.5)
+    freq_init = 50
+    freq_final = 500
     delta_x = np.array([])
     delta_y = np.array([])
     indeces = np.array([])
     sum_ch = np.array([])
     vec_rms_x, vec_rms_y, vec_rms_sum = np.array([]), np.array([]), np.array([])
+    vec_asd_x, vec_asd_y, vec_asd_sum = np.array([]), np.array([]), np.array([])
+    vec_freq_x, vec_freq_y, vec_freq_sum = np.array([]), np.array([]), np.array([])
+    vec_indeces = np.array([])
 
     # PSD COMPARISON
     fig_psd = plt.figure()
@@ -102,6 +108,7 @@ def plot_3d_crio(file_path, file_prefix):
     for ax in axs:
         ax.label_outer()
 
+    # READ DATA
     for i in range(file_number):
         df = pd.read_table(file_path + file_prefix + '{0}.lvm'.format(i), sep='\t', header=None)
         # SOME VERBOSITY
@@ -109,34 +116,55 @@ def plot_3d_crio(file_path, file_prefix):
         # print('\ty', df[1].mean())
         # print('\tx', df[2].mean())
         # print('\tSum', df[2].mean())
-        delta_y = np.append(delta_y, df[1].mean())
-        delta_x = np.append(delta_x, df[2].mean())
-        indeces = np.append(indeces, i)
+        delta_y = np.append(delta_y, df[1].mean() / df[3].mean())
+        delta_x = np.append(delta_x, df[2].mean() / df[3].mean())
         sum_ch = np.append(sum_ch, df[3].mean())
+        indeces = np.append(indeces, i)
 
         # PSD EVALUATION
         # DELTA Y channel
-        psd_y, f_y = mlab.psd(df[1][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
+        psd_y, f_y = mlab.psd(df[1][:5000], NFFT=1000, Fs=1000, detrend="linear", noverlap=0)
         psd_y = psd_y[1:]
-        integral_y = sum(psd_y / len(psd_y))  # * (f_s[1]-f_s[0]))
+        f_y = f_y[1:]
+        start = np.where(f_y == freq_init)[0][0]
+        stop = np.where(f_y == freq_final)[0][0]
+        asd_y = np.sqrt(psd_y)
+        vec_asd_y = np.append(vec_asd_y, asd_y)
+        vec_freq_y = np.append(vec_freq_y, f_y)
+        integral_y = sum(asd_y[start:stop] / len(asd_y[start:stop]))  # * (f_s[1]-f_s[0]))
         vec_rms_y = np.append(vec_rms_y, integral_y)
 
         # DELTA X channel
-        psd_x, f_x = mlab.psd(df[2][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
+        psd_x, f_x = mlab.psd(df[2][:5000], NFFT=1000, Fs=1000, detrend="linear", noverlap=0)
         psd_x = psd_x[1:]
-        integral_x = sum(psd_x / len(psd_x))  # * (f_s[1]-f_s[0]))
+        f_x = f_x[1:]
+        start = np.where(f_x == freq_init)[0][0]
+        stop = np.where(f_x == freq_final)[0][0]
+        asd_x = np.sqrt(psd_x)
+        vec_asd_x = np.append(vec_asd_x, asd_x)
+        vec_freq_x = np.append(vec_freq_x, f_x)
+        integral_x = sum(asd_x[start:stop] / len(asd_x[start:stop]))  # * (f_s[1]-f_s[0]))
         vec_rms_x = np.append(vec_rms_x, integral_x)
 
         # Sum channel
-        psd_sum, f_sum = mlab.psd(df[3][:5000], NFFT=5000, Fs=1000, detrend="linear", noverlap=0)
+        psd_sum, f_sum = mlab.psd(df[3][:5000], NFFT=1000, Fs=1000, detrend="linear", noverlap=0)
         psd_sum = psd_sum[1:]
-        integral_sum = sum(psd_sum / len(psd_sum))  # * (f_s[1]-f_s[0]))
+        f_sum = f_sum[1:]
+        start = np.where(f_sum == freq_init)[0][0]
+        stop = np.where(f_sum == freq_final)[0][0]
+        asd_sum = np.sqrt(psd_sum)
+        vec_asd_sum = np.append(vec_asd_sum, asd_sum)
+        vec_freq_sum = np.append(vec_freq_sum, f_sum)
+        integral_sum = sum(asd_sum[start:stop] / len(asd_sum[start:stop]))  # * (f_s[1]-f_s[0]))
         vec_rms_sum = np.append(vec_rms_sum, integral_sum)
 
+        # Indeces array for 95% comparison
+        vec_indeces = np.append(vec_indeces, np.array(i).repeat(3 * len(f_y)))  # to consider the three channel
+
         if i == 66 or i == 174 or i == 180:
-            axs[0].plot(f_y[1:], np.sqrt(psd_y), linestyle='-', label=r'$\Delta y$ - {0}'.format(i))
-            axs[1].plot(f_x[1:], np.sqrt(psd_x), linestyle='-', label=r'$\Delta x$ - {0}'.format(i))
-            axs[2].plot(f_sum[1:], np.sqrt(psd_sum), linestyle='-', label=r'$\Sigma$ - {0}'.format(i))
+            axs[0].plot(f_y, asd_y, linestyle='-', label=r'$\Delta y$ - {0}'.format(i))
+            axs[1].plot(f_x, asd_x, linestyle='-', label=r'$\Delta x$ - {0}'.format(i))
+            axs[2].plot(f_sum, asd_sum, linestyle='-', label=r'$\Sigma$ - {0}'.format(i))
             axs[0].legend(loc='best', shadow=True, fontsize='medium')
             axs[1].legend(loc='best', shadow=True, fontsize='medium')
             axs[2].legend(loc='best', shadow=True, fontsize='medium')
@@ -153,6 +181,30 @@ def plot_3d_crio(file_path, file_prefix):
     heatmap_psd_x = np.reshape(vec_rms_x, (19, 19))
     heatmap_psd_y = np.reshape(vec_rms_y, (19, 19))
     heatmap_psd_sum = np.reshape(vec_rms_sum, (19, 19))
+
+    # MAKING PSD PLOT WITH 95% CONFIDENCE LEVEL
+    fig_psd_confidence = plt.figure(figsize=(10, 5))
+    # heatmap plot
+    ax = fig_psd_confidence.add_subplot()
+    all_psd_data = np.hstack((vec_asd_y, vec_asd_x, vec_asd_sum))
+    all_freq_data = np.hstack((vec_freq_y, vec_freq_x, vec_freq_sum))
+    dy_ch = np.array('Dy').repeat(vec_asd_y.size)
+    dx_ch = np.array('Dx').repeat(vec_asd_x.size)
+    dsum_ch = np.array('Sum').repeat(vec_asd_sum.size)
+    channels = np.hstack((dy_ch, dx_ch, dsum_ch))
+    # all_indeces = np.repeat(indeces, len(vec_asd_y)/180)  # It is assumed that every psd as the same length
+    print(all_psd_data.size)
+    print(all_freq_data.size)
+    print(vec_indeces.size)
+    df = pd.DataFrame(
+        {'psd_data': all_psd_data, 'freq_data': all_freq_data, 'Channels': channels},
+        columns=['psd_data', 'freq_data', 'Channels'])
+    sns.lineplot(x="freq_data", y="psd_data", hue='Channels', data=df, ax=ax)
+    ax.set_xlabel('Frequency [Hz]', fontsize=20)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+    ax.grid(True, linestyle='--')
 
     # PLOT INDECES MAP
     # sns.heatmap(indeces_map, cmap=['black'], annot=True, cbar=None, linewidths=0.2, fmt='0.0f')
@@ -217,13 +269,13 @@ def plot_3d_crio(file_path, file_prefix):
     # heatmap plot
     ax1_x_psd = fig_x.add_subplot()
     sns.heatmap(heatmap_psd_x, ax=ax1_x_psd, square=True, cbar=True, cmap='viridis',
-                cbar_kws={'label': r'PSD integral of $\Delta x$ $[V^2/Hz)]$'}, xticklabels=x_labels,
-                yticklabels=y_labels)  # , norm=LogNorm())
+                cbar_kws={'label': r'ASD integral'}, xticklabels=x_labels,
+                yticklabels=y_labels, norm=LogNorm())
     ax1_x_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_x_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_x_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_x_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
-    ax1_x_psd.set_title(r'PSD of $\Delta x$ $[V^2/Hz)]$')
+    ax1_x_psd.set_title(r'ASD integral [{0} Hz - {1} Hz] map of $\Delta x$'.format(freq_init, freq_final))
     ax1_x_psd.set_xlabel(r'$x [mm]$')
     ax1_x_psd.set_ylabel(r'$y [mm]$')
 
@@ -232,13 +284,13 @@ def plot_3d_crio(file_path, file_prefix):
     # heatmap plot
     ax1_y_psd = fig_x.add_subplot()
     sns.heatmap(heatmap_psd_y, ax=ax1_y_psd, square=True, cbar=True, cmap='viridis',
-                cbar_kws={'label': r'PSD integral of $\Delta y$ $[V^2/Hz)]$'}, xticklabels=x_labels,
-                yticklabels=y_labels)  # , norm=LogNorm())
+                cbar_kws={'label': r'ASD integral'}, xticklabels=x_labels,
+                yticklabels=y_labels, norm=LogNorm())
     ax1_y_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_y_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_y_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_y_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
-    ax1_y_psd.set_title(r'PSD of $\Delta y$ $[V^2/Hz)]$')
+    ax1_y_psd.set_title(r'ASD integral [{0} Hz - {1} Hz] map of $\Delta y$'.format(freq_init, freq_final))
     ax1_y_psd.set_xlabel(r'$x [mm]$')
     ax1_y_psd.set_ylabel(r'$y [mm]$')
 
@@ -247,13 +299,13 @@ def plot_3d_crio(file_path, file_prefix):
     # heatmap plot
     ax1_sum_psd = fig_x.add_subplot()
     sns.heatmap(heatmap_psd_sum, ax=ax1_sum_psd, square=True, cbar=True, cmap='viridis',
-                cbar_kws={'label': r'PSD integral of $\Sigma$ $[V^2/Hz)]$'}, xticklabels=x_labels,
-                yticklabels=y_labels)  # , norm=LogNorm())
+                cbar_kws={'label': r'ASD integral'}, xticklabels=x_labels,
+                yticklabels=y_labels, norm=LogNorm())
     ax1_sum_psd.hlines(y=4.8, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_sum_psd.hlines(y=14.2, xmin=4.8, xmax=14.2, color='r', linewidth=2.5)
     ax1_sum_psd.vlines(x=4.8, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
     ax1_sum_psd.vlines(x=14.2, ymin=4.8, ymax=14.2, color='r', linewidth=2.5)
-    ax1_sum_psd.set_title(r'PSD of $\Sigma$ $[V^2/Hz)]$')
+    ax1_sum_psd.set_title(r'ASD integral [{0} Hz - {1} Hz] map of $\Sigma$'.format(freq_init, freq_final))
     ax1_sum_psd.set_xlabel(r'$x [mm]$')
     ax1_sum_psd.set_ylabel(r'$y [mm]$')
 
