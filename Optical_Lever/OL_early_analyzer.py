@@ -5,15 +5,30 @@ import matplotlib.pyplot as plt
 
 # FREQUENCY AND PSD WINDOW
 fs = 1000  # if using oscilloscope read first row and do "1 / 2.000000e-04"
-Num = int(60 * fs)
+time_window = 60  # in sec
+Num = int(time_window * fs)
 
 # READING DATA
 # If using cRIO uncomment next line
 
-df = pd.read_table(r'C:\Users\Arc_MDC\Documents\Optical_Lever\Data\OL_Dark_EPZ.lvm', sep='\t', usecols=[0, 1, 2, 3],
+df = pd.read_table(r'C:\Users\Arc_MDC\Documents\Archimedes_Data\Optical_Lever\OL_Dark_EPZ_SoE_noUPS_Open_1kHz.lvm',
+                   sep='\t',
+                   usecols=[0, 1, 2, 3],
                    header=None)
-df1 = pd.read_table(r'C:\Users\Arc_MDC\Documents\Optical_Lever\Data\OL_Dark_GPZ_SoE.lvm', sep='\t', usecols=[0, 1, 2, 3],
+df1 = pd.read_table(r'C:\Users\Arc_MDC\Documents\Archimedes_Data\Optical_Lever\OL_Dark_GPZ_SoE_noUPS_Open_1kHz.lvm',
+                    sep='\t',
+                    usecols=[0, 1, 2, 3],
                     header=None)
+
+# DEFINING PLOT GRAPHIC VARIABLES
+first_file_label = 'OP27EPZ'
+second_file_label = 'OP27GPZ'
+x_limit_inf = 1 / time_window
+x_limit_sup = fs / 2
+y_limit_inf_asd = 1e-6
+y_limit_sup_asd = 3e-5
+y_limit_inf_diff = -1
+y_limit_sup_diff = 1
 
 epz_delta_y = df[1].values.flatten()
 epz_delta_x = df[2].values.flatten()
@@ -86,12 +101,18 @@ fig, ax1 = plt.subplots()
 
 # If using cRIO uncomment next lines
 
-ax1.plot(f, gpz_asd_y, label=r"$\Delta$y - OP27GPZ")
-ax1.plot(f, gpz_asd_x, label=r"$\Delta$x - OP27GPZ")
-ax1.plot(f, gpz_asd_sum, label=r"$\Sigma$ - OP27GPZ")
-ax1.plot(f, epz_asd_y, label=r"$\Delta$y - OP27EPZ")
-ax1.plot(f, epz_asd_x, label=r"$\Delta$x - OP27EPZ")
-ax1.plot(f, epz_asd_sum, label=r"$\Sigma$ - OP27EPZ")
+ax1.plot(f, gpz_asd_y, label=r"$\Delta$y - {}".format(first_file_label))
+ax1.plot(f, gpz_asd_x, label=r"$\Delta$x - {}".format(first_file_label))
+ax1.plot(f, gpz_asd_sum, label=r"$\Sigma$ - {}".format(first_file_label))
+ax1.plot(f, epz_asd_y, label=r"$\Delta$y - {}".format(second_file_label))
+ax1.plot(f, epz_asd_x, label=r"$\Delta$x - {}".format(second_file_label))
+ax1.plot(f, epz_asd_sum, label=r"$\Sigma$ - {}".format(second_file_label))
+# ax1.plot(f, gpz_asd_y, label=r"$\Delta$y - {}".format(first_file_label))
+# ax1.plot(f, gpz_asd_x, label=r"$\Delta$x - {}".format(first_file_label))
+# ax1.plot(f, gpz_asd_sum, label=r"$\Sigma$ - {}".format(first_file_label))
+# ax1.plot(f, epz_asd_y, label=r"$\Delta$y - {}".format(second_file_label))
+# ax1.plot(f, epz_asd_x, label=r"$\Delta$x - {}".format(second_file_label))
+# ax1.plot(f, epz_asd_sum, label=r"$\Sigma$ - {}".format(second_file_label))
 
 # If using oscilloscope uncomment next lines
 
@@ -112,20 +133,24 @@ fig_comp_y = plt.figure()
 gs_y = fig_comp_y.add_gridspec(2, hspace=0.15)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
 axs_y = gs_y.subplots(sharex=True)
 
-axs_y[0].set_xlabel('Frequency [Hz]', fontsize=20)
+# axs_y[0].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_y[0].set_xscale("log")
 axs_y[0].set_yscale("log")
 axs_y[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
-axs_y[0].grid(True, linestyle='--')
+axs_y[0].grid(True, linestyle='--', axis='both', which='both')
+axs_y[0].set_xlim([x_limit_inf, x_limit_sup])
+axs_y[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
 
 axs_y[1].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_y[1].set_xscale("log")
 # axs_y[1].set_yscale("log")
-axs_y[1].set_ylabel(r'$\frac{|a-b|}{a+b}$ [V/$\sqrt{Hz}$]', fontsize=20)
-axs_y[1].grid(True, linestyle='--')
+axs_y[1].set_ylabel(r'$\frac{|a-b|}{a+b}$', fontsize=20)
+axs_y[1].grid(True, linestyle='--', axis='both', which='both')
+axs_y[1].set_xlim([x_limit_inf, x_limit_sup])
+axs_y[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
 
-axs_y[0].plot(f, gpz_asd_y, linestyle='-', label=r'$\Delta y$ - OP27GPZ')
-axs_y[0].plot(f, epz_asd_y, linestyle='-', label=r'$\Delta y$ - OP27EPZ')
+axs_y[0].plot(f, gpz_asd_y, linestyle='-', label=r'$\Delta y$ - {}'.format(first_file_label))
+axs_y[0].plot(f, epz_asd_y, linestyle='-', label=r'$\Delta y$ - {}'.format(second_file_label))
 axs_y[1].plot(f, (gpz_asd_y - epz_asd_y) / (gpz_asd_y + epz_asd_y), linestyle='-', label=r'$\frac{|a-b|}{a+b}$')
 axs_y[0].legend(loc='best', shadow=True, fontsize='medium')
 axs_y[1].legend(loc='best', shadow=True, fontsize='medium')
@@ -133,23 +158,27 @@ axs_y[1].legend(loc='best', shadow=True, fontsize='medium')
 # Delta x channel
 
 fig_comp_x = plt.figure()
-gs_x = fig_comp_x.add_gridspec(2, hspace=0.15)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
+gs_x = fig_comp_x.add_gridspec(2, hspace=0)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
 axs_x = gs_x.subplots(sharex=True)
 
-axs_x[0].set_xlabel('Frequency [Hz]', fontsize=20)
+# axs_x[0].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_x[0].set_xscale("log")
 axs_x[0].set_yscale("log")
 axs_x[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
-axs_x[0].grid(True, linestyle='--')
+axs_x[0].grid(True, linestyle='--', axis='both', which='both')
+axs_x[0].set_xlim([x_limit_inf, x_limit_sup])
+axs_x[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
 
 axs_x[1].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_x[1].set_xscale("log")
 # axs_x[1].set_yscale("log")
-axs_x[1].set_ylabel(r'$\frac{|a-b|}{a+b}$ [V/$\sqrt{Hz}$]', fontsize=20)
-axs_x[1].grid(True, linestyle='--')
+axs_x[1].set_ylabel(r'$\frac{|a-b|}{a+b}$', fontsize=20)
+axs_x[1].grid(True, linestyle='--', axis='both', which='both')
+axs_x[1].set_xlim([x_limit_inf, x_limit_sup])
+axs_x[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
 
-axs_x[0].plot(f, gpz_asd_x, linestyle='-', label=r'$\Delta x$ - OP27GPZ')
-axs_x[0].plot(f, epz_asd_x, linestyle='-', label=r'$\Delta x$ - OP27EPZ')
+axs_x[0].plot(f, gpz_asd_x, linestyle='-', label=r'$\Delta x$ - {}'.format(first_file_label))
+axs_x[0].plot(f, epz_asd_x, linestyle='-', label=r'$\Delta x$ - {}'.format(second_file_label))
 axs_x[1].plot(f, (gpz_asd_x - epz_asd_x) / (gpz_asd_x + epz_asd_x), linestyle='-', label=r'$\frac{|a-b|}{a+b}$')
 axs_x[0].legend(loc='best', shadow=True, fontsize='medium')
 axs_x[1].legend(loc='best', shadow=True, fontsize='medium')
@@ -160,21 +189,26 @@ fig_comp_sum = plt.figure()
 gs_sum = fig_comp_sum.add_gridspec(2, hspace=0.15)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
 axs_sum = gs_sum.subplots(sharex=True)
 
-axs_sum[0].set_xlabel('Frequency [Hz]', fontsize=20)
+# axs_sum[0].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_sum[0].set_xscale("log")
 axs_sum[0].set_yscale("log")
 axs_sum[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
-axs_sum[0].grid(True, linestyle='--')
+axs_sum[0].grid(True, linestyle='--', axis='both', which='both')
+axs_sum[0].set_xlim([x_limit_inf, x_limit_sup])
+axs_sum[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
 
 axs_sum[1].set_xlabel('Frequency [Hz]', fontsize=20)
 axs_sum[1].set_xscale("log")
 # axs_sum[1].set_yscale("log")
-axs_sum[1].set_ylabel(r'$\frac{|a-b|}{a+b}$ [V/$\sqrt{Hz}$]', fontsize=20)
-axs_sum[1].grid(True, linestyle='--')
+axs_sum[1].set_ylabel(r'$\frac{|a-b|}{a+b}$', fontsize=20)
+axs_sum[1].grid(True, linestyle='--', axis='both', which='both')
+axs_sum[1].set_xlim([x_limit_inf, x_limit_sup])
+axs_sum[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
 
-axs_sum[0].plot(f, gpz_asd_sum, linestyle='-', label=r'$\Sigma$ - OP27GPZ')
-axs_sum[0].plot(f, epz_asd_sum, linestyle='-', label=r'$\Sigma$ - OP27EPZ')
-axs_sum[1].plot(f, (gpz_asd_sum - epz_asd_sum) / (gpz_asd_sum + epz_asd_sum), linestyle='-', label=r'$\frac{|a-b|}{a+b}$')
+axs_sum[0].plot(f, gpz_asd_sum, linestyle='-', label=r'$\Sigma$ - {}'.format(first_file_label))
+axs_sum[0].plot(f, epz_asd_sum, linestyle='-', label=r'$\Sigma$ - {}'.format(second_file_label))
+axs_sum[1].plot(f, (gpz_asd_sum - epz_asd_sum) / (gpz_asd_sum + epz_asd_sum), linestyle='-',
+                label=r'$\frac{|a-b|}{a+b}$')
 axs_sum[0].legend(loc='best', shadow=True, fontsize='medium')
 axs_sum[1].legend(loc='best', shadow=True, fontsize='medium')
 plt.show()
