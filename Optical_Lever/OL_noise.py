@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.5.0"
+__version__ = "0.6"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
@@ -230,16 +230,19 @@ def old():
     axs_sum[1].legend(loc='best', shadow=True, fontsize='medium')
 
 
+# TODO: Eventually add config for all the variables (?)
+
+
 def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, means_number=1, final_df=pd.DataFrame(),
                   offset=1,
                   max_length=1200000):
+    # TODO: Add function description
     Num = samp_freq * psd_window
     df = pd.read_table(os.path.join(file_directory, filename),
                        sep='\t',
                        usecols=[0, 1, 2, 3],
                        header=None,
                        names=['NaN', 'Dy', 'Dx', 'Sum'])
-    # print(df.head())
     vec_asd, freq_asd = np.array([]), np.array([])
     data = np.array_split(df[channel][:max_length].values.flatten() * offset, max_length / Num)
     nfft_used = int(Num / means_number)
@@ -256,10 +259,11 @@ def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, mean
         {'asd_data': vec_asd, 'freq_data': freq_asd, 'Channels': ch},
         columns=['asd_data', 'freq_data', 'Channels'])
     final_df = final_df.append(resulting_df, ignore_index=True)
-    return final_df, nfft_used, samp_freq  # freq_asd, vec_asd, final_df
+    return final_df, psd_window / means_number, samp_freq  # freq_asd, vec_asd, final_df
 
 
 def ratio(first_df, second_df):
+    # TODO: Add function description
     ch = np.array('{0}/{1}'.format(first_df['Channels'][0], second_df['Channels'][0])).repeat(len(first_df['Channels']))
     ratio_df = pd.DataFrame(
         {'ratio': first_df['asd_data'] / second_df['asd_data'], 'freq_data': first_df['freq_data'], 'Channels': ch},
@@ -274,8 +278,7 @@ df_1, t_w, f_samp = asd_extractor(
     psd_window=60,
     means_number=10,
     channel='Sum')
-print(t_w)
-print('first df')
+# print('first df')
 df_2, _, _ = asd_extractor(
     file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
     filename=r'OL_Dark_GPZ_SoE_noUPS_Open_1kHz.lvm',
@@ -283,57 +286,67 @@ df_2, _, _ = asd_extractor(
     psd_window=60,
     means_number=10,
     channel='Sum')
-print('second df')
+# print('second df')
 df_3 = ratio(first_df=df_1,
              second_df=df_2)
-print('third df')
+# print('third df')
 # MAKING PSD PLOT WITH 95% CONFIDENCE LEVEL
 fig_psd_confidence = plt.figure(figsize=(10, 5))
 
-outer_grid = gridspec.GridSpec(2, 1, width_ratios=[1],
-                               height_ratios=[3.5, 1])  # gridspec with two adjacent horizontal cells
-upper_cell = outer_grid[0, 0]  # the left SubplotSpec within outer_grid
+# TO USE PARTICULAR LAYOUTS UNCOMMENT FOLLOWING LINES
+# outer_grid = gridspec.GridSpec(3, 1, width_ratios=[1],
+#                                height_ratios=[3.5, 3.5, 1])  # gridspec with two adjacent horizontal cells
+# upper_cell = outer_grid[0, 0]  # the left SubplotSpec within outer_grid
+#
+# inner_grid = gridspec.GridSpecFromSubplotSpec(1, 2, upper_cell)
+#
+# # From here we can plot usinginner_grid's SubplotSpecs
+# ax1 = plt.subplot(outer_grid[0, 0])
+# ax2 = plt.subplot(outer_grid[1, 0])
+# ax3 = plt.subplot(outer_grid[2, 0])
 
-inner_grid = gridspec.GridSpecFromSubplotSpec(1, 2, upper_cell)
+# TO MAKE THREE VERTICAL PLOTS UNCOMMENT NEXT LINES
+gs = fig_psd_confidence.add_gridspec(3, hspace=0.15, width_ratios=[1], height_ratios=[3, 3, 1.5])
+ax = gs.subplots(sharex=True)
 
-# From here we can plot usinginner_grid's SubplotSpecs
-ax1 = plt.subplot(inner_grid[0, 0])
-ax2 = plt.subplot(inner_grid[0, 1])
-ax3 = plt.subplot(outer_grid[1, 0])
-# gs = fig_psd_confidence.add_gridspec(2, hspace=0.15, width_ratios=[1], height_ratios=[4, 1])
-# heatmap plot
-# ax = fig_psd_confidence.add_subplot()
-sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:blue'], ci='sd', data=df_1, ax=ax1)
-sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange'], ci='sd', data=df_2, ax=ax2)
-sns.lineplot(x="freq_data", y="ratio", hue='Channels', palette=['tab:green'], ci='sd', data=df_3, ax=ax3)
+# DATA PLOT USING SEABORN
+# ci: Size of the confidence interval to draw when aggregating with an estimator.
+# “sd” means to draw the standard deviation of the data. Setting to None will skip bootstrapping.
+# See: https://seaborn.pydata.org/generated/seaborn.lineplot.html
+sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:blue'], ci='sd', data=df_1, ax=ax[0])
+sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange'], ci='sd', data=df_2, ax=ax[1])
+sns.lineplot(x="freq_data", y="ratio", hue='Channels', palette=['tab:green'], ci='sd', data=df_3, ax=ax[2])
 
-x_limit_inf = 1 / t_w * f_samp
-x_limit_sup = f_samp / 2
-y_limit_inf_asd = 8e-7
-y_limit_sup_asd = 8e-5
-y_limit_inf_diff = -1
-y_limit_sup_diff = 1
+# DEFINING VARIABLES TO CONTROL X/Y LIMIT IN PLOTS
+x_limit_inf = 1 / t_w  # minimum frequency achieved
+x_limit_sup = f_samp / 2  # Nyquist's theorem
+y_limit_inf_asd = 1e-6  # set by user
+y_limit_sup_asd = 8e-5  # set by user
+y_limit_inf_ratio = -1  # set by user
+y_limit_sup_ratio = 1  # set by user
 
-ax1.set_xlabel('Frequency [Hz]', fontsize=20)
-ax1.set_xscale("log")
-ax1.set_yscale("log")
-ax1.set_xlim([x_limit_inf, x_limit_sup])
-ax1.set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax1.set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
-ax1.grid(True, linestyle='--', axis='both', which='both')
+# IF NOT USING VERTICAL LAYOUTS CHANE ax[0], ax[1], ax[2] ---> ax1, ax2, ax3
+ax[0].set_xlabel('Frequency [Hz]', fontsize=20)
+ax[0].set_xscale("log")
+ax[0].set_yscale("log")
+ax[0].set_xlim([x_limit_inf, x_limit_sup])
+ax[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
+ax[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+ax[0].grid(True, linestyle='--', axis='both', which='both')
 
-ax2.set_xlabel('Frequency [Hz]', fontsize=20)
-ax2.set_xscale("log")
-ax2.set_yscale("log")
-ax2.set_xlim([x_limit_inf, x_limit_sup])
-ax2.set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax2.set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
-ax2.grid(True, linestyle='--', axis='both', which='both')
+ax[1].set_xlabel('Frequency [Hz]', fontsize=20)
+ax[1].set_xscale("log")
+ax[1].set_yscale("log")
+ax[1].set_xlim([x_limit_inf, x_limit_sup])
+ax[1].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
+ax[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+ax[1].grid(True, linestyle='--', axis='both', which='both')
 
-ax3.set_xlabel('Frequency [Hz]', fontsize=20)
-ax3.set_xscale("log")
-# ax3.set_yscale("log")
-ax3.set_ylabel(r'$\frac{a}{b}$', fontsize=20)
-ax3.grid(True, linestyle='--', axis='both', which='both')
+ax[2].set_xlabel('Frequency [Hz]', fontsize=20)
+ax[2].set_xscale("log")
+ax[2].set_xlim([x_limit_inf, x_limit_sup])
+# ax3.set_xlim([y_limit_inf_ratio, y_limit_sup_ratio])
+ax[2].set_ylabel(r'$\frac{a}{b}$', fontsize=20)
+ax[2].grid(True, linestyle='--', axis='both', which='both')
 
 plt.show()
