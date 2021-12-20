@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.6"
+__version__ = "0.7"
 __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import matplotlib.gridspec as gridspec
+from sqlalchemy.testing import rowset
 from win32com.makegw.makegwparse import error_not_supported
 
 
@@ -237,41 +238,47 @@ def old():
 def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, means_number=1, final_df=pd.DataFrame(),
                   offset=1,
                   max_length=600):
+    r"""
+        The data read are split in chunk of equal size using the formula:
+        ..math: #_{chunks} = \frac{maximum length}{PSD window}
+        For each chunk a psd is performed with the window specified and with the number of means specified.
+        The function returns a DataFrame containing three columns (asd_data, freq_data and Channels),the
+        psd window and the means used (necessary to evaluate the minimum frequency achieved)
+        and the sample frequency applied.
+
+        :param file_directory: The directory where the file is stored
+        :type file_directory: str
+
+        :param filename: The name of the file
+        :type filename: str
+
+        :param samp_freq: The sampling frequency used
+        :type samp_freq: int
+
+        :param psd_window: Represents the length, in seconds, of the psd
+        :type psd_window: int
+
+        :param channel: One of the three channel acquired by the OL-shield. It MUST BE one of the following: Dy, Dx or
+         Sum
+        :type channel: str
+
+        :param means_number: Specify how many means for each psd evaluation you want to perform
+        :type means_number: int
+
+        :param final_df: Already existing DataFrame to which you want to append the new data
+        :type final_df: pandas.DataFrame
+
+        :param offset: If you want to apply a vertical translation to the data
+        :type offset: float
+
+        :param max_length: Specify the maximum length of the data, in seconds, to be used. It is used to uniform the
+         length between the channels
+        :type max_length: int
+
+        :return: A tuple of: a DataFrame containing three columns (asd_data, freq_data and Channels) the ratio between
+         the psd window and the means used (necessary to evaluate the minimum frequency achieved)
+         and the sample frequency applied
     """
-
-    :param file_directory: The directory where the file is stored
-    :type file_directory: str
-
-    :param filename: The name of the file
-    :type filename: str
-
-    :param samp_freq: The sampling frequency used
-    :type samp_freq: int
-
-    :param psd_window: Represents the length, in seconds, of the psd
-    :type psd_window: int
-
-    :param channel: One of the three channel acquired by the OL-shield. It MUST BE one of the following: Dy, Dx or Sum
-    :type channel: str
-
-    :param means_number: Specify how many means for each psd evaluation you want to perform
-    :type means_number: int
-
-    :param final_df: Already existing DataFrame to which you want to append the new data
-    :type final_df: pandas.DataFrame
-
-    :param offset: If you want to apply a vertical translation to the data
-    :type offset: float
-
-    :param max_length: Specify the maximum length of the data, in seconds, to be used. It is used to uniform the length
-     between the channels
-    :type max_length: int
-
-    :return: A tuple of: a DataFrame containing three columns (asd_data, freq_data and Channels) the ratio between the
-     psd window and the means used (necessary to evaluate the minimum frequency achieved)
-     and the sample frequency applied
-    """
-    # TODO: Add function description
     Num = samp_freq * psd_window
     last_index = max_length * samp_freq
     df = pd.read_table(os.path.join(file_directory, filename),
@@ -280,7 +287,9 @@ def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, mean
                        header=None,
                        names=['NaN', 'Dy', 'Dx', 'Sum'])
     vec_asd, freq_asd = np.array([]), np.array([])
-    data = np.array_split(df[channel][:last_index].values.flatten() * offset, last_index / Num)
+
+    # The data will be split in Num-chunks. For each chunk a psd will be performed
+    data = np.array_split(df[channel][:last_index].values.flatten() * offset, max_length / psd_window)
     nfft_used = int(Num / means_number)
     for i in range(len(data)):
         psd, freq = mlab.psd(data[i], NFFT=nfft_used, Fs=samp_freq, detrend="linear")  # ,noverlap=NOL)
@@ -366,9 +375,9 @@ def ratio_std(first_df, second_df, num_std=1, estimator='mean'):
     # Evaluate the ratio between the quantities
     std_estim = first_estim / second_estim
     std_low_quantile = (first_df.groupby(['freq_data'])['asd_data'].mean() + num_std * first_std) / (
-                second_df.groupby(['freq_data'])['asd_data'].mean() + num_std * second_std)
+            second_df.groupby(['freq_data'])['asd_data'].mean() + num_std * second_std)
     std_up_quantile = (first_df.groupby(['freq_data'])['asd_data'].mean() - num_std * first_std) / (
-                second_df.groupby(['freq_data'])['asd_data'].mean() - num_std * second_std)
+            second_df.groupby(['freq_data'])['asd_data'].mean() - num_std * second_std)
 
     # Frequencies are the indeces of the DataFrame because of groupby()
     frequency_array = std_estim.index.to_numpy()
@@ -431,21 +440,91 @@ def difference(first_df, second_df, lower_quantile, upper_quantile, estimator='m
     return frequency_array, diff_estim_array, diff_low_quantile_array, diff_up_quantile_array, ratio_label
 
 
-df_1, t_w, f_samp = asd_extractor(
-    file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
-    filename=r'OL_Dark_EPZ_SoE_noUPS_Open_1kHz.lvm',
-    samp_freq=2000,
-    psd_window=60,
-    means_number=10,
-    channel='Sum')
+def distr_plot(first_df, second_df, lower_quantile, upper_quantile, estimator, num_plot):
+    length = 10
+    for i in range(num_plot):
+        test_df1 = first_df.sort_values('freq_data')[i * length:length + i * length]['asd_data']
+        test_df2 = second_df.sort_values('freq_data')[i * length:length + i * length]['asd_data']
 
-df_2, _, _ = asd_extractor(
+        test_df = pd.DataFrame({'GPZ_asd': test_df1, 'EPZ_asd': test_df2},
+                               columns=['GPZ_asd', 'EPZ_asd'])
+
+        # HISTOGRAM PLOT
+        test_df.plot.hist(bins=10, alpha=0.5, legend=True)
+
+        # GRAPH PROPERTIES
+        plt.title('Frequency = {:0.2} Hz'.format(
+            first_df.sort_values('freq_data')[i * length:length + i * length]['freq_data'].min()))
+        plt.ylim([0, 5])
+        plt.tick_params(
+            axis='x',  # changes apply to the x-axis
+            which='both',  # both major and minor ticks are affected
+            bottom=False,  # ticks along the bottom edge are off
+            top=False,  # ticks along the top edge are off
+            labelbottom=False)
+
+        # GPZ vlines
+        plt.axvline(x=test_df['GPZ_asd'].quantile(lower_quantile), color='blue', linestyle='dotted', linewidth=2)
+        plt.text(test_df['GPZ_asd'].quantile(0.1), -0.15, '{}%'.format(lower_quantile * 100),
+                 color='blue', ha='center', va='center')
+
+        plt.axvline(x=test_df['GPZ_asd'].quantile(upper_quantile), color='blue', linestyle='dotted', linewidth=2)
+        plt.text(test_df['GPZ_asd'].quantile(0.9), -0.55, '{}%'.format(upper_quantile * 100),
+                 color='blue', ha='center', va='center')
+
+        # EPZ vlines
+        plt.axvline(x=test_df['EPZ_asd'].quantile(lower_quantile), color='red', linestyle='dotted', linewidth=2)
+        plt.text(test_df['EPZ_asd'].quantile(0.1), -0.15, '{}%'.format(lower_quantile * 100),
+                 color='red', ha='center', va='center')
+
+        plt.axvline(x=test_df['EPZ_asd'].quantile(upper_quantile), color='red', linestyle='dotted', linewidth=2)
+        plt.text(test_df['EPZ_asd'].quantile(0.9), -0.55, '{}%'.format(upper_quantile * 100),
+                 color='red', ha='center', va='center')
+
+        if estimator.lower() == 'median':
+            plt.axvline(x=test_df['GPZ_asd'].median(), color='blue', linestyle='dotted', linewidth=2)
+            plt.text(test_df['GPZ_asd'].median(), -0.35, 'Median', color='blue',
+                     ha='center', va='center')
+
+            plt.axvline(x=test_df['EPZ_asd'].median(), color='red', linestyle='dotted', linewidth=2)
+            plt.text(test_df['EPZ_asd'].median(), -0.35, 'Median', color='red',
+                     ha='center', va='center')
+
+        elif estimator.lower() == 'mean':
+            plt.axvline(x=test_df['GPZ_asd'].mean(), color='blue', linestyle='dotted', linewidth=2)
+            plt.text(test_df['GPZ_asd'].mean(), -0.35, 'Mean', color='blue',
+                     ha='center', va='center')
+
+            plt.axvline(x=test_df['EPZ_asd'].mean(), color='red', linestyle='dotted', linewidth=2)
+            plt.text(test_df['EPZ_asd'].mean(), -0.35, 'Mean', color='red',
+                     ha='center', va='center')
+
+
+df_1, t_w, f_samp = asd_extractor(
     file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
     filename=r'OL_Dark_GPZ_SoE_noUPS_Open_1kHz.lvm',
     samp_freq=2000,
     psd_window=60,
-    means_number=10,
+    means_number=5,
     channel='Sum')
+
+df_2, _, _ = asd_extractor(
+    file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
+    filename=r'OL_Dark_EPZ_SoE_noUPS_Open_1kHz.lvm',
+    samp_freq=2000,
+    psd_window=60,
+    means_number=5,
+    channel='Sum')
+
+# PLOT THE DISTRIBUTION OF THE ASD FOR THE FIRST num_plot FREQUENCIES
+distr_plot(first_df=df_1,
+           second_df=df_2,
+           lower_quantile=0.1,
+           upper_quantile=0.9,
+           estimator='median',
+           num_plot=6)
+# df_2['asd_data'].hist(by=df_2['freq_data'])
+# test_df.plot.hist(bins=5, alpha=0.5)
 
 f_data, ratio_data, ratio_low, ratio_up, ratio_lab = ratio(first_df=df_1,
                                                            second_df=df_2,
@@ -495,8 +574,8 @@ sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange']
 # PLOT RATIO
 ax[2].fill_between(f_data, ratio_low, ratio_up, alpha=.5, color='tab:green', linewidth=0)
 ax[2].plot(f_data, ratio_data, linewidth=2, color='tab:green', label=ratio_lab + ' (Median)')
-# ax[2].scatter(f_data, std_up, linewidth=1, color='tab:red', label='90%')
-# ax[2].scatter(f_data, std_low, linewidth=1, color='tab:blue', label='10%')
+# ax[2].scatter(f_data, ratio_up, linewidth=1, color='tab:red', label='90%')
+# ax[2].scatter(f_data, ratio_low, linewidth=1, color='tab:blue', label='10%')
 
 # PLOT DIFFERENCE
 # ax[2].fill_between(f_data, diff_low, diff_up, alpha=.5, color='tab:green', linewidth=0)
