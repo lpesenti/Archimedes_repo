@@ -48,7 +48,8 @@ error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 58
                                                   fromaddr="archimedes.noreply@gmail.com",
                                                   toaddrs=mailing_list,
                                                   subject='Log report #' + str(now),
-                                                  credentials=('archimedes.noreply@gmail.com', 'fXV-r^kZqpZn7yBt'),
+                                                  credentials=(
+                                                  'archimedes.noreply@gmail.com', config['DEFAULT']['psw']),
                                                   secure=())
 error_mail_handler.setFormatter(mail_formatter)
 error_mail_handler.setLevel(logging.WARNING)
@@ -81,7 +82,8 @@ if __name__ == '__main__':
     # ax2 = fig2.add_subplot()
     # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', ax=ax0)
-    af.easy_psd(day=22, month=11, year=2020, quantity='error', ax=ax0, init_time='23:25:36.094358', final_time='23:55:35.994314')
+    af.easy_psd(day=22, month=11, year=2020, quantity='error', ax=ax0, init_time='23:25:36.094358',
+                final_time='23:55:35.994314')
     # af.time_evolution(day=18, month=5, year=2021, quantity='itf', ax=ax0)
     # fig0.savefig(os.path.join(path_to_img, fname1))
     # fig1.savefig(os.path.join(path_to_img, fname2))

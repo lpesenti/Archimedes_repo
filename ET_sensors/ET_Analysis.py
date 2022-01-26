@@ -5,6 +5,15 @@ __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
 
+r"""
+[LAST UPDATE: 26 Jan 2022 - Luca Pesenti]
+
+This file is to be used as a prototype to launch the functions contained in ET_functions.py
+However, it is perfectly functioning
+
+Enjoy the world of seismometers!  :-)
+"""
+
 from obspy import UTCDateTime
 import ET_functions as ET
 import configparser
@@ -28,14 +37,20 @@ means = float(config['Quantities']['number_of_means'])
 verbose = config.getboolean('Quantities', 'verbose')
 savedata = config.getboolean('Quantities', 'save_data')
 
+Data_path2 = config['Paths']['data_path2']
+sensor2 = config['Instrument']['sensor2']
+
 if __name__ == '__main__':
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
     st_tot = ET.extract_stream(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000,
                                Twindow,
                                verbose=verbose)
-    # ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap)
+    # st_tot.plot()
+    ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap, temporal=False)
+    # ET.rms_comparison(XML_path + XML_file, Data_path, Data_path2, network, sensor, sensor2, location, channel, ti, Twindow, verbose)
+    # ET.spectrogram(st_tot, XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
+    #               verbose)
     # freq, psd, samp_rate, rms, id = ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel,
     #                                                   ti, Twindow, Overlap, means, verbose, out=savedata)
     # ET.plot_maker(frequency_data=freq, psd_data=psd, sampling_rate=samp_rate, rms_data=rms, sensor_id=id)
-    # ET.output(now=now, freq_data=freq, psd_data=psd, rms_data=rms, sampling_rate=samp_rate)

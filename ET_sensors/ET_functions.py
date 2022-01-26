@@ -1,20 +1,25 @@
 __author__ = "Luca Pesenti and Davide Rozza "
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.8.1"
+__version__ = "0.8.5"
 __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
 
 import numpy as np
+from obspy import UTCDateTime
 from obspy import read, read_inventory, Stream
 from obspy.signal import PPSD
 from obspy.imaging.cm import pqlx
 import glob
 from matplotlib import mlab
 import matplotlib.pyplot as plt
-import time
 from datetime import datetime
-# import datetime
+import pandas as pd
+import seaborn as sns
+from matplotlib.dates import date2num, num2date, DateFormatter
+import matplotlib.dates as mdates
+
+import datetime
 
 
 def NLNM(unit):
@@ -110,10 +115,10 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     fsxml = sa[len(sa)]['output_sampling_rate']
     if verbose:
         print('Sampling rate:', fsxml)
-    Num = int(Twindow * fsxml)
+    Num = int(Twindow * 100)  # TODO: Why fsxml is different from the real sampling rate?
     # Returns frequency response and corresponding frequencies using evalresp
     #                                        time_res,       Npoints,  output
-    sresp, fxml = resp.get_evalresp_response(t_samp=1 / fsxml, nfft=Num, output="VEL")
+    sresp, fxml = resp.get_evalresp_response(t_samp=1 / 100, nfft=Num, output="VEL")
     fxml = fxml[1:]  # remove first value that is 0
     sresp = sresp[1:]  # remove first value that is 0
     # amplitude -> absolute frequency value
@@ -184,7 +189,7 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
     return st_tot
 
 
-def ppsd(stream, filexml, sensor, Twindow, Overlap):
+def ppsd(stream, filexml, sensor, Twindow, Overlap, temporal=False):
     """
     Make PPSD plot
 
@@ -211,6 +216,12 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap):
         seism_ppsd.add(stream.select(station=sensor)[itrace])
 
     seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, fs / 2))
+    if temporal:
+        seism_ppsd.plot_temporal(period=1)  # Period of PSD values to plot. The period bin with the central period that
+        # is closest to the specified value is selected. Multiple values can be specified in a list
+        sps = int(stream[0].stats.sampling_rate)
+        stream.merge()
+        stream.spectrogram(wlen=.1 * sps, per_lap=0.90, dbscale=True, log=True)  # , cmap='YlOrRd')
 
 
 def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, mean_number,
@@ -268,11 +279,11 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
             chunk_s = chunk_s[1:]
             integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
             vec_rms = np.append(vec_rms, integral)
-            rms_time = np.append(rms_time, time[index*len(chunk):len(chunk)+index*len(chunk)][0])
+            rms_time = np.append(rms_time, time[index * len(chunk):len(chunk) + index * len(chunk)][0])
             if integral < integral_min:
                 integral_min = integral
                 data = chunk
-                best_time = time[index*len(chunk):len(chunk)+index*len(chunk)]
+                best_time = time[index * len(chunk):len(chunk) + index * len(chunk)]
     # data = np.array([])
     """for index, chunk in enumerate(data_split):
         chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
@@ -295,30 +306,8 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     if out:
         output(freq_data=f_best, psd_data=best_psd, rms_data=vec_rms, sampling_rate=fs)
 
-    # DA CANCELLARE!!
-    def myfromtimestampfunction(timestamp):
-        return datetime.fromtimestamp(timestamp)
-
-    def myvectorizer(input_func):
-        def output_func(array_of_numbers):
-            return [input_func(a) for a in array_of_numbers]
-
-        return output_func
-
-    # CANCELLARE
-    import matplotlib.dates as mdates
-    fig0 = plt.figure()
-    ax0 = fig0.add_subplot()
-    date_convert = myvectorizer(myfromtimestampfunction)
-    xtimex = date_convert(rms_time)
-    xfmt = mdates.DateFormatter('%b %d %H:%M')  #:%S')
-    ax0.xaxis.set_major_formatter(xfmt)
-    ax0.plot(xtimex, vec_rms, linestyle='-', color='tab:blue', label='RMS')
-    ax0.grid(True, linestyle='--')
-    ax0.set_xlabel('time', fontsize=20)
-    ax0.set_ylabel(r'RMS', fontsize=20)
-    ax0.legend(loc='best', shadow=True, fontsize='medium')
-    plt.show()
+    plot_maker(frequency_data=f_best, psd_data=best_psd, rms_data=vec_rms, sampling_rate=fs, sensor_id=seed_id)
+    rms_plotter(rms_time=rms_time, rms_data=vec_rms)
 
     return f_best, best_psd, fs, vec_rms, seed_id
 
@@ -347,6 +336,60 @@ def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
     ax0.set_ylabel(r'Seismic [(m/s)/$\sqrt{Hz}$]', fontsize=20)
     ax0.set_title(sensor_id, fontsize=20)
     ax0.legend(loc='best', shadow=True, fontsize='medium')
+
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot()
+    # ax1.tick_params(axis='both', which='both', labelsize=15)
+    # ax1.hist(rms_data, bins=100)
+    # ax1.grid(True, linestyle='--')
+    # ax1.set_yscale("log")
+    # ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
+    # ax1.set_ylabel(r'Counts', fontsize=20)
+
+    plt.show()
+
+
+def rms_plotter(rms_time, rms_data):
+    def myfromtimestampfunction(timestamp):
+        return datetime.fromtimestamp(timestamp)
+
+    def myvectorizer(input_func):
+        def output_func(array_of_numbers):
+            return [input_func(a) for a in array_of_numbers]
+
+        return output_func
+
+    import matplotlib.dates as mdates
+
+    fig0 = plt.figure()
+    ax0 = fig0.add_subplot()
+    date_convert = myvectorizer(myfromtimestampfunction)
+    xtimex = date_convert(rms_time)
+    xfmt = mdates.DateFormatter('%b %d %H:%M')  #:%S')
+    ax0.xaxis.set_major_formatter(xfmt)
+    ax0.plot(xtimex, rms_data, linestyle='-', color='tab:blue', label='RMS')
+    ax0.grid(True, linestyle='--')
+    ax0.set_xlabel('time', fontsize=20)
+    ax0.set_ylabel(r'RMS', fontsize=20)
+    ax0.legend(loc='best', shadow=True, fontsize='medium')
+
+    import pandas as pd
+
+    df = pd.DataFrame({'rms': rms_data}, index=pd.to_datetime(rms_time, unit='s'))
+    data_0_7 = df.loc[(df.index.hour >= 0) & (df.index.hour <= 7)]
+    data_8_15 = df.loc[(df.index.hour >= 8) & (df.index.hour <= 15)]
+    data_16_23 = df.loc[(df.index.hour >= 16) & (df.index.hour <= 23)]
+    print(data_0_7.head())
+    print('% of rms data between 0 and 7:', round(len(data_0_7) * 100 / len(rms_data), 2))
+    print('% of rms data between 8 and 15:', round(len(data_8_15) * 100 / len(rms_data), 2))
+    print('% of rms data between 16 and 23:', round(len(data_16_23) * 100 / len(rms_data), 2))
+    print('mean of rms data between 0 and 8:', data_0_7.mean())
+    print('mean of rms data between 8 and 15:', data_8_15.mean())
+    print('mean of rms data between 16 and 23:', data_16_23.mean())
+
+    data_0_7.reset_index().plot(x='index', y='rms', title='Integral between 0 and 7')
+    data_8_15.reset_index().plot(x='index', y='rms', title='Integral between 8 and 15')
+    data_16_23.reset_index().plot(x='index', y='rms', title='Integral between 16 and 23')
 
     fig1 = plt.figure()
     ax1 = fig1.add_subplot()
@@ -417,3 +460,305 @@ Both frequency and PSD data has been saved in {outfile_data}
     print(output_str, file=open(outfile, "w"))
 
     np.savetxt(outfile_data, np.c_[freq_data, psd_data], header='Frequency | PSD values')
+
+
+#  THE FOLLOWING FUNCTIONS WORK BUT ARE NEITHER IN A OPTIMIZE VERSION NOR IN A RELEASE STATE.
+
+def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose):
+    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    print('The analysis start from\t', startdate, '\tto\t', stopdate)
+
+    df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
+
+    T = 600
+    Ovl = 0.5
+    TLong = 6 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+
+    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+
+    print('K: ', K)
+    print('M: ', M)
+
+    v = np.empty(K)
+    d = np.empty(K)
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    f = np.round(f, 2)
+    # fmin = 2
+    # fmax = 20
+    # w = 2.0 * np.pi * f
+    # print(np.where(w == 0))
+    # w1 = w ** 2 / respamp
+    # imin = (np.abs(f - fmin)).argmin()
+    # imax = (np.abs(f - fmax)).argmin()
+
+    import timeit
+
+    start = timeit.default_timer()
+    for file in filename_list:
+        k = 0
+        print(file)
+
+        st = read(file)
+        # print(st.sort().__str__(extended=True))
+        st = st.sort()
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+        # Tstop = st[-1:][0].times('utcdatetime')[-1:][0]
+        # time = st[0].times('utcdatetime')[0]
+        # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
+        # time = startdate
+        while time < Tstop:
+            print('Evaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+
+            t1 = time
+            for n in range(0, M):
+                v[k] = np.nan
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:]
+                        # spec = s / gain
+                        v[k] = 0
+
+                # d[k] = date2num(t1.datetime)
+                # print('t1 =', t1)
+                time_measure = np.repeat(t1.timestamp, np.size(f))
+
+                if np.isnan(v[k]):
+                    psd_values = np.tile(v[k], np.size(f))
+                else:
+                    psd_values = s  # 10 * np.log10(s / gain)
+
+                data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
+                data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
+                df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
+    print(df.head())
+    df['psd_value'] = 10 * np.log10(np.sqrt(df['psd_value'] / gain))
+    # df['psd_value'] = 10 * np.log10(df['psd_value'] * df['omega'])
+    # for freq in range(f.size):
+    #     mask = df['frequency'] == f[freq]
+    #     df.loc[mask, 'psd_acc'] = df.loc[mask, 'psd_value'] * w1[freq]
+    print(df.head())
+    print(df.info())
+    df['frequency'] = df['frequency'].astype(float)
+    df['psd_value'] = df['psd_value'].astype(float)
+    result = df.pivot_table(index='frequency', columns='timestamp', values='psd_value')
+
+    # TODO: add option for .csv exportation and create an easy function to load and plot data.
+    #  Remember to change the df loaded indeces with the freq data. Storage ASD values for every day?
+    # result.to_csv(r'D:\ET\{0}{1}-{2}_{3}-{4}.csv'.format(sensor, location, channel, startdate.strftime('%Y%m%d'),
+    #                                                      stopdate.strftime('%Y%m%d')))
+    # result.to_parquet(r"D:\ET\test.parquet.brotli", compression='brotli', compression_level=9)
+
+    result.columns = result.columns.strftime('%d %b %H:%M')
+    print(result.info())
+    print(result.head())
+    stop = timeit.default_timer()
+    print('Elapsed time before plot:', (stop - start), 's')
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot()
+
+    # fig1 = plt.figure(figsize=(10, 5))
+    # ax1 = fig1.add_subplot()
+    #
+    # fig2 = plt.figure(figsize=(10, 5))
+    # ax2 = fig2.add_subplot()
+
+    sns.set(font_scale=1.5)
+    g = sns.heatmap(result, cbar=True, ax=ax, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='mako')
+    # g1 = sns.heatmap(result, cbar=True, ax=ax1, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='viridis')
+    # g2 = sns.heatmap(result, cbar=True, ax=ax2, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='mako')
+
+    ax.set_ylabel(r'Frequency [Hz]', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=70, ha="center")
+    g.set(xlabel=None)
+
+    # ax1.set_ylabel(r'Frequency [Hz]', fontsize=20)
+    # ax1.tick_params(axis='both', which='major', labelsize=18)
+    # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=70, ha="center")
+    # g1.set(xlabel=None)
+    #
+    # ax2.set_ylabel(r'Frequency [Hz]', fontsize=20)
+    # ax2.tick_params(axis='both', which='major', labelsize=18)
+    # plt.setp(ax2.xaxis.get_majorticklabels(), rotation=70, ha="center")
+    # g2.set(xlabel=None)
+
+    fig.tight_layout()
+    # fig1.tight_layout()
+    # fig2.tight_layout()
+    plt.show()
+
+
+def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, verbose):
+    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    df = pd.DataFrame(columns=['timestamp', 'rms_value', 'Station_Name'])
+
+    T = 600
+    Ovl = 0.5
+    TLong = 6 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+
+    print('M: ', M)
+
+    rms_val = np.array([])
+    dates = np.array([])
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    f = np.round(f, 2)
+
+    fmin = 2  # 1 / 240  # Trillium model sensitivity
+    fmax = 20  # fsxml / 2  # Nyquist's theorem
+
+    imin = (np.abs(f - fmin)).argmin()
+    imax = (np.abs(f - fmax)).argmin()
+
+    for file in filename_list:
+        print(file)
+        k = 0
+        st = read(file)
+        # print(st.sort().__str__(extended=True))
+        st = st.sort()
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+
+        while time < Tstop:
+            print('Evaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+            t1 = time
+            for n in range(0, M):
+
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:]
+                        spec = s / gain
+                        rms_val = np.append(rms_val, sum(spec[imin:imax] / T))
+
+                        dates = np.append(dates, date2num(t1.datetime))
+
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+        # rms_val = 10 * np.log10(rms_val)  # to dB
+        if sensor == 'P2' or 'P3':
+            station = np.array(int(filename_list[0].split('.')[2])).repeat(rms_val.size)
+        else:
+            station = np.array(int(filename_list[0].split('.')[1][3])).repeat(rms_val.size)
+
+        data_to_save = np.concatenate((dates, rms_val, station))
+        data_to_save = np.reshape(data_to_save, (3, np.size(rms_val))).T
+        df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
+    print(df.head())
+    print(df.info())
+    return df
+
+
+def rms_comparison(filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel, tstart, Twindow,
+                   verbose):
+    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+    fig = plt.figure(figsize=(10, 5))
+    gs = fig.add_gridspec(2, hspace=0.15, width_ratios=[1], height_ratios=[3, 1.5])
+    ax = gs.subplots(sharex=True)
+
+    df = rms(filexml, Data_path1, network, sensor1, location, channel, tstart, Twindow, verbose)
+    if sensor1 == 'P2' or 'P3' and location == '00':
+        df1 = rms(filexml, Data_path2, network, sensor2, '01', channel, tstart, Twindow, verbose)
+    elif sensor1 == 'P2' or 'P3' and location == '01':
+        df1 = rms(filexml, Data_path2, network, sensor2, '00', channel, tstart, Twindow, verbose)
+    else:
+        df1 = rms(filexml, Data_path2, network, sensor2, location, channel, tstart, Twindow, verbose)
+
+    df['ratio'] = df['rms_value'] / df1['rms_value']
+    df['Quantity'] = 'Ratio'
+
+    print('Mean ratio =', df['ratio'].mean(), '+/-', df['ratio'].std())
+    nighttime_df = df[pd.to_datetime(num2date(df['timestamp'])).hour <= 5]
+    daytime_df = df[pd.to_datetime(num2date(df['timestamp'])).hour > 5]
+
+    print('Mean nighttime ratio =', nighttime_df['ratio'].mean(), '+/-', nighttime_df['ratio'].std())
+    print('Mean daytime ratio =', daytime_df['ratio'].mean(), '+/-', daytime_df['ratio'].std())
+    g = sns.lineplot(x="timestamp", y='ratio', hue='Quantity', palette=['tab:green'], data=df, ax=ax[1])
+
+    df = df.append(df1, ignore_index=True)
+
+    def col_rename(x):
+        return 'SOE ' + str(int(x))
+
+    if sensor1 or sensor2 == 'P2' or 'P3':
+        pass
+    else:
+        df['Station_Name'] = df['Station_Name'].apply(col_rename)
+
+    sns.lineplot(x="timestamp", y="rms_value", hue='Station_Name', palette=['tab:blue', 'tab:red'], ci='sd', data=df,
+                 ax=ax[0])
+
+    ax[0].set_ylabel(r'Integral Under the PSD', fontsize=20)
+    ax[0].set_yscale("log")
+    ax[1].set_yscale("log")
+
+    ax[1].set_ylabel(r'{0} surf / {1} under'.format(sensor1, sensor2), fontsize=20)
+    ax[1].tick_params(axis='both', which='major', labelsize=18)
+    ax[1].xaxis.set_major_locator(mdates.DayLocator())
+    ax[1].xaxis.set_major_formatter(mdates.DateFormatter('%d %b'))
+    g.set(xlabel=None)
+
+    ax[0].grid(True, linestyle='--', axis='both', which='both')
+    ax[1].grid(True, linestyle='--', axis='both', which='both')
+    plt.setp(ax[1].xaxis.get_majorticklabels(), rotation=70)
+    plt.show()

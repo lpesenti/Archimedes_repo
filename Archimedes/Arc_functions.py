@@ -884,9 +884,9 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
     ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
-    ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos article')
+    ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
     # ax.plot(psd_f, asd, linestyle='-', color='tab:orange', label='@ Sos-Enattos normal', linewidth=2)
-    ax.plot(psd_f, asd2, linestyle='-', color='black', label='@ Sos-Enattos theta')
+    ax.plot(psd_f, asd2, linestyle='-', color='black', label='@ Sos-Enattos no G')
     # ax.plot(psd_f, np.abs((asd - asd2) / (asd + asd2)), linestyle='-', label=r'$|\frac{a-b}{a+b}|$', linewidth=2)
 
     # To save data, unccomment the following lines
