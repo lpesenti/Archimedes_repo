@@ -338,17 +338,18 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, te
         print('Building Time Evolution Plot...')
     lab = quantity
     filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.plot(t, df[col_index], linestyle='dotted', label=lab)
+    ax.plot(t, df[col_index], linestyle='-', label=lab)
     if show_extra:
         logger.info("Building data-cleared plot")
         lab1 = quantity + ' cleared'
         data_und_th, _ = th_comparison(df, verbose=verbose)
         ax.plot(t, data_und_th + 5, linestyle='-', label=lab1)
         logger.info("Data-cleared plot successfully built")
-    ax.grid(True, linestyle='-')
-    ax.set_ylabel('Voltage [V]')
+    ax.grid(True, linestyle='--')
+    ax.set_ylabel('Voltage [V]', fontsize=24)
+    ax.tick_params(axis='both', which='major', labelsize=22)
     ax.xaxis.set_major_formatter(ac.time_tick_formatter)
-    ax.legend(loc='best', shadow=True, fontsize='large')
+    ax.legend(loc='best', shadow=True, fontsize=24)
 
     logger.info("Plot successfully built")
     return ax, filename
@@ -767,6 +768,10 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
         ax.set_title('From {0} to {1}'.format(start_date, end_date))
 
         logger.info("Building plot")
+
+    print('######## TEMPORARY ########')
+    print('ALPHA =', alpha)
+    print('PICK OFF MEAN =', pick_off_mean)
 
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])

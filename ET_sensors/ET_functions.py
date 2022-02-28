@@ -10,6 +10,7 @@ from obspy import UTCDateTime
 from obspy import read, read_inventory, Stream
 from obspy.signal import PPSD
 from obspy.imaging.cm import pqlx
+from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
 import glob
 from matplotlib import mlab
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.dates import date2num, num2date, DateFormatter
 import matplotlib.dates as mdates
+from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 
 import datetime
 
@@ -464,7 +466,8 @@ Both frequency and PSD data has been saved in {outfile_data}
 
 #  THE FOLLOWING FUNCTIONS WORK BUT ARE NEITHER IN A OPTIMIZE VERSION NOR IN A RELEASE STATE.
 
-def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose):
+def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
+                save_csv=False, save_img=False, xscale='linear', show_plot=True):
     # TODO: add descriptions and comments. This is an alpha version of the function but already working
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
@@ -487,8 +490,8 @@ def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, 
 
     df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
 
-    T = 600
-    Ovl = 0.5
+    T = Twindow
+    Ovl = Overlap
     TLong = 6 * 3600
     dT = TLong + T * Ovl
     M = int((dT - T) / (T * (1 - Ovl)) + 1)
@@ -499,19 +502,22 @@ def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, 
     print('M: ', M)
 
     v = np.empty(K)
-    d = np.empty(K)
+    # d = np.empty(K)
 
     fsxml = 100
     Num = int(T * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
-    f = np.round(f, 2)
+    print(f.min())
+    print(f.size)
+    # f_str = ["%.2e" % n for n in f]
+    f = np.round(f, 3)
     # fmin = 2
     # fmax = 20
-    # w = 2.0 * np.pi * f
+    w = 2.0 * np.pi * f
     # print(np.where(w == 0))
-    # w1 = w ** 2 / respamp
+    w1 = w ** 2 / respamp
     # imin = (np.abs(f - fmin)).argmin()
     # imax = (np.abs(f - fmax)).argmin()
 
@@ -558,7 +564,7 @@ def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, 
                 if np.isnan(v[k]):
                     psd_values = np.tile(v[k], np.size(f))
                 else:
-                    psd_values = s  # 10 * np.log10(s / gain)
+                    psd_values = s * w1  # w1 --> to have acceleration
 
                 data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
                 data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
@@ -566,7 +572,6 @@ def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, 
                 t1 = t1 + T * Ovl
                 k += 1
             time = time + TLong
-
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
     print(df.head())
     df['psd_value'] = 10 * np.log10(np.sqrt(df['psd_value'] / gain))
@@ -577,53 +582,117 @@ def spectrogram(stream, filexml, Data_path, network, sensor, location, channel, 
     print(df.head())
     print(df.info())
     df['frequency'] = df['frequency'].astype(float)
+    # df.frequency = df.frequency.to_string(float_format='{:.2e}'.format)
     df['psd_value'] = df['psd_value'].astype(float)
     result = df.pivot_table(index='frequency', columns='timestamp', values='psd_value')
 
-    # TODO: add option for .csv exportation and create an easy function to load and plot data.
-    #  Remember to change the df loaded indeces with the freq data. Storage ASD values for every day?
-    # result.to_csv(r'D:\ET\{0}{1}-{2}_{3}-{4}.csv'.format(sensor, location, channel, startdate.strftime('%Y%m%d'),
-    #                                                      stopdate.strftime('%Y%m%d')))
-    # result.to_parquet(r"D:\ET\test.parquet.brotli", compression='brotli', compression_level=9)
+    if save_csv:
+        # TODO: add option for .csv exportation and create an easy function to load and plot data.
+        #  Remember to change the df loaded indeces with the freq data. Storage ASD values for every day?
+        result.to_csv(
+            r'D:\ET\{0}{1}-{2}_{3}-{4}_ACC_{5}.csv'.format(sensor, location, channel, startdate.strftime('%Y%m%d'),
+                                                           stopdate.strftime('%Y%m%d'), Twindow))
+        # result.to_parquet(r"D:\ET\test.parquet.brotli", compression='brotli', compression_level=9)
 
     result.columns = result.columns.strftime('%d %b %H:%M')
+    # result.index.format('%.2e')
+    # pd.set_option('display.float_format', lambda x: '%.2e' % x)
     print(result.info())
     print(result.head())
+    # result.index = result.reindex(f_str)
     stop = timeit.default_timer()
     print('Elapsed time before plot:', (stop - start), 's')
-    fig = plt.figure(figsize=(10, 5))
+
+    daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
+    nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
+
+    print('xscale =', xscale)
+
+    if xscale == 'linear' or xscale == 'both':
+        fig1 = plt.figure(figsize=(19.2, 10.8))
+        ax1 = fig1.add_subplot()
+
+        sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax1,
+                     label='Daytime')
+        sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax1,
+                     label='Nighttime')
+
+        ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax1.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
+        ax1.set_xlim([1 / 240, 50])
+        ax1.set_ylim([-200, -60])
+        ax1.tick_params(axis='both', which='major', labelsize=22)
+        ax1.grid(True, linestyle='--', axis='both', which='both')
+        ax1.legend(loc='best', shadow=True, fontsize='xx-large')
+        fig1.tight_layout()
+
+    if xscale == 'log' or xscale == 'both':
+        fig2 = plt.figure(figsize=(19.2, 10.8))
+        ax2 = fig2.add_subplot()
+        ax2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+        ax2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+        ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+        ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+
+        sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax2,
+                     label='Daytime')
+        sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax2,
+                     label='Nighttime')
+
+        ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax2.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
+        ax2.set_xlim([1 / 240, 50])
+        ax2.set_ylim([-200, -60])
+        ax2.set_xscale("log")
+        ax2.tick_params(axis='both', which='major', labelsize=22)
+        ax2.grid(True, linestyle='--', axis='both', which='both')
+        ax2.legend(loc='best', shadow=True, fontsize='xx-large')
+        fig2.tight_layout()
+
+    fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
 
-    # fig1 = plt.figure(figsize=(10, 5))
-    # ax1 = fig1.add_subplot()
-    #
-    # fig2 = plt.figure(figsize=(10, 5))
-    # ax2 = fig2.add_subplot()
+    sns.set(font_scale=2)
+    g = sns.heatmap(result, cbar=True, ax=ax, cbar_kws={'label': r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]'},
+                    cmap='mako', yticklabels=0, xticklabels=130, vmin=-170, vmax=-60)
 
-    sns.set(font_scale=1.5)
-    g = sns.heatmap(result, cbar=True, ax=ax, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='mako')
-    # g1 = sns.heatmap(result, cbar=True, ax=ax1, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='viridis')
-    # g2 = sns.heatmap(result, cbar=True, ax=ax2, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='mako')
-
-    ax.set_ylabel(r'Frequency [Hz]', fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=18)
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=70, ha="center")
+    # ax.yaxis.set_major_formatter(StrMethodFormatter('{x:,.2e}'))
+    ax.set_ylabel(r'Frequency [Hz]', fontsize=24)
+    ax.tick_params(axis='both', which='major', labelsize=22)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=70, ha="right")
     g.set(xlabel=None)
 
-    # ax1.set_ylabel(r'Frequency [Hz]', fontsize=20)
-    # ax1.tick_params(axis='both', which='major', labelsize=18)
-    # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=70, ha="center")
-    # g1.set(xlabel=None)
-    #
-    # ax2.set_ylabel(r'Frequency [Hz]', fontsize=20)
-    # ax2.tick_params(axis='both', which='major', labelsize=18)
-    # plt.setp(ax2.xaxis.get_majorticklabels(), rotation=70, ha="center")
-    # g2.set(xlabel=None)
+    end, start = ax.get_ylim()
+    stepsize = 1999
+    # print(start, end)
+    ax.yaxis.set_ticks(np.arange(start, end, stepsize))
+    y_labels = f[::stepsize]
+    for pos, val in enumerate(y_labels):
+        if val < 1:
+            y_labels[pos] = '%.2e' % val
+        else:
+            y_labels[pos] = '%.1f' % val
+    # y_labels = ['%.2e' % n for n in y_labels]
+    ax.set_yticklabels(y_labels)
 
     fig.tight_layout()
-    # fig1.tight_layout()
-    # fig2.tight_layout()
-    plt.show()
+
+    if save_img:
+        # fig1.savefig(r'D:\ET\Images\{0}\SOE0_LinePlot_{1}.SVG'.format(sensor, channel))
+        fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
+        fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=1200)
+        fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=1200)
+        fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=1200)
+        fig.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
+
+        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
+        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=300)
+        fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=300)
+        fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=300)
+        fig.savefig(r'D:\ET\Images\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
+        # fig.savefig(r'D:\ET\Images\{0}\{0}_14Days_ASD_{1}.pdf'.format(sensor, channel), dpi=300)
+
+    plt.show() if show_plot else ''
 
 
 def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, verbose):
@@ -654,6 +723,8 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
+    w = 2.0 * np.pi * f
+    w1 = w ** 2 / respamp
     f = np.round(f, 2)
 
     fmin = 2  # 1 / 240  # Trillium model sensitivity
@@ -696,7 +767,7 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
                 k += 1
             time = time + TLong
         # rms_val = 10 * np.log10(rms_val)  # to dB
-        if sensor == 'P2' or 'P3':
+        if sensor == 'P2' or sensor == 'P3':
             station = np.array(int(filename_list[0].split('.')[2])).repeat(rms_val.size)
         else:
             station = np.array(int(filename_list[0].split('.')[1][3])).repeat(rms_val.size)
@@ -710,16 +781,12 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
 
 
 def rms_comparison(filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel, tstart, Twindow,
-                   verbose):
+                   verbose, ratio=True, save_img=False, hline=False):
     # TODO: add descriptions and comments. This is an alpha version of the function but already working
-    fig = plt.figure(figsize=(10, 5))
-    gs = fig.add_gridspec(2, hspace=0.15, width_ratios=[1], height_ratios=[3, 1.5])
-    ax = gs.subplots(sharex=True)
-
     df = rms(filexml, Data_path1, network, sensor1, location, channel, tstart, Twindow, verbose)
-    if sensor1 == 'P2' or 'P3' and location == '00':
+    if sensor1 == 'P2' or sensor1 == 'P3' and location == '00':
         df1 = rms(filexml, Data_path2, network, sensor2, '01', channel, tstart, Twindow, verbose)
-    elif sensor1 == 'P2' or 'P3' and location == '01':
+    elif sensor1 == 'P2' or sensor1 == 'P3' and location == '01':
         df1 = rms(filexml, Data_path2, network, sensor2, '00', channel, tstart, Twindow, verbose)
     else:
         df1 = rms(filexml, Data_path2, network, sensor2, location, channel, tstart, Twindow, verbose)
@@ -733,32 +800,303 @@ def rms_comparison(filexml, Data_path1, Data_path2, network, sensor1, sensor2, l
 
     print('Mean nighttime ratio =', nighttime_df['ratio'].mean(), '+/-', nighttime_df['ratio'].std())
     print('Mean daytime ratio =', daytime_df['ratio'].mean(), '+/-', daytime_df['ratio'].std())
-    g = sns.lineplot(x="timestamp", y='ratio', hue='Quantity', palette=['tab:green'], data=df, ax=ax[1])
 
     df = df.append(df1, ignore_index=True)
 
-    def col_rename(x):
+    def soe_col_rename(x):
         return 'SOE ' + str(int(x))
 
-    if sensor1 or sensor2 == 'P2' or 'P3':
-        pass
+    def boreholes_col_rename(x):
+        name = ''
+        if int(x) == 0:
+            name = 'Surface'
+        elif int(x) == 1:
+            name = 'Underground'
+        return name
+
+    if sensor1 == 'P2' or sensor2 == 'P2':
+        df['Station_Name'] = df['Station_Name'].apply(boreholes_col_rename)
+    elif sensor1 == 'P3' or sensor2 == 'P3':
+        df['Station_Name'] = df['Station_Name'].apply(boreholes_col_rename)
     else:
-        df['Station_Name'] = df['Station_Name'].apply(col_rename)
+        df['Station_Name'] = df['Station_Name'].apply(soe_col_rename)
 
-    sns.lineplot(x="timestamp", y="rms_value", hue='Station_Name', palette=['tab:blue', 'tab:red'], ci='sd', data=df,
-                 ax=ax[0])
+    if ratio:
+        fig = plt.figure(figsize=(19.2, 10.8))
+        gs = fig.add_gridspec(2, hspace=0.15, width_ratios=[1], height_ratios=[3, 1.5])
+        ax = gs.subplots(sharex=True)
 
-    ax[0].set_ylabel(r'Integral Under the PSD', fontsize=20)
-    ax[0].set_yscale("log")
-    ax[1].set_yscale("log")
+        sns.lineplot(x="timestamp", y="rms_value", hue='Station_Name', palette=['tab:blue', 'tab:red'], ci='sd',
+                     data=df,
+                     ax=ax[0])
+        g = sns.lineplot(x="timestamp", y='ratio', hue='Quantity', palette=['tab:green'], data=df, ax=ax[1])
 
-    ax[1].set_ylabel(r'{0} surf / {1} under'.format(sensor1, sensor2), fontsize=20)
-    ax[1].tick_params(axis='both', which='major', labelsize=18)
-    ax[1].xaxis.set_major_locator(mdates.DayLocator())
-    ax[1].xaxis.set_major_formatter(mdates.DateFormatter('%d %b'))
-    g.set(xlabel=None)
+        ax[0].set_ylabel(r'Integral Under the PSD', fontsize=24)
+        ax[0].tick_params(axis='both', which='major', labelsize=22)
+        ax[0].set_yscale("log")
+        ax[1].set_yscale("log")
+        ax[0].set_ylim([df['rms_value'].min() - df['rms_value'].min() / 2, df['rms_value'].max() + 5])
+        ax[1].set_ylim([0, df['ratio'].max() + 5])
+        ax[1].axhline(y=1, color='r', linestyle='dotted', linewidth=2) if hline else ''
 
-    ax[0].grid(True, linestyle='--', axis='both', which='both')
-    ax[1].grid(True, linestyle='--', axis='both', which='both')
-    plt.setp(ax[1].xaxis.get_majorticklabels(), rotation=70)
+        ax[1].set_ylabel(r'{0} surf / {1} under'.format(sensor1, sensor2), fontsize=24)
+        ax[1].tick_params(axis='both', which='major', labelsize=22)
+        ax[1].xaxis.set_major_locator(mdates.DayLocator())
+        ax[1].xaxis.set_major_formatter(mdates.DateFormatter('%a - %d %b'))
+        g.set(xlabel=None)
+
+        ax[0].grid(True, linestyle='--', axis='both', which='both')
+        ax[1].grid(True, linestyle='--', axis='both', which='both')
+        ax[0].legend(loc='best', shadow=True, fontsize='xx-large')
+        ax[1].legend(loc='best', shadow=True, fontsize='xx-large')
+        plt.setp(ax[1].xaxis.get_majorticklabels(), rotation=70)
+        gs.tight_layout(fig)
+    else:
+        fig = plt.figure(figsize=(19.2, 10.8))
+        ax = fig.add_subplot()
+
+        g = sns.lineplot(x="timestamp", y="rms_value", hue='Station_Name', palette=['tab:blue', 'tab:red'], ci='sd',
+                         data=df,
+                         ax=ax)
+        g.set(xlabel=None)
+        ax.set_ylabel(r'Integral Under the PSD', fontsize=24)
+        ax.set_yscale("log")
+        ax.tick_params(axis='both', which='major', labelsize=22)
+        ax.legend(loc='best', shadow=True, fontsize='xx-large')
+        ax.xaxis.set_major_locator(mdates.DayLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%a - %d %b'))
+        ax.grid(True, linestyle='--', axis='both', which='both')
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=70)
+        fig.tight_layout()
+
+    if save_img:
+        fig.savefig(r'D:\ET\Images\HD\Comparison\{0}-{1}_{2}_Days.png'.format(sensor1, sensor2, channel), dpi=1200)
+        fig.savefig(r'D:\ET\Images\HD\Comparison\{0}-{1}_{2}_Days.pdf'.format(sensor1, sensor2, channel), dpi=1200)
+        fig.savefig(r'D:\ET\Images\Comparison\{0}-{1}_{2}_Days.png'.format(sensor1, sensor2, channel), dpi=300)
+        fig.savefig(r'D:\ET\Images\Comparison\{0}-{1}_{2}_Days.pdf'.format(sensor1, sensor2, channel), dpi=300)
+
     plt.show()
+
+
+def asd_from_csv(path_to_csv):
+    df = pd.read_csv(path_to_csv)
+    # fl, nlnm, fh, nhnm = NLNM(1)
+    # w_fl = 2.0 * np.pi * fl
+    # w_fh = 2.0 * np.pi * fh
+    # nlnm = nlnm * w_fl ** 2
+    # nhnm = nhnm * w_fh ** 2
+
+    # print(fl)
+    # print(fh)
+    # asd_nlnm = np.sqrt(10 ** (get_nlnm()[1] / 10))
+    # asd_nhnm = np.sqrt(10 ** (get_nhnm()[1] / 10))
+    # asd_nlnm_db = 10 * np.log10(asd_nlnm)
+    # asd_nhnm_db = 10 * np.log10(asd_nhnm)
+    # print(asd_nlnm_db)
+    # print(asd_nhnm_db)
+
+    print(df.info())
+    print(df.head())
+    # df['frequency'] = df['frequency']
+    # df['frequency'] = df['frequency'].map(lambda x: '{:.2e}'.format(x))
+    # df = df.set_index('frequency')
+    # print(df.head())
+    # print(df.tail())
+    fig = plt.figure(figsize=(19.2, 10.8))
+    ax = fig.add_subplot()
+    label = pd.to_datetime(df.iloc[:, 42].name, unit='ns').strftime('%d %b %H:%M:%S')
+    # datetime.datetime.strptime(df.iloc[:, 1].name, '%Y-%m-%d %H:%M:%S').strftime('%d %b %H:%M')
+    # psd_vals = 10 ** (df.iloc[:, 42] / 5)
+    # psd_vals_db = 10 * np.log10(psd_vals)
+    ax.plot(df['frequency'], df.iloc[:, 42], label=label)
+    ax.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')  # , label="NLNM")
+    ax.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')  # , label="NHNM")
+
+    ax.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+    ax.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+
+    ax.set_xlabel(r'Frequency [Hz]', fontsize=24)
+    ax.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
+    ax.tick_params(axis='both', which='major', labelsize=22)
+    ax.grid(True, linestyle='--', axis='both', which='both')
+    ax.legend(loc='best', shadow=True, fontsize='xx-large')
+    ax.set_xscale("log")
+    ax.set_xlim([1 / 240, 50])
+    ax.set_ylim([-200, -60])
+    ax.axvline(x=2, color='r', linestyle='dotted', linewidth=2)
+    ax.axvline(x=20, color='r', linestyle='dotted', linewidth=2)
+    ax.text(2, -55, '2 Hz', fontsize=20, color='r', ha='center', va='center',
+            bbox={'facecolor': 'white', 'alpha': 1, 'edgecolor': 'r', 'boxstyle': 'round'})
+    ax.text(20, -55, '20 Hz', fontsize=20, color='r', ha='center', va='center',
+            bbox={'facecolor': 'white', 'alpha': 1, 'edgecolor': 'r', 'boxstyle': 'round'})
+
+    # sns.heatmap(df, cbar=True, cbar_kws={'label': r'ASD $[(m/s)/\sqrt{Hz}]$ [dB]'}, cmap='mako', yticklabels=500)
+    fig.tight_layout()
+    plt.show()
+
+
+def comparison_from_csv(path_to_csv1, path_to_csv2):
+    df1 = pd.read_csv(path_to_csv1)
+    df2 = pd.read_csv(path_to_csv2)
+
+    df1['mean'] = df1.mean(axis=1)
+    df2['mean'] = df2.mean(axis=1)
+
+    mean_val = np.mean(df1[(df1['frequency'] >= 2) & (df1['frequency'] <= 20)]['mean'] /
+                       df2[(df2['frequency'] >= 2) & (df2['frequency'] <= 20)]['mean'])
+    std_val = np.std(df1[(df1['frequency'] >= 2) & (df1['frequency'] <= 20)]['mean'] /
+                     df2[(df2['frequency'] >= 2) & (df2['frequency'] <= 20)]['mean'])
+
+    mean_val = 10 ** (mean_val / 10)
+    std_val = 10 ** (std_val / 10)
+    print('Result:', mean_val, '+/-', std_val)
+
+
+def heatmap_from_csv(path_to_file=r'D:\ET\SOE0-HHZ_20210326-20210410_ACC_3600.csv', path_to_csvs=None, multi_csv=False,
+                     save_img=False):
+    if not multi_csv:
+        df = pd.read_csv(path_to_file)
+        freq_indeces = df['frequency']
+    else:
+        import os
+        all_files = glob.glob(os.path.join(path_to_csvs, "*"))
+        df_list = []
+        for filename in all_files:
+            df_prov = pd.read_csv(filename, index_col=None, header=0)
+            df_list.append(df_prov)
+            print(filename)
+            freq_indeces = df_prov['frequency']
+        # print(df_list)
+        df = pd.concat(df_list, axis=1)
+    df.drop(columns='frequency', inplace=True)
+    df = df.set_index(freq_indeces)
+    print(df)
+    print(df.info())
+
+    fig = plt.figure(figsize=(19.2, 10.8))
+    ax = fig.add_subplot()
+
+    sns.heatmap(df, cbar=True, ax=ax, cbar_kws={'label': r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]'},
+                cmap='mako', vmin=-170, vmax=-60)
+
+    if save_img:
+        fig.savefig(
+            r'D:\ET\Images\HD\Heatmap_{0}-{1}_{2}.png'.format(df.columns[0][:10], df.columns[-1:][0][:10], 'ACC_600'),
+            dpi=1200)
+        fig.savefig(
+            r'D:\ET\Images\Heatmap_{0}-{1}_{2}.png'.format(df.columns[0][:10], df.columns[-1:][0][:10], 'ACC_600'),
+            dpi=300)
+        # fig.savefig(r'D:\ET\Images\{0}\{0}_14Days_ASD_{1}.pdf'.format(sensor, channel), dpi=300)
+    # plt.show() # MemoryError plot
+
+
+def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart, T, Ovl, verbose):
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, T, verbose=verbose)
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    print('The analysis start from\t', startdate, '\tto\t', stopdate)
+
+    # df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
+
+    TLong = 6 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+
+    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+
+    print('K: ', K)
+    print('M: ', M)
+
+    v = np.empty(K)
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    print(f.min())
+    print(f.size)
+
+    f = np.round(f, 3)
+
+    w = 2.0 * np.pi * f
+
+    w1 = w ** 2 / respamp
+
+    import timeit
+
+    start = timeit.default_timer()
+    for file in filename_list:
+        df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
+        k = 0
+        print(file)
+        st = read(file)
+        st = st.sort()
+
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+        Tstart = time
+
+        while time < Tstop:
+            print('Evaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+
+            t1 = time
+            for n in range(0, M):
+                v[k] = np.nan
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:]
+                        # spec = s / gain
+                        v[k] = 0
+
+                # d[k] = date2num(t1.datetime)
+                # print('t1 =', t1)
+                time_measure = np.repeat(t1.timestamp, np.size(f))
+
+                if np.isnan(v[k]):
+                    psd_values = np.tile(v[k], np.size(f))
+                else:
+                    psd_values = s * w1  # w1 --> to have acceleration
+
+                data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
+                data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
+                df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
+        df['psd_value'] = 10 * np.log10(np.sqrt(df['psd_value'] / gain))
+        print(df.head())
+        print(df.info())
+        df['frequency'] = df['frequency'].astype(float)
+        df['psd_value'] = df['psd_value'].astype(float)
+        result = df.pivot_table(index='frequency', columns='timestamp', values='psd_value')
+        result.to_csv(
+            r'D:\ET\2021\Heatmap\csv_files\{5}\{0}{1}-{2}_{3}-{4}_ACC_{5}.csv'.format(sensor, location, channel,
+                                                                                  Tstart.strftime('%Y%m%d'),
+                                                                                  Tstop.strftime('%Y%m%d'),
+                                                                                  int(T)))
+    stop = timeit.default_timer()
+    print('Elapsed time:', (stop - start), 's')

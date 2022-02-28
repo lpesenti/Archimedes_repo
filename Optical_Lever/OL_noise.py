@@ -2,7 +2,7 @@ __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
 __version__ = "0.7"
 __maintainer__ = "Luca Pesenti"
-__email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
+__email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Prototype"
 
 import pandas as pd
@@ -506,7 +506,7 @@ df_1, t_w, f_samp = asd_extractor(
     samp_freq=2000,
     psd_window=60,
     means_number=5,
-    channel='Sum')
+    channel='Dx')
 
 df_2, _, _ = asd_extractor(
     file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
@@ -514,15 +514,15 @@ df_2, _, _ = asd_extractor(
     samp_freq=2000,
     psd_window=60,
     means_number=5,
-    channel='Sum')
+    channel='Dx')
 
 # PLOT THE DISTRIBUTION OF THE ASD FOR THE FIRST num_plot FREQUENCIES
-distr_plot(first_df=df_1,
-           second_df=df_2,
-           lower_quantile=0.1,
-           upper_quantile=0.9,
-           estimator='median',
-           num_plot=6)
+# distr_plot(first_df=df_1,
+#            second_df=df_2,
+#            lower_quantile=0.1,
+#            upper_quantile=0.9,
+#            estimator='median',
+#            num_plot=6)
 # df_2['asd_data'].hist(by=df_2['freq_data'])
 # test_df.plot.hist(bins=5, alpha=0.5)
 
@@ -530,7 +530,7 @@ f_data, ratio_data, ratio_low, ratio_up, ratio_lab = ratio(first_df=df_1,
                                                            second_df=df_2,
                                                            lower_quantile=0.1,
                                                            upper_quantile=0.9,
-                                                           estimator='median')
+                                                           estimator='mean')
 
 # TO MAKE RATIO USING STANDARD DEVIATIONS
 # _, std_data, std_low, std_up, std_lab = ratio_std(first_df=df_1,
@@ -572,8 +572,8 @@ sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:blue'], 
 sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange'], ci='sd', data=df_2, ax=ax[1])
 
 # PLOT RATIO
-ax[2].fill_between(f_data, ratio_low, ratio_up, alpha=.5, color='tab:green', linewidth=0)
-ax[2].plot(f_data, ratio_data, linewidth=2, color='tab:green', label=ratio_lab + ' (Median)')
+# ax[2].fill_between(f_data, ratio_low, ratio_up, alpha=.5, color='tab:green', linewidth=0)
+ax[2].plot(f_data, ratio_data, linewidth=2, color='tab:green', label=ratio_lab + ' (Mean)')
 # ax[2].scatter(f_data, ratio_up, linewidth=1, color='tab:red', label='90%')
 # ax[2].scatter(f_data, ratio_low, linewidth=1, color='tab:blue', label='10%')
 
@@ -588,32 +588,42 @@ x_limit_inf = 1 / t_w  # minimum frequency achieved
 x_limit_sup = f_samp / 2  # Nyquist's theorem
 y_limit_inf_asd = 1e-6  # set by user
 y_limit_sup_asd = 8e-5  # set by user
-y_limit_inf_ratio = -1  # set by user
-y_limit_sup_ratio = 1  # set by user
+y_limit_inf_ratio = 0  # set by user
+y_limit_sup_ratio = 4  # set by user
 
-# IF NOT USING VERTICAL LAYOUTS CHANE ax[0], ax[1], ax[2] ---> ax1, ax2, ax3
-ax[0].set_xlabel('Frequency [Hz]', fontsize=20)
+# IF NOT USING VERTICAL LAYOUTS CHANGE ax[0], ax[1], ax[2] ---> ax1, ax2, ax3
+ax[0].set_xlabel('Frequency [Hz]', fontsize=24)
 ax[0].set_xscale("log")
 ax[0].set_yscale("log")
 ax[0].set_xlim([x_limit_inf, x_limit_sup])
 ax[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+ax[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
+ax[0].tick_params(axis='both', labelsize=22, which='both')
 ax[0].grid(True, linestyle='--', axis='both', which='both')
+ax[0].legend(loc='best', shadow=True, fontsize='xx-large')
 
-ax[1].set_xlabel('Frequency [Hz]', fontsize=20)
+ax[1].set_xlabel('Frequency [Hz]', fontsize=24)
 ax[1].set_xscale("log")
 ax[1].set_yscale("log")
 ax[1].set_xlim([x_limit_inf, x_limit_sup])
 ax[1].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=20)
+ax[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
+ax[1].tick_params(axis='both', labelsize=22, which='both')
 ax[1].grid(True, linestyle='--', axis='both', which='both')
+ax[1].legend(loc='best', shadow=True, fontsize='xx-large')
 
-ax[2].set_xlabel('Frequency [Hz]', fontsize=20)
+ax[2].set_xlabel('Frequency [Hz]', fontsize=24)
 ax[2].set_xscale("log")
 ax[2].set_xlim([x_limit_inf, x_limit_sup])
-# ax3.set_xlim([y_limit_inf_ratio, y_limit_sup_ratio])
-ax[2].set_ylabel(r'$\frac{a}{b}$', fontsize=20)
+ax[2].set_ylim([y_limit_inf_ratio, y_limit_sup_ratio])
+ax[2].set_ylabel(r'a/b [a.u.]', fontsize=24)
+ax[2].tick_params(axis='both', labelsize=22, which='both')
 ax[2].grid(True, linestyle='--', axis='both', which='both')
-ax[2].legend(loc='best', shadow=True, fontsize='medium')
+ax[2].legend(loc='upper left', shadow=True, fontsize='xx-large')
+ax[2].yaxis.set_label_coords(-0.059, 0.5)
+ax[2].set_yticks(np.arange(y_limit_sup_ratio - y_limit_inf_ratio + 1))
+ax[2].set_yticklabels(np.arange(5))
+
+print(np.mean(ratio_data), np.std(ratio_data))
 
 plt.show()

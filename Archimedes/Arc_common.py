@@ -112,7 +112,7 @@ def time_tick_formatter(val, pos=None):
     --------
     time_evolution : it is used to rewrite x-axis
     """
-    val = str(datetime.datetime.fromtimestamp(val).strftime('%b %d %H:%M:%S'))
+    val = str(datetime.datetime.fromtimestamp(val).strftime('%b %d %H:%M'))
     return val
 
 
