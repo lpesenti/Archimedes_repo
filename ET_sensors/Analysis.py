@@ -21,23 +21,23 @@ def Read_Inv(filexml, ch, sensor, t, Twindow, verbose):
     Parameters
     ----------
     filexml : str
-	path and name of the xml file to be read
+        path and name of the xml file to be read
     ch : str
-	sensor's channel to be read
+        sensor's channel to be read
     sensor : str
-	sensor's name
+        sensor's name
     t : UTCDateTime
-	time of the analysis
+        time of the analysis
     verbose : bool
-	If True the verbosity is enabled.
+        If True the verbosity is enabled.
 
     Notes
-    -----
-    response output in VEL
+        -----
+        response output in VEL
 
     Returns
     -------
-	A tuple for frequency and sensor's response, the sample frequency
+        A tuple for frequency and sensor's response, the sample frequency
     """
 
     # read inventory
@@ -46,7 +46,7 @@ def Read_Inv(filexml, ch, sensor, t, Twindow, verbose):
         print(invxml)
     # select sensor and channel
     invxmls = invxml.select(station=sensor, channel=ch)
-    if sensor == 'SOE0' or sensor == 'SOE1' or sensor == 'SOE2' or sensor == 'P2' or sensor == :
+    if sensor == 'SOE0' or sensor == 'SOE1' or sensor == 'SOE2' or sensor == 'P2' or sensor == 'P3':
         seed_id = "ET." + sensor + ".." + ch
     else:
         seed_id = "DR." + sensor + ".." + ch
@@ -94,9 +94,9 @@ def Evaluate_PSD(filexml, ch, dirdata, sensor, tstart, tstop, Twindow, Overlap, 
     tstop : str
         stop time of the analysis
     Twindow : float
-	time window for the PSD
+        time window for the PSD
     Overlap : float
-	overlap in percentage for the PSD windows
+        overlap in percentage for the PSD windows
     verbose : bool
         If True the verbosity is enabled.
 

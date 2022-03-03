@@ -45,7 +45,7 @@ csv_filename = config['Paths']['csv_filename']
 csv_filename2 = config['Paths']['csv_filename2']
 
 if __name__ == '__main__':
-    ET.csv_creators(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap, verbose)
+    # ET.csv_creators(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap, verbose)
     ET.heatmap_from_csv(multi_csv=True, path_to_csvs=r'D:\ET\2021\Heatmap\csv_files\600', save_img=True)
     # ET.comparison_from_csv(path_to_csv1=csv_path + csv_filename, path_to_csv2=csv_path + csv_filename2)
     # ET.asd_from_csv(csv_path + csv_filename)

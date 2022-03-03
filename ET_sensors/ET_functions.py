@@ -467,8 +467,64 @@ Both frequency and PSD data has been saved in {outfile_data}
 #  THE FOLLOWING FUNCTIONS WORK BUT ARE NEITHER IN A OPTIMIZE VERSION NOR IN A RELEASE STATE.
 
 def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                save_csv=False, save_img=False, xscale='linear', show_plot=True):
-    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+                save_csv=False, save_img=False, linearplot=True, xscale='linear', show_plot=True):
+    r"""
+    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
+    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
+    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: float
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type Overlap: float
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verobsity
+
+    :type save_csv: bool
+    :param save_csv: If you want to save the data analyzed ina .csv format
+
+    :type save_img: bool
+    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
+        on True if more than 5 days of data are considered.
+
+    :type linearplot: bool
+    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
+        nighttime. This type of plot shows the mean with one sigma of confidence interval
+
+    :type xscale: str
+    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
+        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+
+    :type show_plot: bool
+    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
+        be shown especially if the analysis is done on more than 5 days.
+    """
+    # TODO: check tstart variable, may remove it. Seems useless.
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     # Read Inventory and get freq array, response array, sample freq.
@@ -502,7 +558,6 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
     print('M: ', M)
 
     v = np.empty(K)
-    # d = np.empty(K)
 
     fsxml = 100
     Num = int(T * fsxml)
@@ -603,51 +658,52 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
     stop = timeit.default_timer()
     print('Elapsed time before plot:', (stop - start), 's')
 
-    daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
-    nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
+    if linearplot:
+        daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
+        nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
 
-    print('xscale =', xscale)
+        print('xscale =', xscale)
 
-    if xscale == 'linear' or xscale == 'both':
-        fig1 = plt.figure(figsize=(19.2, 10.8))
-        ax1 = fig1.add_subplot()
+        if xscale == 'linear' or xscale == 'both':
+            fig1 = plt.figure(figsize=(19.2, 10.8))
+            ax1 = fig1.add_subplot()
 
-        sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax1,
-                     label='Daytime')
-        sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax1,
-                     label='Nighttime')
+            sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax1,
+                         label='Daytime')
+            sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax1,
+                         label='Nighttime')
 
-        ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
-        ax1.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
-        ax1.set_xlim([1 / 240, 50])
-        ax1.set_ylim([-200, -60])
-        ax1.tick_params(axis='both', which='major', labelsize=22)
-        ax1.grid(True, linestyle='--', axis='both', which='both')
-        ax1.legend(loc='best', shadow=True, fontsize='xx-large')
-        fig1.tight_layout()
+            ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
+            ax1.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
+            ax1.set_xlim([1 / 240, 50])
+            ax1.set_ylim([-200, -60])
+            ax1.tick_params(axis='both', which='major', labelsize=22)
+            ax1.grid(True, linestyle='--', axis='both', which='both')
+            ax1.legend(loc='best', shadow=True, fontsize=24)
+            fig1.tight_layout()
 
-    if xscale == 'log' or xscale == 'both':
-        fig2 = plt.figure(figsize=(19.2, 10.8))
-        ax2 = fig2.add_subplot()
-        ax2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
-        ax2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
-        ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
-        ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+        if xscale == 'log' or xscale == 'both':
+            fig2 = plt.figure(figsize=(19.2, 10.8))
+            ax2 = fig2.add_subplot()
+            ax2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+            ax2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+            ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+            ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
 
-        sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax2,
-                     label='Daytime')
-        sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax2,
-                     label='Nighttime')
+            sns.lineplot(x='frequency', y='psd_value', palette=['tab:orange'], data=daytime_df, ci='sd', ax=ax2,
+                         label='Daytime')
+            sns.lineplot(x='frequency', y='psd_value', palette=['tab:blue'], data=nighttime_df, ci='sd', ax=ax2,
+                         label='Nighttime')
 
-        ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
-        ax2.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
-        ax2.set_xlim([1 / 240, 50])
-        ax2.set_ylim([-200, -60])
-        ax2.set_xscale("log")
-        ax2.tick_params(axis='both', which='major', labelsize=22)
-        ax2.grid(True, linestyle='--', axis='both', which='both')
-        ax2.legend(loc='best', shadow=True, fontsize='xx-large')
-        fig2.tight_layout()
+            ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
+            ax2.set_ylabel(r'ASD $[(m/s^2)/\sqrt{Hz}]$ [dB]', fontsize=24)
+            ax2.set_xlim([1 / 240, 50])
+            ax2.set_ylim([-200, -60])
+            ax2.set_xscale("log")
+            ax2.tick_params(axis='both', which='major', labelsize=22)
+            ax2.grid(True, linestyle='--', axis='both', which='both')
+            ax2.legend(loc='best', shadow=True, fontsize='xx-large')
+            fig2.tight_layout()
 
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
@@ -679,18 +735,21 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
 
     if save_img:
         # fig1.savefig(r'D:\ET\Images\{0}\SOE0_LinePlot_{1}.SVG'.format(sensor, channel))
-        fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
-        fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=1200)
-        fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=1200)
-        fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=1200)
         fig.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
-
-        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
-        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=300)
-        fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=300)
-        fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=300)
         fig.savefig(r'D:\ET\Images\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
-        # fig.savefig(r'D:\ET\Images\{0}\{0}_14Days_ASD_{1}.pdf'.format(sensor, channel), dpi=300)
+        if linearplot:
+            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
+            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=1200)
+            fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location),
+                         dpi=1200)
+            fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location),
+                         dpi=1200)
+
+            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
+            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=300)
+            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=300)
+            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=300)
+            # fig.savefig(r'D:\ET\Images\{0}\{0}_14Days_ASD_{1}.pdf'.format(sensor, channel), dpi=300)
 
     plt.show() if show_plot else ''
 
@@ -1088,15 +1147,15 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
             time = time + TLong
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
         df['psd_value'] = 10 * np.log10(np.sqrt(df['psd_value'] / gain))
-        print(df.head())
-        print(df.info())
+        # print(df.head())
+        # print(df.info())
         df['frequency'] = df['frequency'].astype(float)
         df['psd_value'] = df['psd_value'].astype(float)
         result = df.pivot_table(index='frequency', columns='timestamp', values='psd_value')
         result.to_csv(
             r'D:\ET\2021\Heatmap\csv_files\{5}\{0}{1}-{2}_{3}-{4}_ACC_{5}.csv'.format(sensor, location, channel,
-                                                                                  Tstart.strftime('%Y%m%d'),
-                                                                                  Tstop.strftime('%Y%m%d'),
-                                                                                  int(T)))
+                                                                                      Tstart.strftime('%Y%m%d'),
+                                                                                      Tstop.strftime('%Y%m%d'),
+                                                                                      int(T)))
     stop = timeit.default_timer()
     print('Elapsed time:', (stop - start), 's')

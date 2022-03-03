@@ -555,7 +555,7 @@ fig_psd_confidence = plt.figure(figsize=(10, 5))
 #
 # inner_grid = gridspec.GridSpecFromSubplotSpec(1, 2, upper_cell)
 #
-# # From here we can plot usinginner_grid's SubplotSpecs
+# # From here we can plot using inner_grid's SubplotSpecs
 # ax1 = plt.subplot(outer_grid[0, 0])
 # ax2 = plt.subplot(outer_grid[1, 0])
 # ax3 = plt.subplot(outer_grid[2, 0])
