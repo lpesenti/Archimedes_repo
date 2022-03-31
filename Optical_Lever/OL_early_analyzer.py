@@ -179,14 +179,15 @@ axs_x[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
 
 axs_x[0].plot(f, gpz_asd_x, linestyle='-', label=r'$\Delta x$ - {}'.format(first_file_label))
 axs_x[0].plot(f, epz_asd_x, linestyle='-', label=r'$\Delta x$ - {}'.format(second_file_label))
-axs_x[1].plot(f, (gpz_asd_x/ epz_asd_x), linestyle='-', label=r'$\frac{a}{b}$')
+axs_x[1].plot(f, (gpz_asd_x / epz_asd_x), linestyle='-', label=r'$\frac{a}{b}$')
 axs_x[0].legend(loc='best', shadow=True, fontsize='medium')
 axs_x[1].legend(loc='best', shadow=True, fontsize='medium')
 
 # Sum channel
 
 fig_comp_sum = plt.figure()
-gs_sum = fig_comp_sum.add_gridspec(2, hspace=0.15)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
+gs_sum = fig_comp_sum.add_gridspec(2,
+                                   hspace=0.15)  # set hspace=0.15 and uncomment titles to see them, or hspace=0 to not
 axs_sum = gs_sum.subplots(sharex=True)
 
 # axs_sum[0].set_xlabel('Frequency [Hz]', fontsize=20)
@@ -203,7 +204,7 @@ axs_sum[1].set_xscale("log")
 axs_sum[1].set_ylabel(r'{0}/{1}'.format(second_file_label, first_file_label), fontsize=20)
 axs_sum[1].grid(True, linestyle='--', axis='both', which='both')
 axs_sum[1].set_xlim([x_limit_inf, x_limit_sup])
-axs_sum[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
+# axs_sum[1].set_ylim([y_limit_inf_diff, y_limit_sup_diff])
 
 axs_sum[0].plot(f, gpz_asd_sum, linestyle='-', label=r'$\Sigma$ - {}'.format(first_file_label))
 axs_sum[0].plot(f, epz_asd_sum, linestyle='-', label=r'$\Sigma$ - {}'.format(second_file_label))
