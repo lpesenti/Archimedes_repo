@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 """This example helps you to get used to PIPython."""
 
-from random import uniform
-
 from pipython import GCSDevice, pitools
 
 CONTROLLERNAME = 'C-663.12'
-STAGES = ('M-228.10S',)  # connect stages to axes
-REFMODE = ('FNL',)  # reference the connected stages
+STAGES = ('M-228.10S')  # connect stages to axes
+REFMODE = ('FNL')  # reference the connected stages
 
 def main():
     """Connect, setup system and move stages and display the positions in a loop."""
@@ -48,31 +46,23 @@ def main():
         # user manual) is passed as "refmode" argument
 
         print('initialize connected stages...')
-        pitools.startup(pidevice)#, stages=STAGES, refmode=REFMODE)
+        pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
 
         # Now we query the allowed motion range of all connected stages.
         # GCS commands often return an (ordered) dictionary with axes/channels
         # as "keys" and the according values as "values".
 
-        rangemin = list(pidevice.qTMN().values())
-        rangemax = list(pidevice.qTMX().values())
-        ranges = zip(rangemin, rangemax)
-
-        # To make this sample a bit more vital we will move to five different
-        # random targets in a loop.
-
-        for _ in range(5):
-            targets = [uniform(rmin, rmax) for (rmin, rmax) in ranges]
+        for iloop in range(5):
+            targets = iloop
             print('move stages...')
-
             # The GCS commands qTMN() and qTMX() used above are query commands.
             # They don't need an argument and will then return all availabe
             # information, e.g. the limits for _all_ axes. With setter commands
             # however you have to specify the axes/channels. GCSDevice provides
             # a property "axes" which returns the names of all connected axes.
             # So lets move our stages...
-
-            pidevice.MOV(pidevice.axes, targets)
+            asse = pidevice.axes
+            pidevice.MOV(asse, targets)
 
             # To check the on target state of an axis there is the GCS command
             # qONT(). But it is more convenient to just call "waitontarget".
@@ -94,13 +84,7 @@ def main():
             #    print('position of axis {} = {.2f}'.format(axis, positions[axis]))
 
         print('done')
-
-#pidevice = GCSDevice('C-663')
-#pidevice.InterfaceSetupDlg()
-#print(pidevice.qIDN())
-#Pos = pidevice.qPOS()
-#print(Pos)
-#pidevice.CloseConnection()
+        return positions[axis]
 
 if __name__ == '__main__':
     # To see what is going on in the background you can remove the following
