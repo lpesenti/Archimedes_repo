@@ -46,10 +46,15 @@ def fz_ReadAxis(M1, M2, Axis):
     else:
        print('Choose only one motor')
 
+    print(CONTROLLERNAME,STAGES,REFMODE)
     with GCSDevice(CONTROLLERNAME) as pidevice:
+        pidevice.ConnectUSB(serialnum='021550465')
+        #pidevice.InterfaceSetupDlg(key='sample')
         print('initialize connected stages...')
         pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
+        print('after startup')
         positions = pidevice.qPOS(pidevice.axes)
+        #print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
         for Axis in pidevice.axes:
             print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
 

@@ -77,4 +77,4 @@ if __name__ == '__main__':
     # import logging
     # logging.basicConfig(level=logging.DEBUG)
 
-    move(5.)
+    move(1.5)

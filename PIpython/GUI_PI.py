@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from pipython import GCSDevice, pitools
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter import *
