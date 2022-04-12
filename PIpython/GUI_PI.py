@@ -27,14 +27,24 @@ def import_M2():
     global M2
     m2 = bool(entry.get())
     M2.set(m2)
+
 def import_NAxis():
     global NAxis
     naxis = int(entry.get())
     NAxis.set(naxis)
+
 def ReadAxis():
     global axis0
     axis0 = PI_functions.fz_ReadAxis(bool(M1.get()),bool(M2.get()),int(Axis.get()))
     Axis0.set(axis0)
+def import_target_val():
+    global target_val
+    target = float(entry.get())
+    target_val.set(target)
+def MoveAxis():
+    global axis1
+    axis1 = PI_functions.fz_MoveAxis(bool(M1.get()),bool(M2.get()),int(Axis.get()),float(target_val.get()))
+    Axis1.set(axis1)
 
 root = tk.Tk()
 root.title("Physical Instrument Python GUI for Archimedes")
@@ -55,13 +65,16 @@ frame1.grid(row=0, column=1, padx=10, pady=2)
 tk.Label(frame1, text='Axis').grid(row=0, column=0)
 Axis = tk.StringVar(value=1)
 Axis_ent = tk.Entry(frame1, textvariable=Axis).grid(row=0, column=1)
-
-tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=1, column=0)
+tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=0, column=2)
 Axis0 = tk.StringVar()
-axis0_ent = tk.Entry(frame1, textvariable=Axis0).grid(row=1, column=1)
+axis0_ent = tk.Entry(frame1, textvariable=Axis0).grid(row=0, column=3)
 
-#tk.Label(frame1, text='Set value').grid(row=2, column=0)
-
+tk.Label(frame1, text='Set value').grid(row=1, column=0)
+Targ = tk.StringVar(value=5.)
+Targ_ent = tk.Entry(frame1, textvariable=Targ).grid(row=1, column=1)
+tk.Button(frame1, text='Move to target value', command=MoveAxis).grid(row=1, column=2)
+Axis1 = tk.StringVar()
+axis1_ent = tk.Entry(frame1, textvariable=Axis1).grid(row=1, column=3)
 
 ########################################################################################
 ########################################################################################

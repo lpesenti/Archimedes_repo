@@ -27,7 +27,7 @@ def fz_Motor(M1, M2):
 
     Returns
     -------
-    which motor: CONTROLLERNAME,STAGES,REFMODE
+    which motor: CONTROLLERNAME,STAGES,REFMODE,SN
     """
 
     CONTROLLERNAME = 'C-663.12'
@@ -94,6 +94,47 @@ def fz_ReadAxis(M1, M2, Axis):
         print('after startup')
         positions = pidevice.qPOS(pidevice.axes)
         #print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
+        for Axis in pidevice.axes:
+            print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
+
+    return positions[Axis]
+
+def fz_MoveAxis(M1, M2, Axis, target):
+    """
+    Move axis
+
+    Parameters
+    ----------
+    M1 : bool
+        Motor 1
+    M2 : bool
+        Motor 2
+    Axis : int
+        Axis's number
+    target : float
+        new target position
+
+    Notes
+    -----
+
+    Returns
+    -------
+    new axis position
+    """
+
+    CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
+    print(CONTROLLERNAME,STAGES,REFMODE,SN)
+    with GCSDevice(CONTROLLERNAME) as pidevice:
+        pidevice.ConnectUSB(serialnum=SN)
+        print('initialize connected stages...')
+        pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
+        print('after startup')
+
+        print('move stages...')
+        pidevice.MOV(pidevice.axes, target)
+        pitools.waitontarget(pidevice)
+
+        positions = pidevice.qPOS(pidevice.axes)
         for Axis in pidevice.axes:
             print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
 
