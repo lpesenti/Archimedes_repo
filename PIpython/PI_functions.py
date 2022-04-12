@@ -35,10 +35,12 @@ def fz_ReadAxis(M1, M2, Axis):
     CONTROLLERNAME = 'C-663.12'
     STAGES = ('M-228.10S')  # connect stages to axes
     REFMODE = ('FNL')  # reference the connected stages
+    SN = '021550465'
     if M1 == True and M2 == False:
        CONTROLLERNAME = 'C-663.12'
        STAGES = ('M-228.10S')  # connect stages to axes
        REFMODE = ('FNL')  # reference the connected stages
+       SN = '021550465'
     elif M1 == False and M2 == True:
        CONTROLLERNAME = 'C-663.12'
        STAGES = ('M-228.10S')  # connect stages to axes
@@ -48,7 +50,7 @@ def fz_ReadAxis(M1, M2, Axis):
 
     print(CONTROLLERNAME,STAGES,REFMODE)
     with GCSDevice(CONTROLLERNAME) as pidevice:
-        pidevice.ConnectUSB(serialnum='021550465')
+        pidevice.ConnectUSB(serialnum=SN)
         #pidevice.InterfaceSetupDlg(key='sample')
         print('initialize connected stages...')
         pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
