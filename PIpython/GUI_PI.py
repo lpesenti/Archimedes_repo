@@ -31,10 +31,10 @@ def import_VEL():
     global Vel
     v = bool(entry.get())
     Vel.set(v)
-def import_StepSize():
-    global StepSize
-    ss = bool(entry.get())
-    StepSize.set(ss)
+# def import_StepSize():
+#     global StepSize
+#     ss = bool(entry.get())
+#     StepSize.set(ss)
 
 def import_NAxis():
     global NAxis
@@ -47,7 +47,7 @@ def ReadAxis():
     Axis0.set(axis0)
 def MoveAxis():
     global axis1
-    axis1 = PI_functions.fz_MoveAxis(bool(M1.get()),bool(M2.get()),int(Axis.get()),float(Targ.get()))
+    axis1 = PI_functions.fz_MoveAxis(bool(M1.get()),bool(M2.get()),int(Axis.get()),float(Targ.get()),float(Vel.get()))#,float(StepSize.get()))
     Axis1.set(axis1)
 
 root = tk.Tk()
@@ -63,11 +63,11 @@ M2 = IntVar(value=False)
 Checkbutton(frameStart, text="E-872 (2 axis)", variable=M2).grid(row=1, column=0)
 
 tk.Label(frameStart, text='Velocity').grid(row=2, column=0)
-Vel = tk.StringVar(value=0.01)
+Vel = tk.StringVar(value=0.5)
 Vel_ent = tk.Entry(frameStart, textvariable=Vel).grid(row=2, column=1)
-tk.Label(frameStart, text='Stepsize').grid(row=3, column=0)
-StepSize = tk.StringVar(value=0.01)
-ss_ent = tk.Entry(frameStart, textvariable=StepSize).grid(row=3, column=1)
+# tk.Label(frameStart, text='Stepsize').grid(row=3, column=0)
+# StepSize = tk.StringVar(value=0.01)
+# ss_ent = tk.Entry(frameStart, textvariable=StepSize).grid(row=3, column=1)
 
 ########################################################################################
 frame1 = tk.LabelFrame(root, text='Read and Write', relief=tk.GROOVE)

@@ -99,7 +99,7 @@ def fz_ReadAxis(M1, M2, Axis):
 
     return positions[Axis]
 
-def fz_MoveAxis(M1, M2, Axis, target):
+def fz_MoveAxis(M1, M2, Axis, target, Vel):#, StepSize):
     """
     Move axis
 
@@ -113,6 +113,10 @@ def fz_MoveAxis(M1, M2, Axis, target):
         Axis's number
     target : float
         new target position
+    Vel : float
+        velocity
+    StepSize : float
+        Step size
 
     Notes
     -----
@@ -129,7 +133,8 @@ def fz_MoveAxis(M1, M2, Axis, target):
         print('initialize connected stages...')
         pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
         print('after startup')
-
+        pidevice.VEL(pidevice.axes, Vel)
+        #pidevice.SST(pidevice.axes, StepSize)
         print('move stages...')
         pidevice.MOV(pidevice.axes, target)
         pitools.waitontarget(pidevice)
