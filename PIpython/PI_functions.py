@@ -40,9 +40,10 @@ def fz_Motor(M1, M2):
        REFMODE = ('FNL')  # reference the connected stages
        SN = '021550465'
     elif M1 == False and M2 == True:
-       CONTROLLERNAME = 'C-663.12'
-       STAGES = ('M-228.10S')  # connect stages to axes
+       CONTROLLERNAME = 'E-872.401'
+       STAGES = ('N-480K111')  # connect stages to axes
        REFMODE = ('FNL')  # reference the connected stages
+       SN = '021550465'
     else:
        print('Choose only one motor')
 
