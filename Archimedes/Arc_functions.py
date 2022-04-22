@@ -357,8 +357,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, te
 
 def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     """
-    It performs the derivative of the data and compares it with a fixed threshold.
-    To perform this comparison it divides the data in given number of slice and check if the delta between the maximum
+    The comparison is made by dividing the data in given number of slice and check if the delta between the maximum
     and the minimum of the slice is greater than threshold or not.
     After the comparison it transforms into np.nan values all the data above the threshold from the dataframe.
 

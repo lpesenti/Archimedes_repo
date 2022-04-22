@@ -10,6 +10,10 @@ import numpy as np
 import pandas as pd
 import math
 
+h = 6.62607004e-34  # Planck constant
+c = 299792458  # speed of light
+kb = 1.38064852e-23  # Boltzmann constant
+
 
 def find_rk(seq, subseq):
     """
@@ -124,8 +128,6 @@ def hex_converter(path_to_data):
 
 
 def shot_noise(laser_wavelength=532e-9, itf_length=0.1, contrast=0.5, photodiode_qeff=0.9, laser_power=3):
-    h = 6.62607004e-34  # Planck constant
-    c = 299792458  # speed of light
     first_term = laser_wavelength / (2 * np.pi * itf_length)
     second_term = 1 / contrast
     third_term = np.sqrt((h * c) / (laser_wavelength * photodiode_qeff * laser_power))
@@ -133,16 +135,12 @@ def shot_noise(laser_wavelength=532e-9, itf_length=0.1, contrast=0.5, photodiode
 
 
 def radiation_pressure_noise(freq, laser_wavelength=532e-9, itf_length=0.1, mom_inertia=1.3e-2, laser_power=0.003):
-    h = 6.62607004e-34  # Planck constant
-    c = 299792458  # speed of light
     first_term = itf_length / (2 * mom_inertia * 4 * np.pi ** 2 * freq ** 2)
     second_term = np.sqrt(laser_power * h / (laser_wavelength * c))
     return first_term * second_term
 
 
 def suspension_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_resonance=0.025):
-    kb = 1.38064852e-23  # Boltzmann constant
-
     phi_loss = 0.01  # inverse of the Q of the arm resonance
     omega_0 = 2 * np.pi * arm_resonance
     omega = 2 * np.pi * freq
@@ -155,14 +153,12 @@ def suspension_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_reso
 
 
 def internal_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_resonance=950):
-    kb = 1.38064852e-23  # Boltzmann constant
-
     phi_loss = 0.001  # inverse of the Q of the arm resonance
     omega_0 = 2 * np.pi * arm_resonance
     omega = 2 * np.pi * freq
 
     num = 4 * kb * temperature * mom_inertia * omega_0 ** 2 * phi_loss
     den = omega ** 2 * ((mom_inertia * omega_0 ** 2 - mom_inertia * omega ** 2) ** 2 + (
-                mom_inertia * omega_0 ** 2) ** 2 * phi_loss ** 2)
+            mom_inertia * omega_0 ** 2) ** 2 * phi_loss ** 2)
 
     return np.sqrt(num / den)

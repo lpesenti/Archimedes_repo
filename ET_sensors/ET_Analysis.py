@@ -46,7 +46,7 @@ csv_filename2 = config['Paths']['csv_filename2']
 
 if __name__ == '__main__':
     # ET.csv_creators(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap, verbose)
-    ET.heatmap_from_csv(multi_csv=True, path_to_csvs=r'D:\ET\2021\Heatmap\csv_files\600', save_img=True)
+    # ET.heatmap_from_csv(multi_csv=True, path_to_csvs=r'D:\ET\2021\Heatmap\csv_files\600', save_img=True)
     # ET.comparison_from_csv(path_to_csv1=csv_path + csv_filename, path_to_csv2=csv_path + csv_filename2)
     # ET.asd_from_csv(csv_path + csv_filename)
 
@@ -56,12 +56,14 @@ if __name__ == '__main__':
     # st_tot = ET.extract_stream(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, ti + 1000,
     #                            Twindow,
     #                            verbose=verbose)
-    # ET.spectrogram(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
-    #                verbose, save_img=False, save_csv=True, xscale='both', show_plot=True)
-    # ET.rms_comparison(XML_path + XML_file, Data_path, Data_path2, network, sensor, sensor2, location, channel, ti,
-    #                   Twindow, verbose, ratio=True, save_img=True, hline=True)
-
     # ET.ppsd(st_tot, XML_path + XML_file, sensor, Twindow, Overlap, temporal=False)
+    # ET.spectrogram(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
+    #                verbose, save_img=False, save_csv=False, xscale='both', show_plot=False)
+    ET.quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
+                     verbose, save_img=True, xscale='both', show_plot=True)
+    # ET.rms_comparison(XML_path + XML_file, Data_path, Data_path2, network, sensor, sensor2, location, channel, ti,
+    #                   Twindow, verbose, ratio=False, save_img=False, hline=False)
+
     # st_tot.plot()
     # freq, psd, samp_rate, rms, id = ET.psd_rms_finder(st_tot, XML_path + XML_file, network, sensor, location, channel,
     #                                                   ti, Twindow, Overlap, means, verbose, out=savedata)

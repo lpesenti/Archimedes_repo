@@ -105,7 +105,7 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     invxmls = invxml.select(network=network, station=sensor, channel=channel)
     # print(invxmls)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
-    resp = invxmls.get_response(seed_id, t)
+    resp = invxmls.get_response(seed_id, t)  # TODO: automatically set the correct time based on first data
     gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
     if verbose:
         invxmls.plot_response(1 / 120, label_epoch_dates=True)
@@ -113,11 +113,12 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
         print(gain)
     # return a nested dictionary detailing the sampling rates of each response stage
     sa = resp.get_sampling_rates()
+    # TODO: look at the Nikita's code to see how retrieve correctly the information on the sampling rate
     # take the last output_sampling_rate
     fsxml = sa[len(sa)]['output_sampling_rate']
     if verbose:
         print('Sampling rate:', fsxml)
-    Num = int(Twindow * 100)  # TODO: Why fsxml is different from the real sampling rate?
+    Num = int(Twindow * 100)  # TODO: Why fsxml is different from the real sampling rate? See previous TODO
     # Returns frequency response and corresponding frequencies using evalresp
     #                                        time_res,       Npoints,  output
     sresp, fxml = resp.get_evalresp_response(t_samp=1 / 100, nfft=Num, output="VEL")
@@ -209,15 +210,16 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap, temporal=False):
     :return:
         PPSD plot with NoiseModel
     """
+
     invxml = read_inventory(filexml)
     fs = stream[0].stats.sampling_rate
     Num = Twindow * fs
     seism_ppsd = PPSD(stream.select(station=sensor)[0].stats, invxml, ppsd_length=Twindow,
-                      overlap=int(Overlap / 100 * Num))
+                      overlap=Overlap)  # (Overlap / 100 * Num))
     for itrace in range(len(stream)):
         seism_ppsd.add(stream.select(station=sensor)[itrace])
 
-    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, fs / 2))
+    seism_ppsd.plot(cmap=pqlx, xaxis_frequency=True, period_lim=(1 / 120, 20))  # fs / 2))
     if temporal:
         seism_ppsd.plot_temporal(period=1)  # Period of PSD values to plot. The period bin with the central period that
         # is closest to the specified value is selected. Multiple values can be specified in a list
@@ -564,8 +566,9 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
-    print(f.min())
-    print(f.size)
+    print('MIN. FREQ.:\t', f.min())
+    # print(f.size)
+    print('GAIN:\t', gain)
     # f_str = ["%.2e" % n for n in f]
     f = np.round(f, 3)
     # fmin = 2
@@ -629,7 +632,9 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
             time = time + TLong
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
     print(df.head())
-    df['psd_value'] = 10 * np.log10(np.sqrt(df['psd_value'] / gain))
+    df['psd_value'] = 10 * np.log10(df['psd_value'])  # / gain)
+    # df['psd_value'] = 10 * np.log10(
+    #     np.sqrt(df['psd_value'] / gain))  # TODO: in the ppsd it is evaluated the psd not asd, try removing the sqrt
     # df['psd_value'] = 10 * np.log10(df['psd_value'] * df['omega'])
     # for freq in range(f.size):
     #     mask = df['frequency'] == f[freq]
@@ -661,6 +666,8 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
     if linearplot:
         daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
         nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
+
+        print(daytime_df)
 
         print('xscale =', xscale)
 
@@ -735,20 +742,54 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
 
     if save_img:
         # fig1.savefig(r'D:\ET\Images\{0}\SOE0_LinePlot_{1}.SVG'.format(sensor, channel))
-        fig.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
-        fig.savefig(r'D:\ET\Images\{0}\{0}{2}_14Days_ASD_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
+        fig.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_HEAT-{3}_{4}_ASD_{1}_ACC.png'.format(sensor, channel, location,
+                                                                                      startdate.strftime('%d-%b-%Y'),
+                                                                                      stopdate.strftime('%d-%b-%Y')),
+                    dpi=1200)
+        fig.savefig(r'D:\ET\Images\{0}\{0}{2}_HEAT-{3}_{4}_ASD_{1}_ACC.png'.format(sensor, channel, location,
+                                                                                   startdate.strftime('%d-%b-%Y'),
+                                                                                   stopdate.strftime('%d-%b-%Y')),
+                    dpi=300)
         if linearplot:
-            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=1200)
-            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=1200)
-            fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location),
-                         dpi=1200)
-            fig2.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location),
-                         dpi=1200)
+            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC.png'.format(sensor, channel, location,
+                                                                                           startdate.strftime(
+                                                                                               '%d-%b-%Y'),
+                                                                                           stopdate.strftime(
+                                                                                               '%d-%b-%Y')), dpi=1200)
+            fig1.savefig(r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC.pdf'.format(sensor, channel, location,
+                                                                                           startdate.strftime(
+                                                                                               '%d-%b-%Y'),
+                                                                                           stopdate.strftime(
+                                                                                               '%d-%b-%Y')), dpi=1200)
+            fig2.savefig(
+                r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log.png'.format(sensor, channel, location,
+                                                                                      startdate.strftime('%d-%b-%Y'),
+                                                                                      stopdate.strftime('%d-%b-%Y')),
+                dpi=1200)
+            fig2.savefig(
+                r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log.pdf'.format(sensor, channel, location,
+                                                                                      startdate.strftime('%d-%b-%Y'),
+                                                                                      stopdate.strftime('%d-%b-%Y')),
+                dpi=1200)
 
-            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.png'.format(sensor, channel, location), dpi=300)
-            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC.pdf'.format(sensor, channel, location), dpi=300)
-            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.png'.format(sensor, channel, location), dpi=300)
-            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}_ACC_log.pdf'.format(sensor, channel, location), dpi=300)
+            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC.png'.format(sensor, channel, location,
+                                                                                        startdate.strftime('%d-%b-%Y'),
+                                                                                        stopdate.strftime('%d-%b-%Y')),
+                         dpi=300)
+            fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC.pdf'.format(sensor, channel, location,
+                                                                                        startdate.strftime('%d-%b-%Y'),
+                                                                                        stopdate.strftime('%d-%b-%Y')),
+                         dpi=300)
+            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log.png'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')), dpi=300)
+            fig2.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log.pdf'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')), dpi=300)
             # fig.savefig(r'D:\ET\Images\{0}\{0}_14Days_ASD_{1}.pdf'.format(sensor, channel), dpi=300)
 
     plt.show() if show_plot else ''
@@ -763,6 +804,8 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
     fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
     filename_list = glob.glob(Data_path + seed_id + "*")
     filename_list.sort()
+
+    print('THIS IS THE GAIN!!!!!', seed_id, gain)
 
     df = pd.DataFrame(columns=['timestamp', 'rms_value', 'Station_Name'])
 
@@ -1159,3 +1202,387 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
                                                                                       int(T)))
     stop = timeit.default_timer()
     print('Elapsed time:', (stop - start), 's')
+
+
+def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
+                save_img=False, xscale='linear', show_plot=True):
+    r"""
+    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
+    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
+    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: float
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type Overlap: float
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verobsity
+
+    :type save_csv: bool
+    :param save_csv: If you want to save the data analyzed ina .csv format
+
+    :type save_img: bool
+    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
+        on True if more than 5 days of data are considered.
+
+    :type linearplot: bool
+    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
+        nighttime. This type of plot shows the mean with one sigma of confidence interval
+
+    :type xscale: str
+    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
+        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+
+    :type show_plot: bool
+    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
+        be shown especially if the analysis is done on more than 5 days.
+    """
+    # TODO: check tstart variable, may remove it. Seems useless.
+
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    print('The analysis start from\t', startdate, '\tto\t', stopdate)
+
+    df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
+
+    T = Twindow
+    Ovl = Overlap
+    TLong = 6 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+
+    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+
+    print('K: ', K)
+    print('M: ', M)
+
+    v = np.empty(K)
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    print('MIN. FREQ.:\t', f.min())
+    # print(f.size)
+    print('GAIN:\t', gain)
+    # f_str = ["%.2e" % n for n in f]
+    f = np.round(f, 3)
+    # fmin = 2
+    # fmax = 20
+    w = 2.0 * np.pi * f
+    # print(np.where(w == 0))
+    w1 = w ** 2 / respamp
+    # imin = (np.abs(f - fmin)).argmin()
+    # imax = (np.abs(f - fmax)).argmin()
+
+    import timeit
+
+    start = timeit.default_timer()
+    for file in filename_list:
+        k = 0
+        print(file)
+
+        st = read(file)
+        # print(st.sort().__str__(extended=True))
+        st = st.sort()
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+        # Tstop = st[-1:][0].times('utcdatetime')[-1:][0]
+        # time = st[0].times('utcdatetime')[0]
+        # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
+        # time = startdate
+        while time < Tstop:
+            print('Evaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+
+            t1 = time
+            for n in range(0, M):
+                v[k] = np.nan
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:]
+                        # spec = s / gain
+                        v[k] = 0
+
+                # d[k] = date2num(t1.datetime)
+                # print('t1 =', t1)
+                time_measure = np.repeat(t1.timestamp, np.size(f))
+
+                if np.isnan(v[k]):
+                    psd_values = np.tile(v[k], np.size(f))
+                else:
+                    psd_values = s * w1  # w1 --> to have acceleration
+
+                data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
+                data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
+                df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
+    print(df.head())
+    df['psd_value'] = 10 * np.log10(df['psd_value'])
+    print(df.head())
+    print(df.info())
+    df['frequency'] = df['frequency'].astype(float)
+    df['psd_value'] = df['psd_value'].astype(float)
+
+    stop = timeit.default_timer()
+    print('Elapsed time before plot:', (stop - start), 's')
+
+    daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
+    nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
+
+    print('xscale =', xscale)
+
+    # Find the data correspond to the quantiles
+    # DAY
+    estim_values_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.1)
+    first_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.5)
+    second_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.9)
+
+    # NIGHT
+    estim_values_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.1)
+    first_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.5)
+    second_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.9)
+
+    # Frequencies are the indeces of the DataFrame because of groupby()
+    frequency_array = estim_values_day.index.to_numpy()
+
+    # Convert the DataFrame in numpy array
+    # DAY
+    estim_values_day_array = estim_values_day.to_numpy()
+    first_quantile_day_array = first_quantile_day.to_numpy()
+    second_quantile_day_array = second_quantile_day.to_numpy()
+
+    # NIGHT
+    estim_values_night_array = estim_values_night.to_numpy()
+    first_quantile_night_array = first_quantile_night.to_numpy()
+    second_quantile_night_array = second_quantile_night.to_numpy()
+
+    if xscale == 'linear' or xscale == 'both':
+        fig1 = plt.figure(figsize=(19.2, 10.8))
+        fig1_1 = plt.figure(figsize=(19.2, 10.8))
+        ax1 = fig1.add_subplot()
+        ax1_1 = fig1_1.add_subplot()
+
+        ax1.plot(frequency_array, estim_values_day_array, linewidth=2, label='Daytime (10%)')
+        ax1.plot(frequency_array, first_quantile_day_array, linewidth=2, label='Daytime (50%)')
+        ax1.plot(frequency_array, second_quantile_day_array, linewidth=2, label='Daytime (90%)')
+
+        ax1_1.plot(frequency_array, estim_values_night_array, linewidth=2, label='Nighttime (10%)')
+        ax1_1.plot(frequency_array, first_quantile_night_array, linewidth=2, label='Nighttime (50%)')
+        ax1_1.plot(frequency_array, second_quantile_night_array, linewidth=2, label='Nighttime (90%)')
+
+        ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax1.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax1.set_xlim([1 / 240, 20])
+        ax1.set_ylim([-210, -70])
+        ax1.tick_params(axis='both', which='major', labelsize=22)
+        ax1.grid(True, linestyle='--', axis='both', which='both')
+        ax1.legend(loc='best', shadow=True, fontsize=24)
+        fig1.tight_layout()
+
+        ax1_1.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax1_1.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax1_1.set_xlim([1 / 240, 20])
+        ax1_1.set_ylim([-210, -70])
+        ax1_1.tick_params(axis='both', which='major', labelsize=22)
+        ax1_1.grid(True, linestyle='--', axis='both', which='both')
+        ax1_1.legend(loc='best', shadow=True, fontsize=24)
+        fig1_1.tight_layout()
+
+    if xscale == 'log' or xscale == 'both':
+        fig2 = plt.figure(figsize=(19.2, 10.8))
+        fig2_2 = plt.figure(figsize=(19.2, 10.8))
+        ax2 = fig2.add_subplot()
+        ax2_2 = fig2_2.add_subplot()
+
+        ax2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+        ax2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+        ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+        ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+
+        ax2_2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+        ax2_2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+        ax2_2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+        ax2_2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+
+        ax2.plot(frequency_array, estim_values_day_array, linewidth=2, label='Daytime (10%)')
+        ax2.plot(frequency_array, first_quantile_day_array, linewidth=2, label='Daytime (50%)')
+        ax2.plot(frequency_array, second_quantile_day_array, linewidth=2, label='Daytime (90%)')
+
+        ax2_2.plot(frequency_array, estim_values_night_array, linewidth=2, label='Nighttime (10%)')
+        ax2_2.plot(frequency_array, first_quantile_night_array, linewidth=2, label='Nighttime (50%)')
+        ax2_2.plot(frequency_array, second_quantile_night_array, linewidth=2, label='Nighttime (90%)')
+
+        ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax2.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax2.set_xlim([1 / 240, 20])
+        ax2.set_ylim([-210, -70])
+        ax2.set_xscale("log")
+        ax2.tick_params(axis='both', which='major', labelsize=22)
+        ax2.grid(True, linestyle='--', axis='both', which='both')
+        ax2.legend(loc='best', shadow=True, fontsize='xx-large')
+        fig2.tight_layout()
+
+        ax2_2.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax2_2.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax2_2.set_xlim([1 / 240, 20])
+        ax2_2.set_ylim([-210, -70])
+        ax2_2.set_xscale("log")
+        ax2_2.tick_params(axis='both', which='major', labelsize=22)
+        ax2_2.grid(True, linestyle='--', axis='both', which='both')
+        ax2_2.legend(loc='best', shadow=True, fontsize='xx-large')
+        fig2_2.tight_layout()
+
+    if save_img:
+        print('Saving images...')
+        fig1.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_DAYTIME.png'.format(sensor, channel, location,
+                                                                                      startdate.strftime(
+                                                                                          '%d-%b-%Y'),
+                                                                                      stopdate.strftime(
+                                                                                          '%d-%b-%Y')), dpi=1200)
+        fig1.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_DAYTIME.pdf'.format(sensor, channel, location,
+                                                                                      startdate.strftime(
+                                                                                          '%d-%b-%Y'),
+                                                                                      stopdate.strftime(
+                                                                                          '%d-%b-%Y')), dpi=1200)
+        fig1_1.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                        startdate.strftime(
+                                                                                            '%d-%b-%Y'),
+                                                                                        stopdate.strftime(
+                                                                                            '%d-%b-%Y')), dpi=1200)
+        fig1_1.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                        startdate.strftime(
+                                                                                            '%d-%b-%Y'),
+                                                                                        stopdate.strftime(
+                                                                                            '%d-%b-%Y')), dpi=1200)
+        fig2.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_DAYTIME.png'.format(sensor, channel, location,
+                                                                                          startdate.strftime(
+                                                                                              '%d-%b-%Y'),
+                                                                                          stopdate.strftime(
+                                                                                              '%d-%b-%Y')),
+            dpi=1200)
+        fig2.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_DAYTIME.pdf'.format(sensor, channel, location,
+                                                                                          startdate.strftime(
+                                                                                              '%d-%b-%Y'),
+                                                                                          stopdate.strftime(
+                                                                                              '%d-%b-%Y')),
+            dpi=1200)
+        fig2_2.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')),
+            dpi=1200)
+        fig2_2.savefig(
+            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')),
+            dpi=1200)
+
+        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_DAYTIME.png'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')),
+                     dpi=300)
+        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_DAYTIME.pdf'.format(sensor, channel, location,
+                                                                                            startdate.strftime(
+                                                                                                '%d-%b-%Y'),
+                                                                                            stopdate.strftime(
+                                                                                                '%d-%b-%Y')),
+                     dpi=300)
+        fig1_1.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                     startdate.strftime('%d-%b-%Y'),
+                                                                                     stopdate.strftime('%d-%b-%Y')),
+            dpi=300)
+        fig1_1.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                     startdate.strftime('%d-%b-%Y'),
+                                                                                     stopdate.strftime('%d-%b-%Y')),
+            dpi=300)
+        fig2.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_DAYTIME.png'.format(sensor, channel, location,
+                                                                                       startdate.strftime(
+                                                                                           '%d-%b-%Y'),
+                                                                                       stopdate.strftime(
+                                                                                           '%d-%b-%Y')), dpi=300)
+        fig2.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_DAYTIME.pdf'.format(sensor, channel, location,
+                                                                                       startdate.strftime(
+                                                                                           '%d-%b-%Y'),
+                                                                                       stopdate.strftime(
+                                                                                           '%d-%b-%Y')), dpi=300)
+        fig2_2.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                         startdate.strftime(
+                                                                                             '%d-%b-%Y'),
+                                                                                         stopdate.strftime(
+                                                                                             '%d-%b-%Y')), dpi=300)
+        fig2_2.savefig(
+            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                         startdate.strftime(
+                                                                                             '%d-%b-%Y'),
+                                                                                         stopdate.strftime(
+                                                                                             '%d-%b-%Y')), dpi=300)
+        print('Images correctly saved')
+    plt.show() if show_plot else ''
