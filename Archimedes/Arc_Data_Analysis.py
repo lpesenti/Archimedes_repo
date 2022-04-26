@@ -77,8 +77,9 @@ if __name__ == '__main__':
     # mng.window.state('zoomed')
     # ax2 = fig2.add_subplot()
     # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
-    af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=True, ax=ax0)
-    af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=False, ax=ax1)
+    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=True, ax=ax0)
+    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=False, ax=ax1)
+    af.soe_psd(day=19, month=5, year=2021, ax=ax0, ax1=ax1, file_start=1037, file_stop=1117)
     # af.easy_psd(day=22, month=11, year=2020, quantity='error', ax=ax0, init_time='23:25:36.094358',
     #             final_time='23:55:35.994314')
     # af.time_evolution(day=18, month=5, year=2021, quantity='itf', ax=ax0)

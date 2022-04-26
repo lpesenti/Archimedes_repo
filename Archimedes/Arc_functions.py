@@ -925,6 +925,240 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     return ax, filename1, filename2
 
 
+def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_start=None, file_stop=None,
+                  verbose=False):
+    """
+    Search data present in a specific folder and read only the column associated with the quantity you are interested in
+
+    Parameters
+    ----------
+    day : int
+        It refers to the first day of the data to be read
+
+    month : int
+        It refers to the first month of the data to be read
+
+    year : int
+        It refers to the first year of the data to be read
+
+    quantity : str
+        The quantity to be read.
+
+    num_d : int
+        How many days of data you want to analyze.
+
+    tevo : bool
+        If True the time column will be read.
+
+    file_start : any
+        The first file to be read.
+
+    file_stop : any
+        The last file to be read.
+
+    verbose : bool
+        If True the verbosity is enabled.
+
+    Notes
+    -----
+    *col_to_save* takes only one of the following parameter:
+        - ITF : the signal from the interferometer expressed in V
+        - Pick Off : the signal from the pick-off expressed in V
+        - Signal injected : the signal from the waveform used expressed in V
+        - Error :
+        - Correction :
+        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
+        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
+        - After Noise :
+        - Time : the timestamp of the data saved every milli second in human-readable format
+
+    Returns
+    -------
+    out : tuple
+        A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column corresponding to
+        the quantity selected and the timestamp of the first data expressed in UNIX
+
+    """
+    try:
+        if not 1 <= day <= 31:
+            raise AttributeError('Day must be in range (1, 31), you inserted: {0}'.format(day))
+        if not 1 <= month <= 12:
+            raise AttributeError('Month must be in range (1, 12), you inserted: {0}'.format(month))
+        if not quantity.lower() in cols:
+            raise AttributeError("The quantity '{0}' does not exist.".format(quantity))
+    except AttributeError as err:
+        logger.error(err.args[0])
+        raise
+    logger.warning("num_d must be greater than 0") if num_d == 0 else ''
+    logger.info("'{0}' data read started".format(quantity.lower()))
+    logger.info("Data from {0}/{1}/{2} selected".format(day, month, year))
+    logger.debug('Parameters:'
+                 '\n{9}day={0}'
+                 '\n{9}month={1}'
+                 '\n{9}year={2}'
+                 '\n{9}quantity={3}'
+                 '\n{9}num_d={4}'
+                 '\n{9}tevo={5}'
+                 '\n{9}file_start={6}'
+                 '\n{9}file_stop={7}'
+                 '\n{9}verbose={8}'
+                 .format(day, month, year, quantity, num_d, tevo, file_start, file_stop, verbose, tab_comm))
+
+    print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
+    month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
+    index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
+
+    logger.debug('Column index={0}'.format(index))
+
+    all_data = []
+    final_df = pd.DataFrame()
+    time_array = []
+
+    for i in range(num_d):  # Loop over number of days
+        temp_data = glob.glob(
+            os.path.join(path_to_data, "SCI_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day + i)))
+        temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
+        all_data += temp_data
+    i = 1
+    logger.info('Number of .lvm found: %i' % len(all_data))
+    if file_start and file_stop:
+        lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
+        start_index = lst.index(str(file_start))
+        stop_index = lst.index(str(file_stop))
+        logger.info('Number of .lvm selected: %i' % len(all_data[start_index:stop_index + 1]))
+        for data in all_data[start_index:stop_index + 1]:
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
+            # Read only the column of interest -> [index]
+            a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                              header=None)
+            # At the end we have a long column with all data
+            final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
+            if tevo:
+                df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
+                    .replace(r'\\09', '', regex=True)
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                for j in range(1, len(a.index) + 1):
+                    time_array.append(timestamp + j / freq)
+        i += 1
+    elif file_start and not file_stop:
+        lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
+        start_index = lst.index(str(file_start))
+        logger.info('Number of .lvm selected: %i' % len(all_data[start_index:]))
+        for data in all_data[start_index:]:
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
+            # Read only the column of interest -> [index]
+            a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                              header=None)
+            # At the end we have a long column with all data
+            final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
+            if tevo:
+                df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
+                    .replace(r'\\09', '', regex=True)
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                for j in range(1, len(a.index) + 1):
+                    time_array.append(timestamp + j / freq)
+        i += 1
+    elif file_stop and not file_start:
+        lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
+        stop_index = lst.index(str(file_stop))
+        logger.info('Number of .lvm selected: %i' % len(all_data[:stop_index + 1]))
+        for data in all_data[:stop_index + 1]:
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
+
+            # Read only the column of interest -> [index]
+            a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                              header=None)
+            # At the end we have a long column with all data
+            final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
+            if tevo:
+                df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
+                    .replace(r'\\09', '', regex=True)
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                for j in range(1, len(a.index) + 1):
+                    time_array.append(timestamp + j / freq)
+        i += 1
+    else:
+        for data in all_data:
+            print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
+            # Read only the column of interest -> [index]
+            a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
+                              header=None)
+            # At the end we have a long column with all data
+            final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
+
+            if tevo:
+                df_col = pd.read_csv(data, sep='\t', nrows=1, header=None).columns
+                time = pd.read_csv(data, sep='\t', usecols=[df_col[-1:][0]], nrows=1, header=None) \
+                    .replace(r'\\09', '', regex=True)
+                timestamp = datetime.datetime.timestamp(pd.to_datetime(time[df_col[-1:][0]][0]))
+                for j in range(1, len(a.index) + 1):
+                    time_array.append(timestamp + j / freq)
+            i += 1
+    if not verbose:
+        pass
+    else:
+        print('#### Reading completed! ####')
+    logger.info("'{0}' data read successfully completed".format(quantity.lower()))
+    logger.warning("The time array is empty!") if not time_array else ''
+    try:
+        if final_df.empty:
+            raise NameError('The data frame is empty. No data found!')
+    except NameError as err:
+        logger.error(err.args[0])
+        raise
+    return final_df, index, time_array
+
+
+def soe_psd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
+            file_stop=None):
+    df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
+                                         file_stop=file_stop, verbose=verbose)
+
+    num = int(psd_len * freq)
+
+    psd_s, psd_f = mlab.psd(df_qty.values.flatten(), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+    psd_s = psd_s[1:]
+    psd_f = psd_f[1:]
+
+    asd = np.sqrt(psd_s)
+
+    # x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
+    # x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
+
+    # ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
+    # ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
+    ax.plot(psd_f, asd, linestyle='-', label='@ Sos-Enattos', linewidth=2)
+
+    ax.set_xlabel("Frequency (Hz)", fontsize=20)
+    ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
+    ax.tick_params(axis='both', labelsize=20, which='both')
+    ax.grid(True, linestyle='--', which='both')
+    ax.legend(loc='best', shadow=True, fontsize='xx-large')
+    ax.set_xscale("linear")
+    ax.set_xlim([2, 20])
+    # ax.set_ylim([1.e-13, 1.e-8])
+    ax.set_yscale("log")
+
+    ax1.plot(psd_f, asd, linestyle='-', label='@ Sos-Enattos', linewidth=2)
+    ax1.set_xlabel("Frequency (Hz)", fontsize=20)
+    ax1.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
+    ax1.tick_params(axis='both', labelsize=20, which='both')
+    ax1.grid(True, linestyle='--', which='both')
+    ax1.legend(loc='best', shadow=True, fontsize='xx-large')
+    ax1.set_xscale("log")
+    # ax1.set_xlim([2, 20])
+    # ax.set_ylim([1.e-13, 1.e-8])
+    ax1.set_yscale("log")
+
+    return ax
+
+
 # OLD VERSION (TO BE REVIEWED...)
 def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
