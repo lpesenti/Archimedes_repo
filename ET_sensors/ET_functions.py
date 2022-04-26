@@ -1205,7 +1205,7 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
 
 
 def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                save_img=False, xscale='linear', show_plot=True):
+                  save_img=False, xscale='linear', show_plot=True, q1=0.1, q2=0.5, q3=0.9):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -1384,14 +1384,14 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
 
     # Find the data correspond to the quantiles
     # DAY
-    estim_values_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.1)
-    first_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.5)
-    second_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(0.9)
+    estim_values_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(q1)
+    first_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(q2)
+    second_quantile_day = daytime_df.groupby(['frequency'])['psd_value'].quantile(q3)
 
     # NIGHT
-    estim_values_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.1)
-    first_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.5)
-    second_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(0.9)
+    estim_values_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(q1)
+    first_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(q2)
+    second_quantile_night = nighttime_df.groupby(['frequency'])['psd_value'].quantile(q3)
 
     # Frequencies are the indeces of the DataFrame because of groupby()
     frequency_array = estim_values_day.index.to_numpy()
