@@ -1205,7 +1205,7 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
 
 
 def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                  save_img=False, xscale='linear', show_plot=True, q1=0.1, q2=0.5, q3=0.9):
+                save_img=False, xscale='linear', show_plot=True, save_txt=False, q1=0.1, q2=0.5, q3=0.9):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -1377,7 +1377,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     stop = timeit.default_timer()
     print('Elapsed time before plot:', (stop - start), 's')
 
-    daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour < 20)]
+    daytime_df = df[(df['timestamp'].dt.hour >= 8) & (df['timestamp'].dt.hour <= 20)]
     nighttime_df = df[(df['timestamp'].dt.hour <= 5) | (df['timestamp'].dt.hour >= 21)]
 
     print('xscale =', xscale)
@@ -1406,6 +1406,10 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     estim_values_night_array = estim_values_night.to_numpy()
     first_quantile_night_array = first_quantile_night.to_numpy()
     second_quantile_night_array = second_quantile_night.to_numpy()
+
+    # TODO: add saving curve data
+    # if save_txt:
+    #     np.savetxt()
 
     if xscale == 'linear' or xscale == 'both':
         fig1 = plt.figure(figsize=(19.2, 10.8))
