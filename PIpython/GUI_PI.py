@@ -93,7 +93,7 @@ Checkbutton(frameStart, text="C-663 (1 axis)", variable=M1).grid(row=0, column=0
 M2 = IntVar(value=False)
 Checkbutton(frameStart, text="E-872 (2 axis)", variable=M2).grid(row=1, column=0)
 
-tk.Label(frameStart, text='Velocity').grid(row=2, column=0)
+tk.Label(frameStart, text='Velocity [mm/s]').grid(row=2, column=0)
 Vel = tk.StringVar(value=0.5)
 tk.Entry(frameStart, textvariable=Vel).grid(row=2, column=1)
 
@@ -108,24 +108,24 @@ tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=0, column=2
 Axis0 = tk.StringVar()
 tk.Entry(frame1, textvariable=Axis0).grid(row=0, column=3)
 
-tk.Label(frame1, text='Set value').grid(row=1, column=0)
+tk.Label(frame1, text='Set value [0-10 mm]').grid(row=1, column=0)
 Targ = tk.StringVar(value=5.)
 tk.Entry(frame1, textvariable=Targ).grid(row=1, column=1)
 tk.Button(frame1, text='Move to target value', command=MoveAxis).grid(row=1, column=2)
 Axis1 = tk.StringVar()
 tk.Entry(frame1, textvariable=Axis1).grid(row=1, column=3)
 
-tk.Label(frame1, text='Set OPEN value').grid(row=2, column=0)
+tk.Label(frame1, text='Set OPEN value [2 mm]').grid(row=2, column=0)
 TargOPEN = tk.StringVar(value=2.)
 tk.Entry(frame1, textvariable=TargOPEN).grid(row=2, column=1)
 tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisOPEN).grid(row=2, column=2)
 Axis1OPEN = tk.StringVar()
 tk.Entry(frame1, textvariable=Axis1OPEN).grid(row=2, column=3)
 
-tk.Label(frame1, text='Set CLOSE value').grid(row=3, column=0)
+tk.Label(frame1, text='Set CLOSE value [7 mm]').grid(row=3, column=0)
 TargCLOSE = tk.StringVar(value=7.)
 tk.Entry(frame1, textvariable=TargCLOSE).grid(row=3, column=1)
-tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisCLOSE).grid(row=3, column=2)
+tk.Button(frame1, text='Move to CLOSE target value', command=MoveAxisCLOSE).grid(row=3, column=2)
 Axis1CLOSE = tk.StringVar()
 tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=3, column=3)
 

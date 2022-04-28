@@ -44,17 +44,17 @@ def fz_Motor(M1, M2):
     #      and sets the current positions to the reference position.
     CONTROLLERNAME = 'C-663.12'
     STAGES = ('M-228.10S')  # connect stages to axes
-    REFMODE = ('')  # reference the connected stages
+    REFMODE = ('FNL')  # reference the connected stages
     SN = '021550465'
     if M1 == True and M2 == False:
         CONTROLLERNAME = 'C-663.12'
         STAGES = ('M-228.10S')  # connect stages to axes
-        REFMODE = ('')  # reference the connected stages
+        REFMODE = ('FNL')  # reference the connected stages
         SN = '021550465'  # 021550465 SN stage in UNISS
     elif M1 == False and M2 == True:
         CONTROLLERNAME = 'E-872.401'
         STAGES = ('N-480K111')  # connect stages to axes
-        REFMODE = ('')  # reference the connected stages
+        REFMODE = ('FNL')  # reference the connected stages
         SN = '021550465'
     else:
         print('Choose only one motor')
@@ -89,8 +89,9 @@ def fz_ReadAxis(M1, M2, Axis):
         pidevice.ConnectUSB(serialnum=SN)
         # pidevice.InterfaceSetupDlg(key='sample')
         print('initialize connected stages...')
-        pitools.startup(pidevice, stages=STAGES, refmodes=None, servostates=True)
+        pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
         positions = pidevice.qPOS(Axis)
+        print(pidevice.qPOS())
         print('position of axis', Axis, '=', positions[Axis])
         # for Axis in pidevice.axes:
         #     print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
@@ -130,7 +131,11 @@ def fz_MoveAxis(M1, M2, Axis, target, Vel):
     with GCSDevice(CONTROLLERNAME) as pidevice:
         pidevice.ConnectUSB(serialnum=SN)
         print('initialize connected stages...')
-        pitools.startup(pidevice, stages=STAGES, refmodes='FRF', servostates=True)
+        pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
+        if Vel >= 1.5:
+            print('velocity out of range: >= 1.5 mm/s')
+            Vel = 0.5
+            print('velocity set to 0.5 mm/s')
         pidevice.VEL(Axis, Vel)
         rangemin = list(pidevice.qTMN(Axis).values())
         rangemax = list(pidevice.qTMX(Axis).values())
@@ -144,7 +149,6 @@ def fz_MoveAxis(M1, M2, Axis, target, Vel):
             print('target value out of range', rangemin[0], '-', rangemax[0])
         positions = pidevice.qPOS(Axis)
         print('position of axis', Axis, '=', positions[Axis])
-        # pidevice.POS(Axis, positions)
         # for Axis in pidevice.axes:
         #    print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
 
