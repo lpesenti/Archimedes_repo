@@ -5,6 +5,8 @@ __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
 
+import os.path
+
 import numpy as np
 from obspy import UTCDateTime
 from obspy import read, read_inventory, Stream
@@ -1204,7 +1206,8 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
 
 
 def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                  save_img=False, xscale='linear', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9, unit='VEL'):
+                  save_img=False, xscale='linear', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9, unit='VEL',
+                  img_path=None):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -1265,6 +1268,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     # Read Inventory and get freq array, response array, sample freq.
     fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+
     filename_list = glob.glob(Data_path + seed_id + "*")
     filename_list.sort()
 
@@ -1311,13 +1315,14 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     # print(np.where(w == 0))
 
     if unit.upper() == 'VEL':
-        pass
+        w1 = 1 / respamp
     elif unit.upper() == 'ACC':
         w1 = w ** 2 / respamp
     else:
         import warnings
         msg = "Invalid data unit chosen [VEl or ACC], using VEL"
         warnings.warn(msg)
+        w1 = 1 / respamp
     # imin = (np.abs(f - fmin)).argmin()
     # imax = (np.abs(f - fmax)).argmin()
 
@@ -1364,10 +1369,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
                 if np.isnan(v[k]):
                     psd_values = np.tile(v[k], np.size(f))
                 else:
-                    if unit.upper() == 'ACC':
-                        psd_values = s * w1  # w1 --> to have acceleration
-                    else:
-                        psd_values = s
+                    psd_values = s * w1
 
                 data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
                 data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
@@ -1510,106 +1512,123 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         fig2_2.tight_layout()
 
     if save_img:
+        if img_path is not None:
+            pass
+        else:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read('config.ini')
+            img_path = config['Paths']['images_dir']
         print('Saving images...')
         fig1.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_DAYTIME.png'.format(sensor, channel, location,
-                                                                                      startdate.strftime(
-                                                                                          '%d-%b-%Y'),
-                                                                                      stopdate.strftime(
-                                                                                          '%d-%b-%Y')), dpi=1200)
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_DAYTIME.png'.format(sensor, channel, location,
+                                                                                        startdate.strftime(
+                                                                                            '%d-%b-%Y'),
+                                                                                        stopdate.strftime(
+                                                                                            '%d-%b-%Y'), unit),
+            dpi=1200)
         fig1.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_DAYTIME.pdf'.format(sensor, channel, location,
-                                                                                      startdate.strftime(
-                                                                                          '%d-%b-%Y'),
-                                                                                      stopdate.strftime(
-                                                                                          '%d-%b-%Y')), dpi=1200)
-        fig1_1.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_NIGHTTIME.png'.format(sensor, channel, location,
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_DAYTIME.pdf'.format(sensor, channel, location,
                                                                                         startdate.strftime(
                                                                                             '%d-%b-%Y'),
                                                                                         stopdate.strftime(
-                                                                                            '%d-%b-%Y')), dpi=1200)
+                                                                                            '%d-%b-%Y'), unit),
+            dpi=1200)
         fig1_1.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_NIGHTTIME.pdf'.format(sensor, channel, location,
-                                                                                        startdate.strftime(
-                                                                                            '%d-%b-%Y'),
-                                                                                        stopdate.strftime(
-                                                                                            '%d-%b-%Y')), dpi=1200)
-        fig2.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_DAYTIME.png'.format(sensor, channel, location,
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_NIGHTTIME.png'.format(sensor, channel, location,
                                                                                           startdate.strftime(
                                                                                               '%d-%b-%Y'),
                                                                                           stopdate.strftime(
-                                                                                              '%d-%b-%Y')),
+                                                                                              '%d-%b-%Y'), unit),
             dpi=1200)
-        fig2.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_DAYTIME.pdf'.format(sensor, channel, location,
+        fig1_1.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_NIGHTTIME.pdf'.format(sensor, channel, location,
                                                                                           startdate.strftime(
                                                                                               '%d-%b-%Y'),
                                                                                           stopdate.strftime(
-                                                                                              '%d-%b-%Y')),
+                                                                                              '%d-%b-%Y'), unit),
             dpi=1200)
-        fig2_2.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_NIGHTTIME.png'.format(sensor, channel, location,
+        fig2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log_DAYTIME.png'.format(sensor, channel, location,
                                                                                             startdate.strftime(
                                                                                                 '%d-%b-%Y'),
                                                                                             stopdate.strftime(
-                                                                                                '%d-%b-%Y')),
+                                                                                                '%d-%b-%Y'), unit),
             dpi=1200)
-        fig2_2.savefig(
-            r'D:\ET\Images\HD\{0}\{0}{2}_LinePlot-{3}_{4}_{1}_ACC_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+        fig2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log_DAYTIME.pdf'.format(sensor, channel, location,
                                                                                             startdate.strftime(
                                                                                                 '%d-%b-%Y'),
                                                                                             stopdate.strftime(
-                                                                                                '%d-%b-%Y')),
+                                                                                                '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig2_2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig2_2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'), unit),
             dpi=1200)
 
-        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_DAYTIME.png'.format(sensor, channel, location,
-                                                                                            startdate.strftime(
-                                                                                                '%d-%b-%Y'),
-                                                                                            stopdate.strftime(
-                                                                                                '%d-%b-%Y')),
+        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_DAYTIME.png'.format(sensor, channel, location,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'), unit),
                      dpi=300)
-        fig1.savefig(r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_DAYTIME.pdf'.format(sensor, channel, location,
-                                                                                            startdate.strftime(
-                                                                                                '%d-%b-%Y'),
-                                                                                            stopdate.strftime(
-                                                                                                '%d-%b-%Y')),
+        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_DAYTIME.pdf'.format(sensor, channel, location,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'), unit),
                      dpi=300)
         fig1_1.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_NIGHTTIME.png'.format(sensor, channel, location,
-                                                                                     startdate.strftime('%d-%b-%Y'),
-                                                                                     stopdate.strftime('%d-%b-%Y')),
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                       startdate.strftime('%d-%b-%Y'),
+                                                                                       stopdate.strftime('%d-%b-%Y'),
+                                                                                       unit),
             dpi=300)
         fig1_1.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_NIGHTTIME.pdf'.format(sensor, channel, location,
-                                                                                     startdate.strftime('%d-%b-%Y'),
-                                                                                     stopdate.strftime('%d-%b-%Y')),
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                       startdate.strftime('%d-%b-%Y'),
+                                                                                       stopdate.strftime('%d-%b-%Y'),
+                                                                                       unit),
             dpi=300)
         fig2.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_DAYTIME.png'.format(sensor, channel, location,
-                                                                                       startdate.strftime(
-                                                                                           '%d-%b-%Y'),
-                                                                                       stopdate.strftime(
-                                                                                           '%d-%b-%Y')), dpi=300)
-        fig2.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_DAYTIME.pdf'.format(sensor, channel, location,
-                                                                                       startdate.strftime(
-                                                                                           '%d-%b-%Y'),
-                                                                                       stopdate.strftime(
-                                                                                           '%d-%b-%Y')), dpi=300)
-        fig2_2.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_NIGHTTIME.png'.format(sensor, channel, location,
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log_DAYTIME.png'.format(sensor, channel, location,
                                                                                          startdate.strftime(
                                                                                              '%d-%b-%Y'),
                                                                                          stopdate.strftime(
-                                                                                             '%d-%b-%Y')), dpi=300)
-        fig2_2.savefig(
-            r'D:\ET\Images\{0}\{0}{2}_LinePlot_{1}-{3}_{4}_ACC_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                             '%d-%b-%Y'), unit),
+            dpi=300)
+        fig2.savefig(
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log_DAYTIME.pdf'.format(sensor, channel, location,
                                                                                          startdate.strftime(
                                                                                              '%d-%b-%Y'),
                                                                                          stopdate.strftime(
-                                                                                             '%d-%b-%Y')), dpi=300)
+                                                                                             '%d-%b-%Y'), unit),
+            dpi=300)
+        fig2_2.savefig(
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log_NIGHTTIME.png'.format(sensor, channel, location,
+                                                                                           startdate.strftime(
+                                                                                               '%d-%b-%Y'),
+                                                                                           stopdate.strftime(
+                                                                                               '%d-%b-%Y'), unit),
+            dpi=300)
+        fig2_2.savefig(
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log_NIGHTTIME.pdf'.format(sensor, channel, location,
+                                                                                           startdate.strftime(
+                                                                                               '%d-%b-%Y'),
+                                                                                           stopdate.strftime(
+                                                                                               '%d-%b-%Y'), unit),
+            dpi=300)
         print('Images correctly saved')
     plt.show() if show_plot else ''
 
@@ -1622,7 +1641,7 @@ def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
     if nlnm_comparison is False:
         frequency = np.loadtxt(et_sens_path)[:, 0]
         et_sens = np.loadtxt(et_sens_path)[:, 1]
-        noise_level = et_sens / (4 * np.pi / 3 * G * rho * 1 / (2 * np.pi * frequency) ** 3 * 2 / L)
+        noise_level = et_sens / (4 * np.pi / 3 * G * rho * 1 / (2 * np.pi * frequency) ** 3 * 2 / L)  # strain to m/s
         border = interp1d(frequency, noise_level, kind='cubic')
     else:
         border = interp1d(1 / get_nlnm()[0], get_nlnm()[1], kind='cubic')
@@ -1647,8 +1666,8 @@ def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
         less_freq = np.array([])
 
         if nlnm_comparison is False:
-            val_to_plot = 10**(val/10)
-            val = 10**(val[lower_freq:upper_freq + 1]/10)  # not dB
+            val_to_plot = np.sqrt(10 ** (val / 10) / 19240000000.0)  # not dB
+            val = np.sqrt(10 ** (val[lower_freq:upper_freq + 1] / 10))  # not dB
         else:
             val = val[lower_freq:upper_freq + 1]  # dB
             val_to_plot = val
