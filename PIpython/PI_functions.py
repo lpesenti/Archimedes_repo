@@ -10,6 +10,30 @@ import scipy.fftpack
 
 import csv, time, datetime
 from pipython import GCSDevice, pitools
+from logging.handlers import TimedRotatingFileHandler
+import logging
+
+# --- LOGGERS SETUP --- #
+
+# Human readable logger
+LogLogger = logging.getLogger('log_motors')
+LogLogger.setLevel(logging.INFO)
+
+Log_formatter = logging.Formatter("[%(asctime)s | %(CN)s/%(STAGES)s/%(SN)s] %(message)s", '%d-%m-%y %H:%M:%S')
+Log_fh = TimedRotatingFileHandler(r'.\logs\Log_PI', when='midnight')
+Log_fh.setLevel(logging.INFO)
+Log_fh.setFormatter(Log_formatter)
+LogLogger.addHandler(Log_fh)
+
+# Monitor logger
+CHDLogger = logging.getLogger('chd_motors')
+CHDLogger.setLevel(logging.DEBUG)
+
+CHD_formatter = logging.Formatter("%(asctime)s|%(CN)s/%(STAGES)s/%(SN)s|%(message)s", '%d-%m-%y %H:%M:%S')
+CHD_fh = TimedRotatingFileHandler(r'.\logs\CHD_PI', when='midnight')
+CHD_fh.setLevel(logging.DEBUG)
+CHD_fh.setFormatter(CHD_formatter)
+CHDLogger.addHandler(CHD_fh)
 
 
 def fz_Motor(M1, M2):
@@ -127,6 +151,7 @@ def fz_MoveAxis(M1, M2, Axis, target, Vel):
     """
 
     CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
+    log_dict = {'CN': CONTROLLERNAME, 'STAGES': STAGES, 'SN': SN}
     print(CONTROLLERNAME, STAGES, REFMODE, SN)
     with GCSDevice(CONTROLLERNAME) as pidevice:
         pidevice.ConnectUSB(serialnum=SN)
@@ -140,14 +165,22 @@ def fz_MoveAxis(M1, M2, Axis, target, Vel):
         rangemin = list(pidevice.qTMN(Axis).values())
         rangemax = list(pidevice.qTMX(Axis).values())
         print(rangemin[0], rangemax[0])
-        if target < rangemax[0] and target > rangemin[0]:
+        if rangemax[0] > target > rangemin[0]:
             print('move stages...')
             pidevice.MOV(Axis, target)
+            LogLogger.info("CMD: move axis {0} to {1}".format(Axis, target), extra=log_dict)
             # pidevice.MVR(Axis, target)
             pitools.waitontarget(pidevice)
+            positions = pidevice.qPOS(Axis)
+            LogLogger.info("RPL: axis {0} moved to {1}".format(Axis, positions[Axis]), extra=log_dict)
+            CHDLogger.debug('{0}'.format(positions[Axis]), extra=log_dict)
         else:
             print('target value out of range', rangemin[0], '-', rangemax[0])
-        positions = pidevice.qPOS(Axis)
+            positions = pidevice.qPOS(Axis)
+            LogLogger.info("RPL: target value out of range. Position of axis {0} is {1}".format(Axis, positions[Axis]),
+                            extra=log_dict)
+            CHDLogger.debug('{0}'.format(positions[Axis]), extra=log_dict)
+        # positions = pidevice.qPOS(Axis)
         print('position of axis', Axis, '=', positions[Axis])
         # for Axis in pidevice.axes:
         #    print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
