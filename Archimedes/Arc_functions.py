@@ -821,12 +821,12 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     # data_folder = os.path.join(path_to_data, "SosEnattos_Data_{0}{1}{2}".format(year, month_str, day))
     # temp_data = glob.glob(os.path.join(data_folder, "SCI*.lvm"))
     # temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
-    start_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(22, month, year, init_time)))
+    start_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(day, month, year, init_time)))
 
     if day2:
         end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(day2, month, year, final_time)))
     else:
-        end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(22, month, year, final_time)))
+        end_date = datetime.datetime.timestamp(pd.to_datetime('{0}/{1}/{2} {3}'.format(day, month, year, final_time)))
     #
     # new_lst = [x.replace(data_folder + r'\SCI_', '').replace('.lvm', '').replace('-', '/').replace('_', ' ') for x in
     #            temp_data]
@@ -885,10 +885,10 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     asd2 = np.sqrt(psd_s2) * pick_off_mean
 
     x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
-    x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
+    # x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
-    ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
-    ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
+    # ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
+    # ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
     # ax.plot(psd_f, asd, linestyle='-', color='tab:orange', label='@ Sos-Enattos normal', linewidth=2)
     ax.plot(psd_f, asd2, linestyle='-', color='black', label='@ Sos-Enattos no G')
     # ax.plot(psd_f, np.abs((asd - asd2) / (asd + asd2)), linestyle='-', label=r'$|\frac{a-b}{a+b}|$', linewidth=2)
@@ -1006,6 +1006,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
     print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
+    # day = '%02d' % day  # It transforms 1,2,3,... -> 01,02,03,...
     index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
 
     logger.debug('Column index={0}'.format(index))
@@ -1015,16 +1016,17 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     time_array = []
 
     for i in range(num_d):  # Loop over number of days
+        day = '%02d' % (day + i)
         temp_data = glob.glob(
-            os.path.join(path_to_data, "SCI_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day + i)))
+            os.path.join(path_to_data, "SCI_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day)))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
     i = 1
     logger.info('Number of .lvm found: %i' % len(all_data))
     if file_start and file_stop:
         lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
-        start_index = lst.index(str(file_start))
-        stop_index = lst.index(str(file_stop))
+        start_index = lst.index(str(file_start).zfill(4))
+        stop_index = lst.index(str(file_stop).zfill(4))
         logger.info('Number of .lvm selected: %i' % len(all_data[start_index:stop_index + 1]))
         for data in all_data[start_index:stop_index + 1]:
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
@@ -1044,7 +1046,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
         i += 1
     elif file_start and not file_stop:
         lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
-        start_index = lst.index(str(file_start))
+        start_index = lst.index(str(file_start).zfill(4))
         logger.info('Number of .lvm selected: %i' % len(all_data[start_index:]))
         for data in all_data[start_index:]:
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
@@ -1064,7 +1066,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
         i += 1
     elif file_stop and not file_start:
         lst = [x.split('_')[-1:][0].split('.')[0] for x in all_data]
-        stop_index = lst.index(str(file_stop))
+        stop_index = lst.index(str(file_stop).zfill(4))
         logger.info('Number of .lvm selected: %i' % len(all_data[:stop_index + 1]))
         for data in all_data[:stop_index + 1]:
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
@@ -1115,10 +1117,13 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     return final_df, index, time_array
 
 
-def soe_psd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
-            file_stop=None):
+def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
+            file_stop=None, ax2=None):
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                          file_stop=file_stop, verbose=verbose)
+
+    df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False, file_start=file_start,
+                                file_stop=file_stop, verbose=verbose)
 
     num = int(psd_len * freq)
 
@@ -1126,7 +1131,9 @@ def soe_psd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     psd_s = psd_s[1:]
     psd_f = psd_f[1:]
 
-    asd = np.sqrt(psd_s)
+    df_po_mean = np.abs(df_po.values.flatten().mean())
+
+    asd = np.sqrt(psd_s) * df_po_mean
 
     # x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     # x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
@@ -1156,7 +1163,117 @@ def soe_psd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     # ax.set_ylim([1.e-13, 1.e-8])
     ax1.set_yscale("log")
 
-    return ax
+    if ax2 is not None:
+        ax2.plot(t, df_qty[col_index], linestyle='dotted', label='Time evolution of {0}'.format(quantity))
+        ax2.xaxis.set_major_formatter(ac.time_tick_formatter)
+        ax2.set_ylabel(r"Voltage [V]", fontsize=20)
+        ax2.tick_params(axis='both', labelsize=20, which='both')
+        ax2.grid(True, linestyle='--', which='both')
+        ax2.legend(loc='best', shadow=True, fontsize='xx-large')
+
+    return ax, ax1
+
+
+def soe_time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, tevo=True, file_start=None,
+                       file_stop=None, verbose=False):
+    """
+    Make the plot of time evolution
+
+    Parameters
+    ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        quantity : str
+            The quantity to be read. It must be one of the following:
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        show_extra : bool
+            If True, data over threshold are displayed with a translation in the same plot.
+
+        tevo : bool
+            If True the time column will be read.
+
+        file_start : any
+            The first file to be read.
+
+        file_stop : any
+            The last file to be read.
+
+        verbose : bool
+            If True the verbosity is enabled.
+    Notes
+    -----
+    *quantity* takes only one of the following parameter:
+        - ITF : the signal from the interferometer expressed in V
+        - Pick Off : the signal from the pick-off expressed in V
+        - Signal injected : the signal from the waveform used expressed in V
+        - Error :
+        - Correction :
+        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
+        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
+        - After Noise :
+        - Time : the timestamp of the data saved every milli second in human-readable format
+    Returns
+    -------
+    out : tuple
+        A tuple of an axes and the relative filename
+    """
+    try:
+        if not ax:
+            raise TypeError("Ax can not be a 'NoneType' object")
+    except TypeError as err:
+        logger.error(err.args[0])
+        raise
+    logger.debug('Parameters: '
+                 '\n{11}day={0}'
+                 '\n{11}month={1}'
+                 '\n{11}year={2}'
+                 '\n{11}quantity={3}'
+                 '\n{11}ax={4}'
+                 '\n{11}ndays={5}'
+                 '\n{11}show_extra={6}'
+                 '\n{11}tevo={7}'
+                 '\n{11}file_start={8}'
+                 '\n{11}file_stop={9}'
+                 '\n{11}verbose={10}'
+                 .format(day, month, year, quantity, ax, ndays, show_extra, tevo, file_start, file_stop, verbose,
+                         tab_comm))
+    df, col_index, t = soe_read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
+                                     file_stop=file_stop, verbose=verbose)
+    logger.info("Building plot")
+    if not verbose:
+        pass
+    else:
+        print('Building Time Evolution Plot...')
+    lab = quantity
+    filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
+    ax.plot(t, df[col_index], linestyle='-', label=lab)
+    if show_extra:
+        logger.info("Building data-cleared plot")
+        lab1 = quantity + ' cleared'
+        data_und_th, _ = th_comparison(df, verbose=verbose)
+        ax.plot(t, data_und_th + 5, linestyle='-', label=lab1)
+        logger.info("Data-cleared plot successfully built")
+    ax.grid(True, linestyle='--')
+    ax.set_ylabel('Voltage [V]', fontsize=24)
+    ax.tick_params(axis='both', which='major', labelsize=22)
+    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
+    ax.legend(loc='best', shadow=True, fontsize=24)
+
+    logger.info("Plot successfully built")
+    return ax, filename
 
 
 # OLD VERSION (TO BE REVIEWED...)

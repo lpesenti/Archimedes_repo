@@ -68,10 +68,12 @@ if __name__ == '__main__':
 
     fig0 = plt.figure(figsize=(19.2, 10.8))
     fig1 = plt.figure(figsize=(19.2, 10.8))
+    fig2 = plt.figure(figsize=(19.2, 10.8))
     # fig0.suptitle('Data from 18/05/2021')
     # fig1.suptitle('Data from 18/05/2021')
     ax0 = fig0.add_subplot()
     ax1 = fig1.add_subplot()
+    ax2 = fig2.add_subplot()
     # fig2 = plt.figure()
     # mng = plt.get_current_fig_manager
     # mng.window.state('zoomed')
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=True, ax=ax0)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=False, ax=ax1)
-    af.soe_psd(day=19, month=5, year=2021, ax=ax0, ax1=ax1, file_start=1037, file_stop=1117)
+    af.soe_asd(day=7, month=4, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=912, file_stop=917)
     # af.easy_psd(day=22, month=11, year=2020, quantity='error', ax=ax0, init_time='23:25:36.094358',
     #             final_time='23:55:35.994314')
     # af.time_evolution(day=18, month=5, year=2021, quantity='itf', ax=ax0)
