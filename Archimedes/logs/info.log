@@ -1,37 +1,44 @@
-[13-05-21 09:51:57 | Arc_functions.py             psd(), line 488] INFO: Evaluation of the PSD on 'Error' started
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 140] INFO: 'error' data read started
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 245] INFO: 'error' data read successfully completed
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 140] INFO: 'itf' data read started
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 245] INFO: 'itf' data read successfully completed
-[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 140] INFO: 'pick off' data read started
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 245] INFO: 'pick off' data read successfully completed
-[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 401] INFO: Comparison started
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 419] INFO: Number of slices = 330
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 431] INFO: Slices rejected = 5
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 432] INFO: Comparison successfully completed
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 438] INFO: Data rejected 1.515 %
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 444] INFO: Replacement successfully completed
-[13-05-21 09:53:24 | Arc_functions.py             psd(), line 504] INFO: Start cleaning from NaN values
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 507] INFO: Cleaning from NaN values successfully completed
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 510] INFO: Evaluating the PSD frequencies
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 530] INFO: Searching the optimal array
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 589] INFO: Value of the integral: 1.2658950932557305e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 590] INFO: Mean of the pick-off: 0
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 597] INFO: First index of the data chosen: [0]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 598] INFO: Data selected are from 22/11/20 23:15:36 to 22/11/20 23:56:16
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 599] INFO: Optimal array successfully found
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 608] INFO: Voltage min = [-9.948893]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 609] INFO: Voltage max = [-2.86356]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 610] INFO: Alpha = [1.19500988e-07]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 640] INFO: Optimal index chosen: [5, 6, 7]
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 656] INFO: Optimal data selected are from 22/11/20 23:41:01 to 22/11/20 23:56:16
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 670] INFO: Building plot
-[13-05-21 09:53:33 | Arc_functions.py             psd(), line 696] INFO: Plot succesfully built
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 5/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 6
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 2
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 5/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 6
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 2
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:26 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:26 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!

@@ -1118,7 +1118,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
 
 def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
-            file_stop=None, ax2=None):
+            file_stop=None, ax2=None, pick_off=True, label=None):
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                          file_stop=file_stop, verbose=verbose)
 
@@ -1127,23 +1127,29 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
 
     num = int(psd_len * freq)
 
-    psd_s, psd_f = mlab.psd(df_qty.values.flatten(), NFFT=num, Fs=freq, detrend="linear")  # , noverlap=int(num / 2))
+    psd_s, psd_f = mlab.psd(df_qty.values.flatten(), NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
     psd_s = psd_s[1:]
     psd_f = psd_f[1:]
 
     df_po_mean = np.abs(df_po.values.flatten().mean())
-
-    asd = np.sqrt(psd_s) * df_po_mean
+    if pick_off:
+        asd = np.sqrt(psd_s) * df_po_mean
+    else:
+        asd = np.sqrt(psd_s)
 
     # x, y = np.loadtxt(os.path.join(path_to_data, 'VirgoData_Jul2019.txt'), unpack=True, usecols=[0, 1])
     # x_davide, y_davide = np.loadtxt(os.path.join(path_to_data, 'psd_52_57.txt'), unpack=True, usecols=[0, 1])
 
     # ax.plot(x, y, linestyle='-', color='red', label='@ Virgo')
     # ax.plot(x_davide, y_davide, linestyle='-', color='blue', label='@ Sos-Enattos Davide')
-    ax.plot(psd_f, asd, linestyle='-', label='@ Sos-Enattos', linewidth=2)
+    if label is not None:
+        label_asd = label
+    else:
+        label_asd = '@ Sos Enattos'
+    ax.plot(psd_f, asd, linestyle='-', label=label_asd, linewidth=2)
 
     ax.set_xlabel("Frequency (Hz)", fontsize=20)
-    ax.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
+    ax.set_ylabel(r"ASD [V/$\sqrt{Hz}$]", fontsize=20)
     ax.tick_params(axis='both', labelsize=20, which='both')
     ax.grid(True, linestyle='--', which='both')
     ax.legend(loc='best', shadow=True, fontsize='xx-large')
@@ -1151,17 +1157,19 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     ax.set_xlim([2, 20])
     # ax.set_ylim([1.e-13, 1.e-8])
     ax.set_yscale("log")
+    ax.set_title('{0}'.format(quantity.upper()), fontsize=22)
 
-    ax1.plot(psd_f, asd, linestyle='-', label='@ Sos-Enattos', linewidth=2)
+    ax1.plot(psd_f, asd, linestyle='-', label=label_asd, linewidth=2)
     ax1.set_xlabel("Frequency (Hz)", fontsize=20)
-    ax1.set_ylabel(r"ASD [rad/$\sqrt{Hz}$]", fontsize=20)
+    ax1.set_ylabel(r"ASD [V/$\sqrt{Hz}$]", fontsize=20)
     ax1.tick_params(axis='both', labelsize=20, which='both')
     ax1.grid(True, linestyle='--', which='both')
     ax1.legend(loc='best', shadow=True, fontsize='xx-large')
     ax1.set_xscale("log")
-    # ax1.set_xlim([2, 20])
+    ax1.set_xlim([1e-2, 1])
     # ax.set_ylim([1.e-13, 1.e-8])
     ax1.set_yscale("log")
+    ax1.set_title('{0}'.format(quantity.upper()), fontsize=22)
 
     if ax2 is not None:
         ax2.plot(t, df_qty[col_index], linestyle='dotted', label='Time evolution of {0}'.format(quantity))

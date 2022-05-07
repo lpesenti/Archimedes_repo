@@ -1,12 +1,4 @@
-from matplotlib import mlab
-from matplotlib import pyplot as plt
-from matplotlib.dates import date2num
-import matplotlib.dates as mdates
-import numpy as np
-import math
-from scipy import signal
-import scipy.io
-import scipy.fftpack
+
 
 import csv, time, datetime
 from pipython import GCSDevice, pitools
@@ -74,12 +66,13 @@ def fz_Motor(M1, M2):
         CONTROLLERNAME = 'C-663.12'
         STAGES = ('M-228.10S')  # connect stages to axes
         REFMODE = ('FNL')  # reference the connected stages
-        SN = '021550465'  # 021550465 SN stage in UNISS
+        SN = '021550449'  # 021550465 SN stage @ UNISS
     elif M1 == False and M2 == True:
+        print('pippo')
         CONTROLLERNAME = 'E-872.401'
-        STAGES = ('N-480K111')  # connect stages to axes
+        STAGES = ('N-480.210CV')  # connect stages to axes
         REFMODE = ('FNL')  # reference the connected stages
-        SN = '021550465'
+        SN = '121081258'  # 121081258 SN stage @ Sos Enattos
     else:
         print('Choose only one motor')
 
@@ -114,7 +107,9 @@ def fz_ReadAxis(M1, M2, Axis):
         # pidevice.InterfaceSetupDlg(key='sample')
         print('initialize connected stages...')
         pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
+        print('pippo1')
         positions = pidevice.qPOS(Axis)
+        print('pippo2')
         print(pidevice.qPOS())
         print('position of axis', Axis, '=', positions[Axis])
         # for Axis in pidevice.axes:

@@ -197,7 +197,7 @@ def plot_3d_crio(file_path, file_prefix):
     dx_ch = np.array('Dx').repeat(vec_asd_x.size)
     dsum_ch = np.array('Sum').repeat(vec_asd_sum.size)
     channels = np.hstack((dy_ch, dx_ch, dsum_ch))
-    # all_indeces = np.repeat(indeces, len(vec_asd_y)/180)  # It is assumed that every psd as the same length
+    # all_indeces = np.repeat(indeces, len(vec_asd_y)/180)  # It is assumed that every psd has the same length
     # print(all_psd_data.size)
     # print(all_freq_data.size)
     # print(vec_indeces.size)

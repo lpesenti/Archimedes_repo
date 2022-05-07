@@ -26,6 +26,7 @@ from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import datetime
 
 
+
 def NLNM(unit):
     """
     The Peterson model represents an ensemble of seismic spectra measured in a worldwide network (Peterson 1993,

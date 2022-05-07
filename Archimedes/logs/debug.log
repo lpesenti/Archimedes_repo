@@ -1,128 +1,132 @@
-[13-05-21 09:51:57 | Arc_functions.py             psd(), line 487] DEBUG: Parameters:
-																			day=22
-																			month=11
-																			year=2020
-																			quantity=Error
-																			ax=AxesSubplot(0.125,0.11;0.775x0.77)
-																			time_interval=300
-																			mode=low noise
-																			ndays=1
-																			length=10000
-																			low_freq=2
-																			high_freq=10
-																			psd_len=100
-																			noise_th=0.03
-																			rms_th=1e-11
-																			ax1=None
-																			file_start=50
-																			file_stop=60
-																			verbose=False
-[13-05-21 09:51:57 | Arc_functions.py             psd(), line 488] INFO: Evaluation of the PSD on 'Error' started
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 140] INFO: 'error' data read started
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
-																			day=22
-																			month=11
-																			year=2020
-																			quantity=Error
-																			num_d=1
-																			tevo=True
-																			file_start=50
-																			file_stop=60
-																			verbose=False
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 158] DEBUG: index=4
-[13-05-21 09:51:57 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 245] INFO: 'error' data read successfully completed
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 140] INFO: 'itf' data read started
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
-																			day=22
-																			month=11
-																			year=2020
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 5/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=5
+																			month=5
+																			year=2022
 																			quantity=ITF
 																			num_d=1
-																			tevo=False
-																			file_start=None
-																			file_stop=None
+																			tevo=True
+																			file_start=841
+																			file_stop=846
 																			verbose=False
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 158] DEBUG: index=1
-[13-05-21 09:51:59 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 245] INFO: 'itf' data read successfully completed
-[13-05-21 09:52:41 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 140] INFO: 'pick off' data read started
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 141] INFO: Data from 22/11/2020 selected
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 152] DEBUG: Parameters:
-																			day=22
-																			month=11
-																			year=2020
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=1
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 6
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 2
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 5/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=5
+																			month=5
+																			year=2022
 																			quantity=Pick Off
 																			num_d=1
 																			tevo=False
-																			file_start=None
-																			file_stop=None
+																			file_start=841
+																			file_stop=846
 																			verbose=False
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 158] DEBUG: index=2
-[13-05-21 09:52:44 | Arc_functions.py       read_data(), line 169] INFO: Number of .lvm found: 211
-[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 245] INFO: 'pick off' data read successfully completed
-[13-05-21 09:53:22 | Arc_functions.py       read_data(), line 246] WARNING: The time array is empty!
-[13-05-21 09:53:24 | Arc_functions.py             psd(), line 497] DEBUG: rows_in_df_Error=3300000 rows_in_df_itf=63103100 rows_in_df_pickoff=63103100
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 401] INFO: Comparison started
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 406] DEBUG: Parameters:
-																			rows_in_df=3300000
-																			threshold=0.03
-																			length=10000
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=2
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 6
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 2
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=ITF
+																			num_d=1
+																			tevo=True
+																			file_start=116
+																			file_stop=116
 																			verbose=False
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 413] DEBUG: Size of data_to_check = 3300000
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 416] DEBUG: Factor=10000.0
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 418] DEBUG: num_slice=330
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 419] INFO: Number of slices = 330
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 430] DEBUG: len(index_data_rej)=5
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 431] INFO: Slices rejected = 5
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 432] INFO: Comparison successfully completed
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 437] DEBUG: frac_rejected=0.015151515151515152
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 438] INFO: Data rejected 1.515 %
-[13-05-21 09:53:24 | Arc_functions.py   th_comparison(), line 444] INFO: Replacement successfully completed
-[13-05-21 09:53:24 | Arc_functions.py             psd(), line 504] INFO: Start cleaning from NaN values
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 507] INFO: Cleaning from NaN values successfully completed
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 509] DEBUG: num=100000
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 510] INFO: Evaluating the PSD frequencies
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 512] DEBUG: psd_f obtained with N=100000, NFFT=100000, Fs=100000, detrend=linear
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 530] INFO: Searching the optimal array
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 577] DEBUG: el_s obtained with N=2440000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:28 | Arc_functions.py             psd(), line 581] DEBUG: RMS integral: 1.2658950932557305e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 577] DEBUG: el_s obtained with N=810000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 581] DEBUG: RMS integral: 8.018370429264799e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 588] DEBUG: Size of the data used: 2440000
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 589] INFO: Value of the integral: 1.2658950932557305e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 590] INFO: Mean of the pick-off: 0
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 597] INFO: First index of the data chosen: [0]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 598] INFO: Data selected are from 22/11/20 23:15:36 to 22/11/20 23:56:16
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 599] INFO: Optimal array successfully found
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 608] INFO: Voltage min = [-9.948893]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 609] INFO: Voltage max = [-2.86356]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 610] INFO: Alpha = [1.19500988e-07]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 614] DEBUG: Number of slice for the subset: 8
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 2.3511692894837326e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.8291696281819655e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.6462914210921585e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.5445397722809565e-11
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.6646220192920878e-10
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 6.8856861207232865e-12
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 3.72770604188961e-12
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 623] DEBUG: chunk_s obtained with N=305000, NFFT=100000, Fs=1000, detrend=linear
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 626] DEBUG: RMS integral: 1.691080002885711e-12
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 633] DEBUG: Chunks candidates [5, 6, 7]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 639] DEBUG: Consecutive indices: [[5, 6, 7]]
-[13-05-21 09:53:30 | Arc_functions.py             psd(), line 640] INFO: Optimal index chosen: [5, 6, 7]
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 650] DEBUG: Size of the optimal data: 915000
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 656] INFO: Optimal data selected are from 22/11/20 23:41:01 to 22/11/20 23:56:16
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 661] DEBUG: opt_psd obtained with N=915000, NFFT=100000, Fs=1000, detrend=linear, noverlap = 50000
-[13-05-21 09:53:32 | Arc_functions.py             psd(), line 670] INFO: Building plot
-[13-05-21 09:53:33 | Arc_functions.py             psd(), line 696] INFO: Plot succesfully built
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=1
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:24 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=Pick Off
+																			num_d=1
+																			tevo=False
+																			file_start=116
+																			file_stop=116
+																			verbose=False
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=2
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=ITF
+																			num_d=1
+																			tevo=True
+																			file_start=823
+																			file_stop=823
+																			verbose=False
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=Pick Off
+																			num_d=1
+																			tevo=False
+																			file_start=823
+																			file_stop=823
+																			verbose=False
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=2
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'itf' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=ITF
+																			num_d=1
+																			tevo=True
+																			file_start=901
+																			file_stop=901
+																			verbose=False
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'itf' data read successfully completed
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 993] INFO: 'pick off' data read started
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 994] INFO: Data from 6/5/2022 selected
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1005] DEBUG: Parameters:
+																			day=6
+																			month=5
+																			year=2022
+																			quantity=Pick Off
+																			num_d=1
+																			tevo=False
+																			file_start=901
+																			file_stop=901
+																			verbose=False
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1012] DEBUG: Column index=2
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1025] INFO: Number of .lvm found: 12
+[07-05-22 12:03:25 | Arc_functions.py   soe_read_data(), line 1030] INFO: Number of .lvm selected: 1
+[07-05-22 12:03:26 | Arc_functions.py   soe_read_data(), line 1109] INFO: 'pick off' data read successfully completed
+[07-05-22 12:03:26 | Arc_functions.py   soe_read_data(), line 1110] WARNING: The time array is empty!
