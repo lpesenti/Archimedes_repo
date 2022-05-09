@@ -1852,8 +1852,6 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     # imin = (np.abs(f - fmin)).argmin()
     # imax = (np.abs(f - fmax)).argmin()
 
-    import timeit
-
     greater_array = np.array([])
     less_array = np.array([])
 
@@ -1897,10 +1895,10 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
                         s = s[1:]
                         v[k] = 0
 
-                        psd_values = s * w1
+                        asd_values = np.sqrt(s * w1)
 
                         for freq_index in range(len(freq_data)):
-                            if np.sqrt(psd_values[freq_index]) <= border_comparison[freq_index]:
+                            if asd_values[freq_index] <= border_comparison[freq_index]:
                                 less_npts += 1
                                 less_freq = np.append(less_freq, freq_data[freq_index])
                             else:
@@ -1909,7 +1907,7 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
 
                         if plot_index == 0:
 
-                            plt.plot(f, np.sqrt(psd_values))
+                            plt.plot(f, asd_values)
                             # plt.ylim([1e-10, 1e-5])
                             plt.plot(frequency, border(frequency), label='Border')
                             plt.yscale('log')
@@ -1925,7 +1923,7 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
                 plot_index += 1
                 # time_measure = np.repeat(t1.timestamp, np.size(f))
                 greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
-                less_array = np.append(less_array, round(greater_npts / len(freq_data) * 100, 2))
+                less_array = np.append(less_array, round(less_npts / len(freq_data) * 100, 2))
                 t1 = t1 + T * Ovl
                 k += 1
             time = time + TLong
@@ -1991,24 +1989,35 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
         be shown especially if the analysis is done on more than 5 days.
     """
+
+    import timeit
+
+    start = timeit.default_timer()
     less1, great1, border = et_sens_read(et_sens_path, filexml, Data_path1, network, sensor1, location, channel, tstart,
                                          Twindow, Overlap, verbose, unit=unit)
-    if sensor1 == 'P2' or sensor1 == 'P3' and location == '00':
-        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, '01', channel, tstart,
-                                             Twindow, Overlap, verbose, unit=unit)
-    elif sensor1 == 'P2' or sensor1 == 'P3' and location == '01':
-        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, '00', channel, tstart,
-                                             Twindow, Overlap, verbose, unit=unit)
+    if sensor1 == 'P2' and location == '00':
+        location2 = '01'
+    elif sensor1 == 'P2' and location == '01':
+        location2 = '00'
+    elif sensor1 == 'P3' and location == '00':
+        location2 = '01'
+    elif sensor1 == 'P3' and location == '01':
+        location2 = '00'
     else:
-        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location, channel,
-                                             tstart, Twindow, Overlap, verbose, unit=unit)
+        location2 = location
 
+    less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location2, channel,
+                                         tstart, Twindow, Overlap, verbose, unit=unit)
+
+    stop = timeit.default_timer()
+
+    print('Elapsed time before plot:', (stop - start), 's')
     fig = plt.figure(figsize=(19.2, 10.8))
 
     # HISTOGRAM
     ax = fig.add_subplot()
     ax.hist([less1, less2], bins=50, density=False,
-            label=['{0}.{1}'.format(sensor1, location), '{0}.{1}'.format(sensor2, location)])
+            label=['{0}.{1}'.format(sensor1, location), '{0}.{1}'.format(sensor2, location2)])
     ax.set_xlabel(r'% of points under ET sensitivity curve', fontsize=24)
     ax.set_ylabel(r'Hours', fontsize=24)
     ax.legend(loc='best', shadow=True, fontsize=24)
