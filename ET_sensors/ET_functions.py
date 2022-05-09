@@ -26,7 +26,6 @@ from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import datetime
 
 
-
 def NLNM(unit):
     """
     The Peterson model represents an ensemble of seismic spectra measured in a worldwide network (Peterson 1993,
@@ -1442,13 +1441,13 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         ax1 = fig1.add_subplot()
         ax1_1 = fig1_1.add_subplot()
 
-        ax1.plot(frequency_array, q1_values_day_array, linewidth=2, label='Daytime (10%)')
-        ax1.plot(frequency_array, q2_quantile_day_array, linewidth=2, label='Daytime (50%)')
-        ax1.plot(frequency_array, q3_quantile_day_array, linewidth=2, label='Daytime (90%)')
+        ax1.plot(frequency_array, q1_values_day_array, linewidth=2, label='Daytime ({0}%)'.format(q1 * 100))
+        ax1.plot(frequency_array, q2_quantile_day_array, linewidth=2, label='Daytime ({0}%)'.format(q2 * 100))
+        ax1.plot(frequency_array, q3_quantile_day_array, linewidth=2, label='Daytime ({0}%)'.format(q3 * 100))
 
-        ax1_1.plot(frequency_array, q1_values_night_array, linewidth=2, label='Nighttime (10%)')
-        ax1_1.plot(frequency_array, q2_quantile_night_array, linewidth=2, label='Nighttime (50%)')
-        ax1_1.plot(frequency_array, q3_quantile_night_array, linewidth=2, label='Nighttime (90%)')
+        ax1_1.plot(frequency_array, q1_values_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q1 * 100))
+        ax1_1.plot(frequency_array, q2_quantile_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q2 * 100))
+        ax1_1.plot(frequency_array, q3_quantile_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q3 * 100))
 
         ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
         ax1.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
@@ -1484,13 +1483,13 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         ax2_2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
         ax2_2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
 
-        ax2.plot(frequency_array, q1_values_day_array, linewidth=2, label='Daytime (10%)')
-        ax2.plot(frequency_array, q2_quantile_day_array, linewidth=2, label='Daytime (50%)')
-        ax2.plot(frequency_array, q3_quantile_day_array, linewidth=2, label='Daytime (90%)')
+        ax2.plot(frequency_array, q1_values_day_array, linewidth=2, label='Daytime ({0}%)'.format(q1 * 100))
+        ax2.plot(frequency_array, q2_quantile_day_array, linewidth=2, label='Daytime ({0}%)'.format(q2 * 100))
+        ax2.plot(frequency_array, q3_quantile_day_array, linewidth=2, label='Daytime ({0}%)'.format(q3 * 100))
 
-        ax2_2.plot(frequency_array, q1_values_night_array, linewidth=2, label='Nighttime (10%)')
-        ax2_2.plot(frequency_array, q2_quantile_night_array, linewidth=2, label='Nighttime (50%)')
-        ax2_2.plot(frequency_array, q3_quantile_night_array, linewidth=2, label='Nighttime (90%)')
+        ax2_2.plot(frequency_array, q1_values_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q1 * 100))
+        ax2_2.plot(frequency_array, q2_quantile_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q2 * 100))
+        ax2_2.plot(frequency_array, q3_quantile_night_array, linewidth=2, label='Nighttime ({0}%)'.format(q3 * 100))
 
         ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
         ax2.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
@@ -1634,7 +1633,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     plt.show() if show_plot else ''
 
 
-def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
+def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
     G = 6.673e-11  # Gravitational constant
     rho = 2800  # density of the rock around the detector
     L = 10000  # Arm length of the interferometer
@@ -1667,8 +1666,9 @@ def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
         less_freq = np.array([])
 
         if nlnm_comparison is False:
-            val_to_plot = np.sqrt(10 ** (val / 10) / 19240000000.0)  # not dB
-            val = np.sqrt(10 ** (val[lower_freq:upper_freq + 1] / 10))  # not dB
+            val_to_plot = 10 ** (val / 10) / 19240000000.0  # np.sqrt(10 ** (val / 10) / 19240000000.0)  # not dB
+            val = 10 ** (val[
+                         lower_freq:upper_freq + 1] / 10) / 19240000000.0  # np.sqrt(10 ** (val[lower_freq:upper_freq + 1] / 10))  # not dB
         else:
             val = val[lower_freq:upper_freq + 1]  # dB
             val_to_plot = val
@@ -1696,8 +1696,9 @@ def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
                   round(less_npts / len(freq_data) * 100, 2), '%')
 
             plt.plot(data['frequency'], val_to_plot, label=key)
+            plt.ylim([1e-10, 1e-5])
             if nlnm_comparison is False:
-                plt.plot(freq_data, border_plot_curve, label='Border {0}'.format(key))
+                plt.plot(frequency, border(frequency), label='Border {0}'.format(key))
                 plt.yscale('log')
             else:
                 plt.plot(1 / get_nlnm()[0], border(1 / get_nlnm()[0]), label='Border {0}'.format(key))
@@ -1706,7 +1707,313 @@ def et_sens_comparison(et_sens_path, npz_file, nlnm_comparison=False):
             plt.axvline(x=upper_lim, color='r', linestyle='dotted', linewidth=2)
             plt.xscale('log')
             plt.xlim([0.1, 10])
+            plt.grid(True, linestyle='--', axis='both', which='both')
             plt.legend()
             plt.show()
         else:
             pass
+
+
+def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap,
+                 verbose, unit='VEL'):
+    r"""
+    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
+    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
+    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: float
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type Overlap: float
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verobsity
+
+    :type save_csv: bool
+    :param save_csv: If you want to save the data analyzed ina .csv format
+
+    :type save_img: bool
+    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
+        on True if more than 5 days of data are considered.
+
+    :type linearplot: bool
+    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
+        nighttime. This type of plot shows the mean with one sigma of confidence interval
+
+    :type xscale: str
+    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
+        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+
+    :type show_plot: bool
+    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
+        be shown especially if the analysis is done on more than 5 days.
+    """
+
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+    # Read Inventory and get freq array, response array, sample freq.
+    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
+
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    print('The analysis start from\t', startdate, '\tto\t', stopdate)
+
+    T = Twindow
+    Ovl = Overlap
+    TLong = 12 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+    print('K: ', K)
+    print('M: ', M)
+
+    v = np.empty(K)
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    print('MIN. FREQ.:\t', f.min())
+    # print(f.size)
+    print('GAIN:\t', gain)
+
+    # ET SENSITIVITY SETUP
+    G = 6.673e-11  # Gravitational constant
+    rho = 2800  # density of the rock around the detector
+    L = 10000  # Arm length of the interferometer
+
+    frequency = np.loadtxt(et_sens_path)[:, 0]
+    et_sens = np.loadtxt(et_sens_path)[:, 1]
+    noise_level = et_sens / (4 * np.pi / 3 * G * rho * 1 / (2 * np.pi * frequency) ** 3 * 2 / L)  # strain to m/s
+    border = interp1d(frequency, noise_level, kind='cubic')
+
+    lower_lim = 1
+    upper_lim = 5
+
+    lower_freq = np.argmin(np.abs(f - lower_lim))
+    upper_freq = np.argmin(np.abs(f - upper_lim))
+
+    freq_data = f[lower_freq:upper_freq + 1]
+    border_comparison = border(freq_data)
+
+    print('FREQUENCY LENGTH', len(freq_data))
+
+    # f_str = ["%.2e" % n for n in f]
+    f = np.round(f, 3)
+    # fmin = 2
+    # fmax = 20
+    w = 2.0 * np.pi * f
+    # print(np.where(w == 0))
+
+    if unit.upper() == 'VEL':
+        w1 = 1 / respamp
+    elif unit.upper() == 'ACC':
+        w1 = w ** 2 / respamp
+    else:
+        import warnings
+        msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+        warnings.warn(msg)
+        w1 = 1 / respamp
+    # imin = (np.abs(f - fmin)).argmin()
+    # imax = (np.abs(f - fmax)).argmin()
+
+    import timeit
+
+    greater_array = np.array([])
+    less_array = np.array([])
+
+    plot_index = 0
+
+    for file in filename_list:
+        k = 0
+        print(file)
+
+        st = read(file)
+        # print(st.sort().__str__(extended=True))
+        st = st.sort()
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+        # Tstop = st[-1:][0].times('utcdatetime')[-1:][0]
+        # time = st[0].times('utcdatetime')[0]
+        # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
+        # time = startdate
+        while time < Tstop:
+            print('Evaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+
+            t1 = time
+            for n in range(0, M):
+
+                less_npts = 0
+                greater_npts = 0
+                greater_freq = np.array([])
+                less_freq = np.array([])
+
+                v[k] = np.nan
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:]
+                        v[k] = 0
+
+                        psd_values = s * w1
+
+                        for freq_index in range(len(freq_data)):
+                            if np.sqrt(psd_values[freq_index]) <= border_comparison[freq_index]:
+                                less_npts += 1
+                                less_freq = np.append(less_freq, freq_data[freq_index])
+                            else:
+                                greater_npts += 1
+                                greater_freq = np.append(greater_freq, freq_data[freq_index])
+
+                        if plot_index == 0:
+
+                            plt.plot(f, np.sqrt(psd_values))
+                            # plt.ylim([1e-10, 1e-5])
+                            plt.plot(frequency, border(frequency), label='Border')
+                            plt.yscale('log')
+                            plt.axvline(x=lower_lim, color='r', linestyle='dotted', linewidth=2)
+                            plt.axvline(x=upper_lim, color='r', linestyle='dotted', linewidth=2)
+                            plt.xscale('log')
+                            plt.xlim([0.1, 10])
+                            plt.grid(True, linestyle='--', axis='both', which='both')
+                            plt.legend()
+                            plt.show()
+                        else:
+                            pass
+                plot_index += 1
+                # time_measure = np.repeat(t1.timestamp, np.size(f))
+                greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
+                less_array = np.append(less_array, round(greater_npts / len(freq_data) * 100, 2))
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+
+    return less_array, greater_array, border_comparison
+
+
+def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel,
+                       tstart, Twindow, Overlap, verbose, show_plot=True, unit='VEL'):
+    r"""
+    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
+    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
+    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: float
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type Overlap: float
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verobsity
+
+    :type save_csv: bool
+    :param save_csv: If you want to save the data analyzed ina .csv format
+
+    :type save_img: bool
+    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
+        on True if more than 5 days of data are considered.
+
+    :type linearplot: bool
+    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
+        nighttime. This type of plot shows the mean with one sigma of confidence interval
+
+    :type xscale: str
+    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
+        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+
+    :type show_plot: bool
+    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
+        be shown especially if the analysis is done on more than 5 days.
+    """
+    less1, great1, border = et_sens_read(et_sens_path, filexml, Data_path1, network, sensor1, location, channel, tstart,
+                                         Twindow, Overlap, verbose, unit=unit)
+    if sensor1 == 'P2' or sensor1 == 'P3' and location == '00':
+        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, '01', channel, tstart,
+                                             Twindow, Overlap, verbose, unit=unit)
+    elif sensor1 == 'P2' or sensor1 == 'P3' and location == '01':
+        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, '00', channel, tstart,
+                                             Twindow, Overlap, verbose, unit=unit)
+    else:
+        less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location, channel,
+                                             tstart, Twindow, Overlap, verbose, unit=unit)
+
+    fig = plt.figure(figsize=(19.2, 10.8))
+
+    # HISTOGRAM
+    ax = fig.add_subplot()
+    ax.hist([less1, less2], bins=50, density=False,
+            label=['{0}.{1}'.format(sensor1, location), '{0}.{1}'.format(sensor2, location)])
+    ax.set_xlabel(r'% of points under ET sensitivity curve', fontsize=24)
+    ax.set_ylabel(r'Hours', fontsize=24)
+    ax.legend(loc='best', shadow=True, fontsize=24)
+    ax.grid(True, linestyle='--', axis='both', which='both')
+
+    fig.tight_layout()
+
+    plt.show() if show_plot else ''
