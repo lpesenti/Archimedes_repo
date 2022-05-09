@@ -68,10 +68,9 @@ def fz_Motor(M1, M2):
         REFMODE = ('FNL')  # reference the connected stages
         SN = '021550449'  # 021550465 SN stage @ UNISS
     elif M1 == False and M2 == True:
-        print('pippo')
         CONTROLLERNAME = 'E-872.401'
-        STAGES = ('N-480.210CV')  # connect stages to axes
-        REFMODE = ('FNL')  # reference the connected stages
+        STAGES = ('N-480.210CV', 'N-480.210CV', 'NOSTAGE', 'NOSTAGE')  # connect stages to axes
+        REFMODE = ('FNL', 'FNL')  # reference the connected stages
         SN = '121081258'  # 121081258 SN stage @ Sos Enattos
     else:
         print('Choose only one motor')
