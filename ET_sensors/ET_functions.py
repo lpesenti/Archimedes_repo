@@ -1794,7 +1794,7 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
 
     T = Twindow
     Ovl = Overlap
-    TLong = 12 * 3600
+    TLong = 6 * 3600
     dT = TLong + T * Ovl
     M = int((dT - T) / (T * (1 - Ovl)) + 1)
     K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
@@ -1905,21 +1905,20 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
                                 greater_npts += 1
                                 greater_freq = np.append(greater_freq, freq_data[freq_index])
 
-                        if plot_index == 0:
-
-                            plt.plot(f, asd_values)
-                            # plt.ylim([1e-10, 1e-5])
-                            plt.plot(frequency, border(frequency), label='Border')
-                            plt.yscale('log')
-                            plt.axvline(x=lower_lim, color='r', linestyle='dotted', linewidth=2)
-                            plt.axvline(x=upper_lim, color='r', linestyle='dotted', linewidth=2)
-                            plt.xscale('log')
-                            plt.xlim([0.1, 10])
-                            plt.grid(True, linestyle='--', axis='both', which='both')
-                            plt.legend()
-                            plt.show()
-                        else:
-                            pass
+                        # if plot_index == 0:
+                        #     plt.plot(f, asd_values)
+                        #     # plt.ylim([1e-10, 1e-5])
+                        #     plt.plot(frequency, border(frequency), label='Border')
+                        #     plt.yscale('log')
+                        #     plt.axvline(x=lower_lim, color='r', linestyle='dotted', linewidth=2)
+                        #     plt.axvline(x=upper_lim, color='r', linestyle='dotted', linewidth=2)
+                        #     plt.xscale('log')
+                        #     plt.xlim([0.1, 10])
+                        #     plt.grid(True, linestyle='--', axis='both', which='both')
+                        #     plt.legend()
+                        #     plt.show()
+                        # else:
+                        #     pass
                 plot_index += 1
                 # time_measure = np.repeat(t1.timestamp, np.size(f))
                 greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
