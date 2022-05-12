@@ -22,6 +22,7 @@ import seaborn as sns
 from matplotlib.dates import date2num, num2date, DateFormatter
 import matplotlib.dates as mdates
 from scipy.interpolate import interp1d
+from scipy import signal
 from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import datetime
 
@@ -599,7 +600,7 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
         # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
         # time = startdate
         while time < Tstop:
-            print('Evaluating from\t', time, '\tto\t', Tstop)
+            print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
@@ -848,7 +849,7 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
         time = UTCDateTime(time)
 
         while time < Tstop:
-            print('Evaluating from\t', time, '\tto\t', Tstop)
+            print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
@@ -1157,7 +1158,7 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
         Tstart = time
 
         while time < Tstop:
-            print('Evaluating from\t', time, '\tto\t', Tstop)
+            print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
@@ -1345,7 +1346,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
         # time = startdate
         while time < Tstop:
-            print('Evaluating from\t', time, '\tto\t', Tstop)
+            print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
@@ -1714,8 +1715,8 @@ def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
             pass
 
 
-def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap,
-                 verbose, unit='VEL'):
+def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, TLong,
+                 verbose, unit='VEL', q1=0.9):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -1794,7 +1795,6 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
 
     T = Twindow
     Ovl = Overlap
-    TLong = 6 * 3600
     dT = TLong + T * Ovl
     M = int((dT - T) / (T * (1 - Ovl)) + 1)
     K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
@@ -1833,27 +1833,24 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
 
     print('FREQUENCY LENGTH', len(freq_data))
 
-    # f_str = ["%.2e" % n for n in f]
     f = np.round(f, 3)
-    # fmin = 2
-    # fmax = 20
     w = 2.0 * np.pi * f
-    # print(np.where(w == 0))
 
     if unit.upper() == 'VEL':
-        w1 = 1 / respamp
+        w1 = 1 / respamp  # respamp is already the square
     elif unit.upper() == 'ACC':
-        w1 = w ** 2 / respamp
+        w1 = w ** 2 / respamp  # respamp is already the square
     else:
         import warnings
         msg = "Invalid data unit chosen [VEl or ACC], using VEL"
         warnings.warn(msg)
         w1 = 1 / respamp
-    # imin = (np.abs(f - fmin)).argmin()
-    # imax = (np.abs(f - fmax)).argmin()
 
     greater_array = np.array([])
     less_array = np.array([])
+
+    gaps_counter = 0
+    npts_counter = 0
 
     plot_index = 0
 
@@ -1862,138 +1859,151 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
         print(file)
 
         st = read(file)
-        # print(st.sort().__str__(extended=True))
         st = st.sort()
         Tstop = st[-1:][0].times('timestamp')[-1:][0]
         Tstop = UTCDateTime(Tstop)
         time = st[0].times('timestamp')[0]
         time = UTCDateTime(time)
-        # Tstop = st[-1:][0].times('utcdatetime')[-1:][0]
-        # time = st[0].times('utcdatetime')[0]
-        # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
-        # time = startdate
+
         while time < Tstop:
-            print('Evaluating from\t', time, '\tto\t', Tstop)
+            df = pd.DataFrame(columns=['frequency', 'asd_value'], dtype=float)
+            less_npts = 0
+            greater_npts = 0
+
             tstart = time
             tstop = time + dT - 1 / fsxml
+
+            print('\tEvaluating from\t', time, '\tto\t', tstop)
+
             st = read(file, starttime=tstart, endtime=tstop)
-
             t1 = time
-            for n in range(0, M):
-
-                less_npts = 0
-                greater_npts = 0
-                greater_freq = np.array([])
-                less_freq = np.array([])
-
+            for n in range(M):
                 v[k] = np.nan
                 tr = st.slice(t1, t1 + T - 1 / fsxml)
                 if tr.get_gaps() == [] and len(tr) > 0:
                     tr1 = tr[0]
                     if tr1.stats.npts == Num:
-                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml,
+                                        detrend="linear")  # , window=mlab.window_hanning)  # , noverlap=int(Num/2))
                         s = s[1:]
-                        v[k] = 0
-
                         asd_values = np.sqrt(s * w1)
 
-                        for freq_index in range(len(freq_data)):
-                            if asd_values[freq_index] <= border_comparison[freq_index]:
-                                less_npts += 1
-                                less_freq = np.append(less_freq, freq_data[freq_index])
-                            else:
-                                greater_npts += 1
-                                greater_freq = np.append(greater_freq, freq_data[freq_index])
+                        v[k] = 0
 
-                        # if plot_index == 0:
-                        #     plt.plot(f, asd_values)
-                        #     # plt.ylim([1e-10, 1e-5])
-                        #     plt.plot(frequency, border(frequency), label='Border')
-                        #     plt.yscale('log')
-                        #     plt.axvline(x=lower_lim, color='r', linestyle='dotted', linewidth=2)
-                        #     plt.axvline(x=upper_lim, color='r', linestyle='dotted', linewidth=2)
-                        #     plt.xscale('log')
-                        #     plt.xlim([0.1, 10])
-                        #     plt.grid(True, linestyle='--', axis='both', which='both')
-                        #     plt.legend()
-                        #     plt.show()
-                        # else:
-                        #     pass
-                plot_index += 1
-                # time_measure = np.repeat(t1.timestamp, np.size(f))
-                greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
-                less_array = np.append(less_array, round(less_npts / len(freq_data) * 100, 2))
+                    else:
+                        npts_counter += 1
+                    plot_index += 1
+                else:
+                    gaps_counter += 1
+
+                if np.isnan(v[k]):
+                    asd_values = np.tile(v[k], np.size(f))
+                else:
+                    pass
+                data_to_save = np.concatenate((f, asd_values))
+                data_to_save = np.reshape(data_to_save, (2, np.size(f))).T
+
+                df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
+
                 t1 = t1 + T * Ovl
                 k += 1
             time = time + TLong
 
-    return less_array, greater_array, border_comparison
+            q1_values = df.groupby(['frequency'])['asd_value'].quantile(q1)
+            q1_array = q1_values.to_numpy()
+            q1_array = q1_array[lower_freq:upper_freq + 1]
+
+            for freq_index in range(len(freq_data)):
+                if q1_array[freq_index] <= border_comparison[freq_index]:
+                    less_npts += 1
+                else:
+                    greater_npts += 1
+
+            greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
+            less_array = np.append(less_array, round(less_npts / len(freq_data) * 100, 2))
+
+    print('NUMBER OF GAPS:', gaps_counter)
+    print('NUMBER OF MISMATCH POINTS:', npts_counter)
+    return less_array, greater_array, border_comparison, startdate, stopdate
 
 
 def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel,
-                       tstart, Twindow, Overlap, verbose, show_plot=True, unit='VEL'):
-    r"""
-    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
-    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
-    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+                       tstart, Twindow, Overlap, verbose, TLong, show_plot=True, unit='VEL', nbins=10, save_img=False,
+                       img_path=None, save_data=False, yscale='linear'):
+    """
+    :type et_sens_path: str
+    :param et_sens_path:
 
     :type filexml: str
-    :param filexml: The .xml needed to read the seismometer response
+    :param filexml:
 
-    :type Data_path: str
-    :param Data_path: Path to the data.
+    :type Data_path1: str
+    :param Data_path1:
+
+    :type Data_path2: str
+    :param Data_path2:
 
     :type network: str
-    :param network: Sensor network
+    :param network:
 
-    :type sensor: str
-    :param sensor: Name of the sensor
+    :type sensor1: str
+    :param sensor1:
+
+    :type sensor2: str
+    :param sensor2:
 
     :type location: str
-    :param location: Location of the sensor
+    :param location:
 
     :type channel: str
-    :param channel: Channel to be analysed
+    :param channel:
 
     :type tstart: str, :class: 'obspy.UTCDateTime'
-    :param tstart: Start time to get the response from the seismometer (?)
+    :param tstart:
 
-    :type Twindow: float
-    :param Twindow: Time windows used to evaluate the PSD.
+    :type Twindow: int
+    :param Twindow:
 
     :type Overlap: float
-    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
-        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
-        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+    :param Overlap:
 
     :type verbose: bool
-    :param verbose: Needed for verobsity
+    :param verbose:
 
-    :type save_csv: bool
-    :param save_csv: If you want to save the data analyzed ina .csv format
-
-    :type save_img: bool
-    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
-        on True if more than 5 days of data are considered.
-
-    :type linearplot: bool
-    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
-        nighttime. This type of plot shows the mean with one sigma of confidence interval
-
-    :type xscale: str
-    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
-        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+    :type TLong: int
+    :param TLong:
 
     :type show_plot: bool
-    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
-        be shown especially if the analysis is done on more than 5 days.
-    """
+    :param show_plot:
 
+    :type unit: str
+    :param unit:
+
+    :type nbins: int
+    :param nbins:
+
+    :type save_img: bool
+    :param save_img:
+
+    :type img_path: str
+    :param img_path:
+
+    :type save_data: bool
+    :param save_data:
+
+    :type yscale: str
+    :param yscale:
+
+    :return:
+    """
     import timeit
 
     start = timeit.default_timer()
-    less1, great1, border = et_sens_read(et_sens_path, filexml, Data_path1, network, sensor1, location, channel, tstart,
-                                         Twindow, Overlap, verbose, unit=unit)
+    less1, great1, border, startdate, stopdate = et_sens_read(et_sens_path, filexml, Data_path1,
+                                                              network, sensor1,
+                                                              location, channel, tstart, Twindow,
+                                                              Overlap, TLong,
+                                                              verbose, unit=unit)
     if sensor1 == 'P2' and location == '00':
         location2 = '01'
     elif sensor1 == 'P2' and location == '01':
@@ -2005,23 +2015,117 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     else:
         location2 = location
 
-    less2, great2, border = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location2, channel,
-                                         tstart, Twindow, Overlap, verbose, unit=unit)
+    less2, great2, border, _, _ = et_sens_read(et_sens_path, filexml, Data_path2, network,
+                                               sensor2, location2, channel,
+                                               tstart, Twindow, Overlap, TLong, verbose,
+                                               unit=unit)
+
+    print('UNDER CURVE P2.00:', len(less1), len(less2))
+    print('ABOVE CURVE P2.01:', len(great1), len(great2))
+
+    if save_data:
+        np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor1, location, nbins),
+                   np.c_[less1, great1])
+        np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor2, location2, nbins),
+                   np.c_[less2, great2])
 
     stop = timeit.default_timer()
 
     print('Elapsed time before plot:', (stop - start), 's')
-    fig = plt.figure(figsize=(19.2, 10.8))
 
-    # HISTOGRAM
+    y_to_hour = 3600 / TLong
+
+    # HISTOGRAM UNDER CURVE
+    fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
-    ax.hist([less1, less2], bins=50, density=False,
-            label=['{0}.{1}'.format(sensor1, location), '{0}.{1}'.format(sensor2, location2)])
+    x = np.arange(0, 100, 100 / nbins)
+    less_hist1 = np.histogram(less1, bins=nbins)
+    less_hist2 = np.histogram(less2, bins=nbins)
+    width = 25 / nbins
+
+    rects1 = ax.bar(x, less_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7, edgecolor='k',
+                    align='edge')
+    rects2 = ax.bar(x + width, less_hist2[0] / y_to_hour, width, label='{0}.{1}'.format(sensor2, location2), alpha=0.7,
+                    edgecolor='k',
+                    align='edge')
+    ax.bar_label(rects1, padding=3, color='tab:blue', fontsize=20)
+    ax.bar_label(rects2, padding=3, color='tab:orange', fontsize=20)
+
     ax.set_xlabel(r'% of points under ET sensitivity curve', fontsize=24)
-    ax.set_ylabel(r'Hours', fontsize=24)
+    ax.set_ylabel(r'Time', fontsize=24)
     ax.legend(loc='best', shadow=True, fontsize=24)
     ax.grid(True, linestyle='--', axis='both', which='both')
+    ax.set_xlim([-5, 105])
 
     fig.tight_layout()
 
+    # HISTOGRAM ABOVE CURVE
+    fig1 = plt.figure(figsize=(19.2, 10.8))
+    ax1 = fig1.add_subplot()
+
+    x = np.arange(0, 100, 100 / nbins)
+    great_hist1 = np.histogram(great1, bins=nbins)
+    great_hist2 = np.histogram(great2, bins=nbins)
+
+    width = 25 / nbins
+    rects1 = ax1.bar(x, great_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7, edgecolor='k',
+                     align='edge')
+    rects2 = ax1.bar(x + width, great_hist2[0] / y_to_hour, width, label='{0}.{1}'.format(sensor2, location2), alpha=0.7,
+                     edgecolor='k',
+                     align='edge')
+
+    ax1.bar_label(rects1, padding=3, color='tab:blue', fontsize=20)
+    ax1.bar_label(rects2, padding=3, color='tab:orange', fontsize=20)
+
+    ax1.set_xlabel(r'% of points above ET sensitivity curve', fontsize=24)
+    ax1.set_ylabel(r'Time', fontsize=24)
+    ax1.legend(loc='best', shadow=True, fontsize=24)
+    ax1.grid(True, linestyle='--', axis='both', which='both')
+    ax1.set_xlim([-5, 105])
+    fig1.tight_layout()
+
+    if yscale.lower() == 'linear':
+        ax.set_yscale('linear')
+        ax1.set_yscale('linear')
+    elif yscale.lower() == 'log':
+        ax.set_yscale('log')
+        ax1.set_yscale('log')
+    else:
+        import warnings
+        msg = "Invalid yscale chosen. Set to default, yscale='linear'"
+        warnings.warn(msg)
+        ax.set_yscale('linear')
+        ax1.set_yscale('linear')
+
+    print('TOTAL ABOVE POINTS P2 00:', np.sum(great1))
+    print('TOTAL ABOVE POINTS P2 01:', np.sum(great2))
+
+    if save_img:
+        if img_path is not None:
+            pass
+        else:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read('config.ini')
+            img_path = config['Paths']['images_dir']
+        print('Saving images...')
+        fig.savefig(
+            img_path + r'\Comparison-UNDER_{0}{1}-{2}{3}_from_{4}_to_{5}_{6}-BINS.png'.format(sensor1, location,
+                                                                                              sensor2,
+                                                                                              location2,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              nbins), dpi=1200)
+        fig1.savefig(
+            img_path + r'\Comparison-ABOVE_{0}{1}-{2}{3}_from_{4}_to_{5}_{6}-BINS.png'.format(sensor1, location,
+                                                                                              sensor2,
+                                                                                              location2,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              nbins), dpi=1200)
+        print('Images correctly saved')
     plt.show() if show_plot else ''
