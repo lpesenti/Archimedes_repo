@@ -1,5 +1,5 @@
 __author__ = "Luca Pesenti and Davide Rozza "
-__credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
+__credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza", "Nikita Levashko"]
 __version__ = "0.8.5"
 __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
@@ -1716,7 +1716,7 @@ def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
 
 
 def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, TLong,
-                 verbose, unit='VEL', q1=0.9):
+                 verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -1791,26 +1791,17 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     stopdate = st2[0].times('timestamp')[-1:][0]
     stopdate = UTCDateTime(stopdate)
 
-    print('The analysis start from\t', startdate, '\tto\t', stopdate)
-
-    T = Twindow
-    Ovl = Overlap
-    dT = TLong + T * Ovl
-    M = int((dT - T) / (T * (1 - Ovl)) + 1)
-    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
-    print('K: ', K)
-    print('M: ', M)
+    dT = TLong + Twindow * Overlap
+    M = int((dT - Twindow) / (Twindow * (1 - Overlap)) + 1)
+    K = int((stopdate - startdate) / (Twindow * (1 - Overlap)) + 1)
 
     v = np.empty(K)
 
     fsxml = 100
-    Num = int(T * fsxml)
+    Num = int(Twindow * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
-    print('MIN. FREQ.:\t', f.min())
-    # print(f.size)
-    print('GAIN:\t', gain)
 
     # ET SENSITIVITY SETUP
     G = 6.673e-11  # Gravitational constant
@@ -1822,29 +1813,51 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     noise_level = et_sens / (4 * np.pi / 3 * G * rho * 1 / (2 * np.pi * frequency) ** 3 * 2 / L)  # strain to m/s
     border = interp1d(frequency, noise_level, kind='cubic')
 
-    lower_lim = 1
-    upper_lim = 5
-
     lower_freq = np.argmin(np.abs(f - lower_lim))
     upper_freq = np.argmin(np.abs(f - upper_lim))
 
     freq_data = f[lower_freq:upper_freq + 1]
     border_comparison = border(freq_data)
 
-    print('FREQUENCY LENGTH', len(freq_data))
+    print('+', '-' * 84, '+', sep='')
+    print('| The analysis start from', startdate, 'to', stopdate, '|')
+    print('| K:'.ljust(30, '.'), '{0} |'.format(K).rjust(56, '.'), sep='')
+    print('| M:'.ljust(30, '.'), '{0} |'.format(M).rjust(56, '.'), sep='')
+    print('| Minimum Frequency:'.ljust(30, '.'), '{0} |'.format(f.min()).rjust(56, '.'), sep='')
+    print('| Gain:'.ljust(30, '.'), '{0} |'.format(gain).rjust(56, '.'), sep='')
+    print('| Frequency Length'.ljust(30, '.'), '{0} |'.format(len(freq_data)).rjust(56, '.'), sep='')
+    print('| PSD time window'.ljust(30, '.'), '{0} |'.format(Twindow).rjust(56, '.'), sep='')
+    print('| Overlap'.ljust(30, '.'), '{0} |'.format(Overlap).rjust(56, '.'), sep='')
+    print('| Slice length'.ljust(30, '.'), '{0} |'.format(TLong).rjust(56, '.'), sep='')
+    print('+', '-' * 84, '+', sep='')
 
     f = np.round(f, 3)
     w = 2.0 * np.pi * f
 
     if unit.upper() == 'VEL':
         w1 = 1 / respamp  # respamp is already the square
+        fl = 1 / get_nlnm()[0]
+        nlnm = 10 ** (get_nlnm()[1] / 10) / (2.0 * np.pi / get_nlnm()[0])  # transform NLNM from m/s^2 [dB] to m/s
+        nhnm = 10 ** (get_nhnm()[1] / 10) / (2.0 * np.pi / get_nhnm()[0])  # transform NHNM from m/s^2 [dB] to m/s
     elif unit.upper() == 'ACC':
         w1 = w ** 2 / respamp  # respamp is already the square
+        fl = 1 / get_nlnm()[0]
+        nlnm = 10 ** (get_nlnm()[1] / 10)
+        nhnm = 10 ** (get_nhnm()[1] / 10)
     else:
         import warnings
         msg = "Invalid data unit chosen [VEl or ACC], using VEL"
         warnings.warn(msg)
         w1 = 1 / respamp
+        fl = 1 / get_nlnm()[0]
+        nlnm = 10 ** (get_nlnm()[1] / 10) / (2.0 * np.pi / get_nlnm()[0])  # transform NLNM from m/s^2 [dB] to m/s
+        nhnm = 10 ** (get_nhnm()[1] / 10) / (2.0 * np.pi / get_nhnm()[0])  # transform NHNM from m/s^2 [dB] to m/s
+
+    # FIND MEAN VALUE OF THE NLNM AND NHNM BETWEEN f_min AND f_max TO CHECK THE SEISMOMETER DATA READ
+    f_min = np.argmin(np.abs(fl - lower_lim))
+    f_max = np.argmin(np.abs(fl - upper_lim))
+    nlnm_comparison_value = np.mean(nlnm[f_min:f_max]) * 2
+    nhnm_comparison_value = np.mean(nhnm[f_min:f_max]) * 2
 
     greater_array = np.array([])
     less_array = np.array([])
@@ -1873,23 +1886,20 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
             tstart = time
             tstop = time + dT - 1 / fsxml
 
-            print('\tEvaluating from\t', time, '\tto\t', tstop)
+            print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop)
 
             st = read(file, starttime=tstart, endtime=tstop)
             t1 = time
             for n in range(M):
                 v[k] = np.nan
-                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                tr = st.slice(t1, t1 + Twindow - 1 / fsxml)
                 if tr.get_gaps() == [] and len(tr) > 0:
                     tr1 = tr[0]
                     if tr1.stats.npts == Num:
-                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml,
-                                        detrend="linear")  # , window=mlab.window_hanning)  # , noverlap=int(Num/2))
-                        s = s[1:]
-                        asd_values = np.sqrt(s * w1)
-
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:] * w1
+                        asd_values = np.sqrt(s)
                         v[k] = 0
-
                     else:
                         npts_counter += 1
                     plot_index += 1
@@ -1900,12 +1910,13 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
                     asd_values = np.tile(v[k], np.size(f))
                 else:
                     pass
+
                 data_to_save = np.concatenate((f, asd_values))
                 data_to_save = np.reshape(data_to_save, (2, np.size(f))).T
 
                 df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
 
-                t1 = t1 + T * Ovl
+                t1 = t1 + Twindow * Overlap
                 k += 1
             time = time + TLong
 
@@ -1922,23 +1933,29 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
             greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
             less_array = np.append(less_array, round(less_npts / len(freq_data) * 100, 2))
 
-    print('NUMBER OF GAPS:', gaps_counter)
-    print('NUMBER OF MISMATCH POINTS:', npts_counter)
+    print('+', '-' * 48, '+', sep='')
+    print('| NUMBER OF GAPS'.ljust(35, '.'), '{0} |'.format(gaps_counter).rjust(15, '.'), sep='')
+    print('| NUMBER OF MISMATCH POINTS'.ljust(35, '.'), '{0} |'.format(npts_counter).rjust(15, '.'), sep='')
+    print('+', '-' * 48, '+', sep='')
     return less_array, greater_array, border_comparison, startdate, stopdate
 
 
 def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel,
                        tstart, Twindow, Overlap, verbose, TLong, show_plot=True, unit='VEL', nbins=10, save_img=False,
-                       img_path=None, save_data=False, yscale='linear'):
+                       img_path=None, save_data=False, yscale='linear', lower_lim=1, upper_lim=5, terziet=False):
     """
+    This function make the comparison between the seismometer data chosen and the ET sensitivity curve in a given
+    frequency range [version of 19/05/2022]. The results of this comparison are shown in a bar plot in which is reported
+    the amount of hours in which the seismometer data are below or above the ET sensitivity curve.
+
     :type et_sens_path: str
-    :param et_sens_path:
+    :param et_sens_path: The path to the .txt file of the ET sensitivity curve
 
     :type filexml: str
-    :param filexml:
+    :param filexml: The .xml needed to read the seismometer response
 
     :type Data_path1: str
-    :param Data_path1:
+    :param Data_path1: Path to the data.
 
     :type Data_path2: str
     :param Data_path2:
@@ -1994,31 +2011,35 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     :type yscale: str
     :param yscale:
 
-    :return:
+    :type terziet: str
+    :param terziet:
     """
     import timeit
 
     start = timeit.default_timer()
-    less1, great1, border, startdate, stopdate = et_sens_read(et_sens_path, filexml, Data_path1,
-                                                              network, sensor1,
-                                                              location, channel, tstart, Twindow,
-                                                              Overlap, TLong,
-                                                              verbose, unit=unit)
-    if sensor1 == 'P2' and location == '00':
+
+    if sensor1 == 'P2' and sensor2 == 'P2' and location == '00':
         location2 = '01'
-    elif sensor1 == 'P2' and location == '01':
+    elif sensor1 == 'P2' and sensor2 == 'P2' and location == '01':
         location2 = '00'
-    elif sensor1 == 'P3' and location == '00':
+    elif sensor1 == 'P3' and sensor2 == 'P3' and location == '00':
         location2 = '01'
-    elif sensor1 == 'P3' and location == '01':
+    elif sensor1 == 'P3' and sensor2 == 'P3' and location == '01':
         location2 = '00'
     else:
         location2 = location
+    print('*' * 45)
+    print('* Starting comparison between {0}{1} and {2}{3} *'.format(sensor1, location, sensor2, location2).ljust(45))
+    print('*' * 45)
 
-    less2, great2, border, _, _ = et_sens_read(et_sens_path, filexml, Data_path2, network,
-                                               sensor2, location2, channel,
-                                               tstart, Twindow, Overlap, TLong, verbose,
-                                               unit=unit)
+    less1, great1, border, startdate, stopdate = et_sens_read(et_sens_path, filexml, Data_path1, network, sensor1,
+                                                              location, channel, tstart, Twindow, Overlap, TLong,
+                                                              verbose, unit=unit, lower_lim=lower_lim,
+                                                              upper_lim=upper_lim)
+
+    less2, great2, border, _, _ = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location2, channel,
+                                               tstart, Twindow, Overlap, TLong, verbose, unit=unit, lower_lim=lower_lim,
+                                               upper_lim=upper_lim)
 
     print('UNDER CURVE P2.00:', len(less1), len(less2))
     print('ABOVE CURVE P2.01:', len(great1), len(great2))
@@ -2043,7 +2064,8 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     less_hist2 = np.histogram(less2, bins=nbins)
     width = 25 / nbins
 
-    rects1 = ax.bar(x, less_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7, edgecolor='k',
+    rects1 = ax.bar(x, less_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7,
+                    edgecolor='k',
                     align='edge')
     rects2 = ax.bar(x + width, less_hist2[0] / y_to_hour, width, label='{0}.{1}'.format(sensor2, location2), alpha=0.7,
                     edgecolor='k',
@@ -2052,7 +2074,7 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     ax.bar_label(rects2, padding=3, color='tab:orange', fontsize=20)
 
     ax.set_xlabel(r'% of points under ET sensitivity curve', fontsize=24)
-    ax.set_ylabel(r'Time', fontsize=24)
+    ax.set_ylabel(r'# of hours', fontsize=24)
     ax.legend(loc='best', shadow=True, fontsize=24)
     ax.grid(True, linestyle='--', axis='both', which='both')
     ax.set_xlim([-5, 105])
@@ -2068,9 +2090,11 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     great_hist2 = np.histogram(great2, bins=nbins)
 
     width = 25 / nbins
-    rects1 = ax1.bar(x, great_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7, edgecolor='k',
+    rects1 = ax1.bar(x, great_hist1[0] / y_to_hour, width, label='{0}.{1}'.format(sensor1, location), alpha=0.7,
+                     edgecolor='k',
                      align='edge')
-    rects2 = ax1.bar(x + width, great_hist2[0] / y_to_hour, width, label='{0}.{1}'.format(sensor2, location2), alpha=0.7,
+    rects2 = ax1.bar(x + width, great_hist2[0] / y_to_hour, width, label='{0}.{1}'.format(sensor2, location2),
+                     alpha=0.7,
                      edgecolor='k',
                      align='edge')
 
@@ -2078,7 +2102,7 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     ax1.bar_label(rects2, padding=3, color='tab:orange', fontsize=20)
 
     ax1.set_xlabel(r'% of points above ET sensitivity curve', fontsize=24)
-    ax1.set_ylabel(r'Time', fontsize=24)
+    ax1.set_ylabel(r'# of hours', fontsize=24)
     ax1.legend(loc='best', shadow=True, fontsize=24)
     ax1.grid(True, linestyle='--', axis='both', which='both')
     ax1.set_xlim([-5, 105])

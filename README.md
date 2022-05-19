@@ -27,6 +27,9 @@ Welcome to the GitHub repository of the Archimedes Experiment!
         * ...
         * _SosEnattos_Data_yyyymmdd_ (n)
             * *.lvm
+* In the latest updates (_26/04/2022_), two functions were added. Both of them start with _soe..._  and can be used to
+  easily make the plot of the data taken on the Sos Enattos site. The data __DON'T__ need to be saved in a particular
+  folder since it is specified in the config.ini
 
 #### Arc_common.py
 
@@ -49,6 +52,11 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 
 * This script was used to perform some compression test on data taken by the Archimedes prototype. However, it is in an
   unstable and unreviewed version.
+
+#### config.ini
+
+* In this file are contained several variables needed for the analysis on the Archimedes experiment data.
+* The values of the variable present must be changed especially the ones related to paths variables.
 
 ## ET_sensors
 
