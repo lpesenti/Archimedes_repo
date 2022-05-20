@@ -1725,7 +1725,7 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
 
     print('The analysis start from\t', startdate, '\tto\t', stopdate)
 
-    df = pd.DataFrame()
+    # df = pd.DataFrame()
 
     T = Twindow
     Ovl = Overlap
@@ -1747,6 +1747,10 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
     f = f[1:]
     print('MIN. FREQ.:\t', f.min())
     w = 2.0 * np.pi * f
+
+    f_dict = {}
+    for i_dict in range(f.size):
+        f_dict["f{0}".format(i_dict)] = []
 
     import timeit
 
@@ -1776,11 +1780,13 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
             w1 = 1 / respamp
 
         while time < Tstop:
-            print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
             t1 = time
+
+            print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop)
+
             for n in range(0, M):
                 v[k] = np.nan
                 tr = st.slice(t1, t1 + T - 1 / fsxml)
@@ -1797,31 +1803,41 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
                 else:
                     pass
 
-                df_add = pd.DataFrame(data=psd_values_db, columns=[t1.timestamp])
-                df = pd.concat([df, df_add], axis=1)
+                for i, val in enumerate(psd_values_db):
+                    f_dict['f{0}'.format(i)].append(val)
+                # df_add = pd.DataFrame(data=psd_values_db, columns=[t1.timestamp])
+                # df = pd.concat([df, df_add], axis=1)
 
                 t1 = t1 + T * Ovl
                 k += 1
             time = time + TLong
-
-    df = df.set_index(f)
-    print(df.info())
-    print('Quantile evaluation started...')
+    print(f_dict['f0'])
+    # df = df.set_index(f)
+    # print(df.info())
+    # print('Quantile evaluation started...')
 
     # Find the data correspond to the quantiles
-    q1_series = df.T.quantile(q1)
-    q2_series = df.T.quantile(q2)
-    q3_series = df.T.quantile(q3)
+    # q1_series = df.T.quantile(q1)
+    # q2_series = df.T.quantile(q2)
+    # q3_series = df.T.quantile(q3)
 
-    # Frequencies are the indeces of the DataFrame because of groupby()
-    frequency_array = q1_series.index.to_numpy()
+    # frequency_array = q1_series.index.to_numpy()
+    frequency_array = f
 
     print('Conversion to numpy arrays')
-
     # Convert the DataFrame in numpy array
-    q1_array = q1_series.to_numpy()
-    q2_array = q2_series.to_numpy()
-    q3_array = q3_series.to_numpy()
+    q1_array = np.array([])  # q1_series.to_numpy()
+    q2_array = np.array([])  # q2_series.to_numpy()
+    q3_array = np.array([])  # q3_series.to_numpy()
+
+    for key, val in f_dict.items():
+        val = np.array(val)
+        val = val[~np.isnan(val)]
+        q1_array = np.append(q1_array, np.quantile(np.array(val), q1))
+        q2_array = np.append(q2_array, np.quantile(np.array(val), q2))
+        q3_array = np.append(q3_array, np.quantile(np.array(val), q3))
+
+    print(q1_array)
 
     if save_npz:
         print('Saving data to .npz file')
@@ -2023,8 +2039,8 @@ def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
             pass
 
 
-def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, TLong,
-                 verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5):
+def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, Twindow, Overlap, TLong,
+                 verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5, time_evo=False):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
@@ -2083,8 +2099,6 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     """
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
-    # Read Inventory and get freq array, response array, sample freq.
-    fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=verbose)
 
     filename_list = glob.glob(Data_path + seed_id + "*")
     filename_list.sort()
@@ -2132,7 +2146,7 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     print('| K:'.ljust(30, '.'), '{0} |'.format(K).rjust(56, '.'), sep='')
     print('| M:'.ljust(30, '.'), '{0} |'.format(M).rjust(56, '.'), sep='')
     print('| Minimum Frequency:'.ljust(30, '.'), '{0} |'.format(f.min()).rjust(56, '.'), sep='')
-    print('| Gain:'.ljust(30, '.'), '{0} |'.format(gain).rjust(56, '.'), sep='')
+    print('| Maximum Frequency:'.ljust(30, '.'), '{0} |'.format(f.max()).rjust(56, '.'), sep='')
     print('| Frequency Length'.ljust(30, '.'), '{0} |'.format(len(freq_data)).rjust(56, '.'), sep='')
     print('| PSD time window'.ljust(30, '.'), '{0} |'.format(Twindow).rjust(56, '.'), sep='')
     print('| Overlap'.ljust(30, '.'), '{0} |'.format(Overlap).rjust(56, '.'), sep='')
@@ -2142,33 +2156,9 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     f = np.round(f, 3)
     w = 2.0 * np.pi * f
 
-    if unit.upper() == 'VEL':
-        w1 = 1 / respamp  # respamp is already the square
-        fl = 1 / get_nlnm()[0]
-        nlnm = 10 ** (get_nlnm()[1] / 10) / (2.0 * np.pi / get_nlnm()[0])  # transform NLNM from m/s^2 [dB] to m/s
-        nhnm = 10 ** (get_nhnm()[1] / 10) / (2.0 * np.pi / get_nhnm()[0])  # transform NHNM from m/s^2 [dB] to m/s
-    elif unit.upper() == 'ACC':
-        w1 = w ** 2 / respamp  # respamp is already the square
-        fl = 1 / get_nlnm()[0]
-        nlnm = 10 ** (get_nlnm()[1] / 10)
-        nhnm = 10 ** (get_nhnm()[1] / 10)
-    else:
-        import warnings
-        msg = "Invalid data unit chosen [VEl or ACC], using VEL"
-        warnings.warn(msg)
-        w1 = 1 / respamp
-        fl = 1 / get_nlnm()[0]
-        nlnm = 10 ** (get_nlnm()[1] / 10) / (2.0 * np.pi / get_nlnm()[0])  # transform NLNM from m/s^2 [dB] to m/s
-        nhnm = 10 ** (get_nhnm()[1] / 10) / (2.0 * np.pi / get_nhnm()[0])  # transform NHNM from m/s^2 [dB] to m/s
-
-    # FIND MEAN VALUE OF THE NLNM AND NHNM BETWEEN f_min AND f_max TO CHECK THE SEISMOMETER DATA READ
-    f_min = np.argmin(np.abs(fl - lower_lim))
-    f_max = np.argmin(np.abs(fl - upper_lim))
-    nlnm_comparison_value = np.mean(nlnm[f_min:f_max]) * 2
-    nhnm_comparison_value = np.mean(nhnm[f_min:f_max]) * 2
-
     greater_array = np.array([])
     less_array = np.array([])
+    time_array = np.array([])
 
     gaps_counter = 0
     npts_counter = 0
@@ -2178,13 +2168,25 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     for file in filename_list:
         k = 0
         print(file)
-
         st = read(file)
         st = st.sort()
         Tstop = st[-1:][0].times('timestamp')[-1:][0]
         Tstop = UTCDateTime(Tstop)
         time = st[0].times('timestamp')[0]
         time = UTCDateTime(time)
+
+        # Read Inventory and get freq array, response array, sample freq.
+        fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                              verbose=verbose)
+        if unit.upper() == 'VEL':
+            w1 = 1 / respamp  # respamp is already the square
+        elif unit.upper() == 'ACC':
+            w1 = w ** 2 / respamp  # respamp is already the square
+        else:
+            import warnings
+            msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+            warnings.warn(msg)
+            w1 = 1 / respamp
 
         while time < Tstop:
             df = pd.DataFrame(columns=['frequency', 'asd_value'], dtype=float)
@@ -2241,16 +2243,20 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
             greater_array = np.append(greater_array, round(greater_npts / len(freq_data) * 100, 2))
             less_array = np.append(less_array, round(less_npts / len(freq_data) * 100, 2))
 
+            if time_evo:
+                time_array = np.append(time_array, time - TLong)
+
     print('+', '-' * 48, '+', sep='')
     print('| NUMBER OF GAPS'.ljust(35, '.'), '{0} |'.format(gaps_counter).rjust(15, '.'), sep='')
     print('| NUMBER OF MISMATCH POINTS'.ljust(35, '.'), '{0} |'.format(npts_counter).rjust(15, '.'), sep='')
     print('+', '-' * 48, '+', sep='')
-    return less_array, greater_array, border_comparison, startdate, stopdate
+    return less_array, greater_array, border_comparison, startdate, stopdate, time_array
 
 
-def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel,
-                       tstart, Twindow, Overlap, verbose, TLong, show_plot=True, unit='VEL', nbins=10, save_img=False,
-                       img_path=None, save_data=False, yscale='linear', lower_lim=1, upper_lim=5, terziet=False):
+def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, location2,
+                       channel, Twindow, Overlap, verbose, TLong, show_plot=True, unit='VEL', q1=0.9, nbins=10,
+                       save_img=False, img_path=None, save_data=False, yscale='linear', lower_lim=1, upper_lim=5,
+                       terziet=False, time_evo=False, out_path=None):
     """
     This function make the comparison between the seismometer data chosen and the ET sensitivity curve in a given
     frequency range [version of 19/05/2022]. The results of this comparison are shown in a bar plot in which is reported
@@ -2280,11 +2286,11 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     :type location: str
     :param location:
 
+    :type location2: str
+    :param location2:
+
     :type channel: str
     :param channel:
-
-    :type tstart: str, :class: 'obspy.UTCDateTime'
-    :param tstart:
 
     :type Twindow: int
     :param Twindow:
@@ -2319,44 +2325,42 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     :type yscale: str
     :param yscale:
 
-    :type terziet: str
+    :type terziet: bool
     :param terziet:
+
+    :type time_evo: bool
+    :param time_evo:
     """
     import timeit
 
     start = timeit.default_timer()
 
-    if sensor1 == 'P2' and sensor2 == 'P2' and location == '00':
-        location2 = '01'
-    elif sensor1 == 'P2' and sensor2 == 'P2' and location == '01':
-        location2 = '00'
-    elif sensor1 == 'P3' and sensor2 == 'P3' and location == '00':
-        location2 = '01'
-    elif sensor1 == 'P3' and sensor2 == 'P3' and location == '01':
-        location2 = '00'
-    else:
-        location2 = location
     print('*' * 45)
     print('* Starting comparison between {0}{1} and {2}{3} *'.format(sensor1, location, sensor2, location2).ljust(45))
     print('*' * 45)
 
-    less1, great1, border, startdate, stopdate = et_sens_read(et_sens_path, filexml, Data_path1, network, sensor1,
-                                                              location, channel, tstart, Twindow, Overlap, TLong,
-                                                              verbose, unit=unit, lower_lim=lower_lim,
-                                                              upper_lim=upper_lim)
+    less1, great1, border, startdate, stopdate, time_array = et_sens_read(et_sens_path, filexml, Data_path1, network,
+                                                                          sensor1, location, channel, Twindow, Overlap,
+                                                                          TLong, verbose, unit=unit, q1=q1,
+                                                                          lower_lim=lower_lim, upper_lim=upper_lim,
+                                                                          time_evo=time_evo)
 
-    less2, great2, border, _, _ = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2, location2, channel,
-                                               tstart, Twindow, Overlap, TLong, verbose, unit=unit, lower_lim=lower_lim,
-                                               upper_lim=upper_lim)
+    less2, great2, border, _, _, time_array2 = et_sens_read(et_sens_path, filexml, Data_path2, network, sensor2,
+                                                            location2,
+                                                            channel, Twindow, Overlap, TLong, verbose, unit=unit, q1=q1,
+                                                            lower_lim=lower_lim, upper_lim=upper_lim, time_evo=time_evo)
 
-    print('UNDER CURVE P2.00:', len(less1), len(less2))
-    print('ABOVE CURVE P2.01:', len(great1), len(great2))
-
-    if save_data:  # TODO: add outfile path for image saver
-        np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor1, location, nbins),
-                   np.c_[less1, great1])
-        np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor2, location2, nbins),
-                   np.c_[less2, great2])
+    if save_data:
+        if out_path is not None:
+            pass
+        else:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read('config.ini')
+            out_path = config['Paths']['outfile_path']
+        print('Saving data to .npz file')
+        np.savez(out_path + r'Comparison_data.txt'.format(sensor1, location, nbins), t1=time_array, t2=time_array2,
+                 l1=less1, l2=less2, g1=great1, g2=great2)
 
     stop = timeit.default_timer()
 
@@ -2416,22 +2420,64 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     ax1.set_xlim([-5, 105])
     fig1.tight_layout()
 
+    if time_evo:
+        from matplotlib.dates import DateFormatter
+        # UNDER CURVE
+        fig2 = plt.figure(figsize=(19.2, 10.8))
+        ax2 = fig2.add_subplot()
+        ax2.plot_date(time_array, less1, label='{0}.{1}'.format(sensor1, location))
+        ax2.plot_date(time_array2, less2, label='{0}.{1}'.format(sensor2, location2))
+        ax2.xaxis.set_major_formatter(DateFormatter('%d-%b-%Y \n %H:%M'))
+        ax2.set_ylabel(r'% of points under ET sensitivity curve', fontsize=24)
+        ax2.legend(loc='best', shadow=True, fontsize=24)
+        ax2.grid(True, linestyle='--', axis='both', which='both')
+        fig2.tight_layout()
+
+        # ABOVE CURVE
+        fig3 = plt.figure(figsize=(19.2, 10.8))
+        ax3 = fig3.add_subplot()
+        ax3.plot_date(time_array, great1, label='{0}.{1}'.format(sensor1, location))
+        ax3.plot_date(time_array2, great2, label='{0}.{1}'.format(sensor2, location2))
+        ax3.xaxis.set_major_formatter(DateFormatter('%d-%b-%Y \n %H:%M'))
+        ax3.set_ylabel(r'% of points above ET sensitivity curve', fontsize=24)
+        ax3.legend(loc='best', shadow=True, fontsize=24)
+        ax3.grid(True, linestyle='--', axis='both', which='both')
+        fig3.tight_layout()
+
     if yscale.lower() == 'linear':
         ax.set_yscale('linear')
         ax1.set_yscale('linear')
+        ax2.set_yscale('linear')
     elif yscale.lower() == 'log':
         ax.set_yscale('log')
         ax1.set_yscale('log')
+        ax2.set_yscale('log')
     else:
         import warnings
         msg = "Invalid yscale chosen. Set to default, yscale='linear'"
         warnings.warn(msg)
         ax.set_yscale('linear')
         ax1.set_yscale('linear')
+        ax2.set_yscale('linear')
 
-    # TODO: automatically change sensor and location in print (use format as before)
-    print('TOTAL ABOVE POINTS P2 00:', np.sum(great1))
-    print('TOTAL ABOVE POINTS P2 01:', np.sum(great2))
+    print('#' * 55, sep='')
+    print('# UNDER CURVE {0}{1}'.format(sensor1, location).ljust(35, '.'), '{0} #'.format(len(less1)).rjust(20, '.'),
+          sep='')
+    print('# UNDER CURVE {0}{1}'.format(sensor2, location2).ljust(35, '.'), '{0} #'.format(len(less2)).rjust(20, '.'),
+          sep='')
+    print('# ABOVE CURVE {0}{1}'.format(sensor1, location).ljust(35, '.'), '{0} #'.format(len(great1)).rjust(20, '.'),
+          sep='')
+    print('# ABOVE CURVE {0}{1}'.format(sensor2, location2).ljust(35, '.'), '{0} #'.format(len(great2)).rjust(20, '.'),
+          sep='')
+    print('# TOTAL UNDER POINTS {0}{1}'.format(sensor1, location).ljust(35, '.'),
+          '{0} #'.format(np.sum(less1)).rjust(20, '.'), sep='')
+    print('# TOTAL UNDER POINTS {0}{1}'.format(sensor2, location2).ljust(35, '.'),
+          '{0} #'.format(np.sum(less2)).rjust(20, '.'), sep='')
+    print('# TOTAL ABOVE POINTS {0}{1}'.format(sensor1, location).ljust(35, '.'),
+          '{0} #'.format(np.sum(great1)).rjust(20, '.'), sep='')
+    print('# TOTAL ABOVE POINTS {0}{1}'.format(sensor2, location2).ljust(35, '.'),
+          '{0} #'.format(np.sum(great1)).rjust(20, '.'), sep='')
+    print('#' * 55, sep='')
 
     if save_img:
         if img_path is not None:
@@ -2460,5 +2506,24 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
                                                                                               stopdate.strftime(
                                                                                                   '%d-%b-%Y'),
                                                                                               nbins), dpi=1200)
+        if time_evo:
+            fig2.savefig(
+                img_path + r'\TEVO_Comparison-UNDER_{0}{1}-{2}{3}_from_{4}_to_{5}.png'.format(sensor1, location,
+                                                                                              sensor2,
+                                                                                              location2,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y')),
+                dpi=1200)
+            fig3.savefig(
+                img_path + r'\TEVO_Comparison-ABOVE_{0}{1}-{2}{3}_from_{4}_to_{5}.png'.format(sensor1, location,
+                                                                                              sensor2,
+                                                                                              location2,
+                                                                                              startdate.strftime(
+                                                                                                  '%d-%b-%Y'),
+                                                                                              stopdate.strftime(
+                                                                                                  '%d-%b-%Y')),
+                dpi=1200)
         print('Images correctly saved')
     plt.show() if show_plot else ''
