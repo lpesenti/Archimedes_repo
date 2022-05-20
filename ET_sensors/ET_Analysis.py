@@ -54,14 +54,14 @@ if __name__ == '__main__':
     # ET.comparison_from_csv(path_to_csv1=csv_path + csv_filename, path_to_csv2=csv_path + csv_filename2)
     # ET.asd_from_csv(csv_path + csv_filename)
 
-    # ET.quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
-    #                  verbose, save_img=True, xscale='both', show_plot=True, unit='VEL', img_path=img_path)
+    ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
+                         verbose, save_img=True, xscale='log', show_plot=False, unit='ACC', img_path=img_path)
 
     # ET.et_sens_single_comparison(et_sens_path=et_sens, npz_file=npz_data, nlnm_comparison=False)
-    ET.et_sens_comparison(et_sens_path=et_sens, filexml=XML_path + XML_file, Data_path1=Data_path,
-                          Data_path2=Data_path2, network=network, sensor1=sensor, sensor2=sensor2, location=location,
-                          channel=channel, tstart=ti, Twindow=Twindow, Overlap=Overlap, TLong=TLong, verbose=verbose,
-                          show_plot=True, unit='VEL', save_img=True, nbins=10, save_data=True)
+    # ET.et_sens_comparison(et_sens_path=et_sens, filexml=XML_path + XML_file, Data_path1=Data_path,
+    #                       Data_path2=Data_path2, network=network, sensor1=sensor, sensor2=sensor2, location=location,
+    #                       channel=channel, tstart=ti, Twindow=Twindow, Overlap=Overlap, TLong=TLong, verbose=verbose,
+    #                       show_plot=True, unit='VEL', save_img=True, nbins=10, save_data=True)
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
 

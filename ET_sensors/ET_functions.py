@@ -1315,15 +1315,16 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     w = 2.0 * np.pi * f
     # print(np.where(w == 0))
 
-    if unit.upper() == 'VEL':
-        w1 = 1 / respamp
-    elif unit.upper() == 'ACC':
-        w1 = w ** 2 / respamp
-    else:
-        import warnings
-        msg = "Invalid data unit chosen [VEl or ACC], using VEL"
-        warnings.warn(msg)
-        w1 = 1 / respamp
+    # if unit.upper() == 'VEL':
+    #     w1 = 1 / respamp
+    # elif unit.upper() == 'ACC':
+    #     w1 = w ** 2 / respamp
+    # else:
+    #     import warnings
+    #     msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+    #     warnings.warn(msg)
+    #     w1 = 1 / respamp
+
     # imin = (np.abs(f - fmin)).argmin()
     # imax = (np.abs(f - fmax)).argmin()
 
@@ -1341,6 +1342,19 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         Tstop = UTCDateTime(Tstop)
         time = st[0].times('timestamp')[0]
         time = UTCDateTime(time)
+
+        # Test
+        fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                              verbose=verbose)
+        if unit.upper() == 'VEL':
+            w1 = 1 / respamp
+        elif unit.upper() == 'ACC':
+            w1 = w ** 2 / respamp
+        else:
+            import warnings
+            msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+            warnings.warn(msg)
+            w1 = 1 / respamp
         # Tstop = st[-1:][0].times('utcdatetime')[-1:][0]
         # time = st[0].times('utcdatetime')[0]
         # startdate = UTCDateTime('{0}-{1}T12:23:34.5'.format(year, day))
@@ -1629,6 +1643,300 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
                                                                                                '%d-%b-%Y'),
                                                                                            stopdate.strftime(
                                                                                                '%d-%b-%Y'), unit),
+            dpi=300)
+        print('Images correctly saved')
+    plt.show() if show_plot else ''
+
+
+def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
+                      save_img=False, xscale='linear', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9,
+                      unit='VEL', img_path=None):
+    r"""
+    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
+    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
+    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: float
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type Overlap: float
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verobsity
+
+    :type save_csv: bool
+    :param save_csv: If you want to save the data analyzed ina .csv format
+
+    :type save_img: bool
+    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
+        on True if more than 5 days of data are considered.
+
+    :type linearplot: bool
+    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
+        nighttime. This type of plot shows the mean with one sigma of confidence interval
+
+    :type xscale: str
+    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
+        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+
+    :type show_plot: bool
+    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
+        be shown especially if the analysis is done on more than 5 days.
+    """
+
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    print('The analysis start from\t', startdate, '\tto\t', stopdate)
+
+    df = pd.DataFrame()
+
+    T = Twindow
+    Ovl = Overlap
+    TLong = 12 * 3600
+    dT = TLong + T * Ovl
+    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+
+    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+
+    print('K: ', K)
+    print('M: ', M)
+
+    v = np.empty(K)
+
+    fsxml = 100
+    Num = int(T * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    print('MIN. FREQ.:\t', f.min())
+    w = 2.0 * np.pi * f
+
+    import timeit
+
+    start = timeit.default_timer()
+    for file in filename_list:
+        print(file)
+        k = 0
+
+        st = read(file)
+        st = st.sort()
+
+        Tstop = st[-1:][0].times('timestamp')[-1:][0]
+        Tstop = UTCDateTime(Tstop)
+        time = st[0].times('timestamp')[0]
+        time = UTCDateTime(time)
+
+        fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                              verbose=verbose)
+        if unit.upper() == 'VEL':
+            w1 = 1 / respamp
+        elif unit.upper() == 'ACC':
+            w1 = w ** 2 / respamp
+        else:
+            import warnings
+            msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+            warnings.warn(msg)
+            w1 = 1 / respamp
+
+        while time < Tstop:
+            print('\tEvaluating from\t', time, '\tto\t', Tstop)
+            tstart = time
+            tstop = time + dT - 1 / fsxml
+            st = read(file, starttime=tstart, endtime=tstop)
+            t1 = time
+            for n in range(0, M):
+                v[k] = np.nan
+                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                if tr.get_gaps() == [] and len(tr) > 0:
+                    tr1 = tr[0]
+                    if tr1.stats.npts == Num:
+                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                        s = s[1:] * w1
+                        # asd_values = np.sqrt(s)
+                        psd_values_db = 10 * np.log10(s)
+                        v[k] = 0
+                if np.isnan(v[k]):
+                    psd_values_db = np.tile(v[k], np.size(f))
+                else:
+                    pass
+
+                df_add = pd.DataFrame(data=psd_values_db, columns=[t1.timestamp])
+                df = pd.concat([df, df_add], axis=1)
+
+                t1 = t1 + T * Ovl
+                k += 1
+            time = time + TLong
+
+    df = df.set_index(f)
+    print(df.info())
+    print('Quantile evaluation started...')
+
+    # Find the data correspond to the quantiles
+    q1_series = df.T.quantile(q1)
+    q2_series = df.T.quantile(q2)
+    q3_series = df.T.quantile(q3)
+
+    # Frequencies are the indeces of the DataFrame because of groupby()
+    frequency_array = q1_series.index.to_numpy()
+
+    print('Conversion to numpy arrays')
+
+    # Convert the DataFrame in numpy array
+    q1_array = q1_series.to_numpy()
+    q2_array = q2_series.to_numpy()
+    q3_array = q3_series.to_numpy()
+
+    if save_npz:
+        print('Saving data to .npz file')
+        np.savez(r'C:\Users\Arc_MDC\Documents\ET\P2\data_ALL.npz', frequency=frequency_array, q1=q1_array,
+                 q2=q2_array, q3=q3_array)
+
+    stop = timeit.default_timer()
+    print('Elapsed time before plot:', (stop - start), 's')
+
+    print('xscale =', xscale)
+
+    if xscale == 'linear' or xscale == 'both':
+        fig1 = plt.figure(figsize=(19.2, 10.8))
+        ax1 = fig1.add_subplot()
+
+        ax1.plot(frequency_array, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
+        ax1.plot(frequency_array, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
+        ax1.plot(frequency_array, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
+
+        ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax1.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax1.set_xlim([1 / 240, 20])
+        ax1.set_ylim([-210, -70])
+        ax1.tick_params(axis='both', which='major', labelsize=22)
+        ax1.grid(True, linestyle='--', axis='both', which='both')
+        ax1.legend(loc='best', shadow=True, fontsize=24)
+        ax1.set_title('Analysis from {0} to {1} of {2}{3}'.format(startdate, stopdate, sensor, location))
+        fig1.tight_layout()
+
+    if xscale == 'log' or xscale == 'both':
+        fig2 = plt.figure(figsize=(19.2, 10.8))
+        ax2 = fig2.add_subplot()
+
+        ax2.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+        ax2.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+        ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+        ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+
+        ax2.plot(frequency_array, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
+        ax2.plot(frequency_array, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
+        ax2.plot(frequency_array, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
+
+        ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
+        ax2.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
+        ax2.set_xlim([1 / 240, 20])
+        ax2.set_ylim([-210, -70])
+        ax2.set_xscale("log")
+        ax2.tick_params(axis='both', which='major', labelsize=22)
+        ax2.grid(True, linestyle='--', axis='both', which='both')
+        ax2.legend(loc='best', shadow=True, fontsize='xx-large')
+        ax2.set_title('Analysis from {0} to {1} of {2}{3}'.format(startdate, stopdate, sensor, location))
+        fig2.tight_layout()
+
+    if save_img:
+        if img_path is not None:
+            pass
+        else:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read('config.ini')
+            img_path = config['Paths']['images_dir']
+        print('Saving images...')
+        fig1.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.png'.format(sensor, channel, location,
+                                                                                startdate.strftime(
+                                                                                    '%d-%b-%Y'),
+                                                                                stopdate.strftime(
+                                                                                    '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig1.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.pdf'.format(sensor, channel, location,
+                                                                                startdate.strftime(
+                                                                                    '%d-%b-%Y'),
+                                                                                stopdate.strftime(
+                                                                                    '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.png'.format(sensor, channel, location,
+                                                                                    startdate.strftime(
+                                                                                        '%d-%b-%Y'),
+                                                                                    stopdate.strftime(
+                                                                                        '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig2.savefig(
+            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.pdf'.format(sensor, channel, location,
+                                                                                    startdate.strftime(
+                                                                                        '%d-%b-%Y'),
+                                                                                    stopdate.strftime(
+                                                                                        '%d-%b-%Y'), unit),
+            dpi=1200)
+        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.png'.format(sensor, channel, location,
+                                                                                      startdate.strftime(
+                                                                                          '%d-%b-%Y'),
+                                                                                      stopdate.strftime(
+                                                                                          '%d-%b-%Y'), unit),
+                     dpi=300)
+        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.pdf'.format(sensor, channel, location,
+                                                                                      startdate.strftime(
+                                                                                          '%d-%b-%Y'),
+                                                                                      stopdate.strftime(
+                                                                                          '%d-%b-%Y'), unit),
+                     dpi=300)
+        fig2.savefig(
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.png'.format(sensor, channel, location,
+                                                                                 startdate.strftime(
+                                                                                     '%d-%b-%Y'),
+                                                                                 stopdate.strftime(
+                                                                                     '%d-%b-%Y'), unit),
+            dpi=300)
+        fig2.savefig(
+            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.pdf'.format(sensor, channel, location,
+                                                                                 startdate.strftime(
+                                                                                     '%d-%b-%Y'),
+                                                                                 stopdate.strftime(
+                                                                                     '%d-%b-%Y'), unit),
             dpi=300)
         print('Images correctly saved')
     plt.show() if show_plot else ''
@@ -2044,7 +2352,7 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     print('UNDER CURVE P2.00:', len(less1), len(less2))
     print('ABOVE CURVE P2.01:', len(great1), len(great2))
 
-    if save_data:
+    if save_data:  # TODO: add outfile path for image saver
         np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor1, location, nbins),
                    np.c_[less1, great1])
         np.savetxt(r'D:\ET\2022\P2\Comparison_data_{0}{1}-BINS.txt'.format(sensor2, location2, nbins),
@@ -2121,6 +2429,7 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
         ax.set_yscale('linear')
         ax1.set_yscale('linear')
 
+    # TODO: automatically change sensor and location in print (use format as before)
     print('TOTAL ABOVE POINTS P2 00:', np.sum(great1))
     print('TOTAL ABOVE POINTS P2 01:', np.sum(great2))
 
