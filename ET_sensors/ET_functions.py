@@ -1650,7 +1650,6 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
 
 def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Twindow, Overlap, verbose, unit='VEL',
                       out_path=None):
-
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
 
     filename_list = glob.glob(Data_path + seed_id + "*")
@@ -1686,6 +1685,7 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Tw
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
+    np.savez(out_path + fr'Frequency.npz', frequency=f)
     print('MIN. FREQ.:\t', f.min())
     w = 2.0 * np.pi * f
 
@@ -1735,13 +1735,16 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Tw
                         s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
                         s = s[1:] * w1
                         psd_values_db = 10 * np.log10(s)
+                        v[k] = 0
 
-                        temp_array = np.append(temp_array, psd_values_db)
-
+                if np.isnan(v[k]):
+                    temp_array = np.append(temp_array, np.repeat(np.nan, f.size))
+                else:
+                    temp_array = np.append(temp_array, psd_values_db)
                 t1 = t1 + T * Ovl
                 k += 1
             time = time + TLong
-        print('\t\tSaving data to .npz file')
+        print('\t\tSaving data to file')
         filename = file.split('.')[-1]
         if out_path is not None:
             pass
@@ -1750,19 +1753,39 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Tw
             config = configparser.ConfigParser()
             config.read('config.ini')
             out_path = config['Paths']['outfile_path']
-        np.savez(out_path + fr'{filename}.npz', psd=temp_array)
+        temp_df = pd.DataFrame(temp_array, columns=['psd'])
+        temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
+        temp_df.to_parquet(out_path + fr'{filename}_C9.parquet.brotli', compression='brotli', compression_level=9)
+        # np.savetxt(out_path + fr'{filename}.txt', temp_array)
 
     stop = timeit.default_timer()
     print('Elapsed time:', (stop - start), 's')
 
 
-def plot_from_npz(npz_file, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24, q1=0.1,
-                  q2=0.5, q3=0.9, xscale='log', yscale='linear'):
-    data = np.load(npz_file)
+def plot_from_npz(npz_directory, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24,
+                  q1=0.1, q2=0.5, q3=0.9, xscale='log', yscale='linear'):
+    filename_list = glob.glob(npz_directory + "*")
+    data = np.load(filename_list[0])
     freq_data = data['frequency']
-    q1_array = data['q1']
-    q2_array = data['q2']
-    q3_array = data['q3']
+
+    q1_array = np.array([])
+    q2_array = np.array([])
+    q3_array = np.array([])
+    for freq_index, frequency in enumerate(freq_data):
+        j = (freq_index + 1) / freq_data.size
+        print("\r[%-50s] %g%%" % ('=' * int(100 * j), round(100 * j, 3)), end='')
+        # freq_perc = round(100 * freq_index / freq_data.size, 2)
+        # print('({0}%)'.format(freq_perc), '|', frequency, 'Hz')
+        temp_array = np.array([])
+        for file_index, npz_file in enumerate(filename_list):
+            # file_perc = round(100 * file_index / len(filename_list), 2)
+            # print('({0}%)/({1}%)'.format(freq_perc, file_perc), npz_file)
+            data = np.load(npz_file)
+            psd_array = data['psd']
+            temp_array = np.append(temp_array, psd_array[freq_index::freq_data.size])
+        q1_array = np.append(q1_array, np.quantile(temp_array, q1))
+        q2_array = np.append(q2_array, np.quantile(temp_array, q2))
+        q3_array = np.append(q3_array, np.quantile(temp_array, q3))
 
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
