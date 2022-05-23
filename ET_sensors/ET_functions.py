@@ -1762,7 +1762,8 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Tw
     print('Elapsed time:', (stop - start), 's')
 
 
-def plot_from_df(df_directory, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24,
+def plot_from_df(df_directory, out_path, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]',
+                 label_size=24,
                  q1=0.1, q2=0.5, q3=0.9, xscale='log', yscale='linear'):
     filename_list = glob.glob(df_directory + "*.brotli")
     data = np.load(df_directory + 'Frequency.npz')
@@ -1788,10 +1789,12 @@ def plot_from_df(df_directory, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/
         q2_array = np.append(q2_array, np.quantile(temp_array, q2))
         q3_array = np.append(q3_array, np.quantile(temp_array, q3))
 
+    np.savez(out_path + fr'{filename_list[0]}-{filename_list[-1]}.npz', f=freq_data, q1=q1_array, q2=q2_array,
+             q3=q3_array)
     stop = timeit.default_timer()
     print('Elapsed time before plot:', (stop - start), 'seconds')
-    print('Elapsed time before plot:', (stop - start)/60, 'minutes')
-    print('Elapsed time before plot:', (stop - start)/3600, 'hours')
+    print('Elapsed time before plot:', (stop - start) / 60, 'minutes')
+    print('Elapsed time before plot:', (stop - start) / 3600, 'hours')
 
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
