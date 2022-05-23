@@ -1207,7 +1207,7 @@ def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart,
 
 
 def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                  save_img=False, xscale='linear', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9, unit='VEL',
+                  save_img=False, xscale='log', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9, unit='VEL',
                   img_path=None):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
@@ -1648,8 +1648,8 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     plt.show() if show_plot else ''
 
 
-def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
-                      save_img=False, xscale='linear', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9,
+def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Twindow, Overlap, verbose,
+                      save_img=False, xscale='log', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9,
                       unit='VEL', img_path=None):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
@@ -1748,100 +1748,84 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
     print('MIN. FREQ.:\t', f.min())
     w = 2.0 * np.pi * f
 
-    f_dict = {}
-    for i_dict in range(f.size):
-        f_dict["f{0}".format(i_dict)] = []
-
-    import timeit
-
-    start = timeit.default_timer()
-    for file in filename_list:
-        print(file)
-        k = 0
-
-        st = read(file)
-        st = st.sort()
-
-        Tstop = st[-1:][0].times('timestamp')[-1:][0]
-        Tstop = UTCDateTime(Tstop)
-        time = st[0].times('timestamp')[0]
-        time = UTCDateTime(time)
-
-        fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, time, Twindow,
-                                              verbose=verbose)
-        if unit.upper() == 'VEL':
-            w1 = 1 / respamp
-        elif unit.upper() == 'ACC':
-            w1 = w ** 2 / respamp
-        else:
-            import warnings
-            msg = "Invalid data unit chosen [VEl or ACC], using VEL"
-            warnings.warn(msg)
-            w1 = 1 / respamp
-
-        while time < Tstop:
-            tstart = time
-            tstop = time + dT - 1 / fsxml
-            st = read(file, starttime=tstart, endtime=tstop)
-            t1 = time
-
-            print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop)
-
-            for n in range(0, M):
-                v[k] = np.nan
-                tr = st.slice(t1, t1 + T - 1 / fsxml)
-                if tr.get_gaps() == [] and len(tr) > 0:
-                    tr1 = tr[0]
-                    if tr1.stats.npts == Num:
-                        s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
-                        s = s[1:] * w1
-                        # asd_values = np.sqrt(s)
-                        psd_values_db = 10 * np.log10(s)
-                        v[k] = 0
-                if np.isnan(v[k]):
-                    psd_values_db = np.tile(v[k], np.size(f))
-                else:
-                    pass
-
-                for i, val in enumerate(psd_values_db):
-                    f_dict['f{0}'.format(i)].append(val)
-                # df_add = pd.DataFrame(data=psd_values_db, columns=[t1.timestamp])
-                # df = pd.concat([df, df_add], axis=1)
-
-                t1 = t1 + T * Ovl
-                k += 1
-            time = time + TLong
-    print(f_dict['f0'])
-    # df = df.set_index(f)
-    # print(df.info())
-    # print('Quantile evaluation started...')
-
-    # Find the data correspond to the quantiles
-    # q1_series = df.T.quantile(q1)
-    # q2_series = df.T.quantile(q2)
-    # q3_series = df.T.quantile(q3)
-
-    # frequency_array = q1_series.index.to_numpy()
-    frequency_array = f
-
-    print('Conversion to numpy arrays')
-    # Convert the DataFrame in numpy array
     q1_array = np.array([])  # q1_series.to_numpy()
     q2_array = np.array([])  # q2_series.to_numpy()
     q3_array = np.array([])  # q3_series.to_numpy()
 
-    for key, val in f_dict.items():
-        val = np.array(val)
-        val = val[~np.isnan(val)]
-        q1_array = np.append(q1_array, np.quantile(np.array(val), q1))
-        q2_array = np.append(q2_array, np.quantile(np.array(val), q2))
-        q3_array = np.append(q3_array, np.quantile(np.array(val), q3))
+    import timeit
+
+    start = timeit.default_timer()
+
+    for frequency_index, freq in enumerate(f):
+        freq_perc = round(100 * frequency_index / len(filename_list), 2)
+        print('({0}%)'.format(freq_perc), round(freq, 2), 'Hz')
+        temp_array = np.array([])
+
+        for file_index, file in enumerate(filename_list):
+            file_perc = round(100 * file_index / len(filename_list), 2)
+            print('\t({0}%)/({1}%)'.format(freq_perc, file_perc), file)
+            k = 0
+
+            st = read(file)
+            st = st.sort()
+
+            Tstop = st[-1:][0].times('timestamp')[-1:][0]
+            Tstop = UTCDateTime(Tstop)
+            time = st[0].times('timestamp')[0]
+            time = UTCDateTime(time)
+
+            fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                                  verbose=verbose)
+            if unit.upper() == 'VEL':
+                w1 = 1 / respamp
+            elif unit.upper() == 'ACC':
+                w1 = w ** 2 / respamp
+            else:
+                import warnings
+                msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+                warnings.warn(msg)
+                w1 = 1 / respamp
+
+            while time < Tstop:
+                tstart = time
+                tstop = time + dT - 1 / fsxml
+                st = read(file, starttime=tstart, endtime=tstop)
+                t1 = time
+
+                # print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop)
+
+                for n in range(0, M):
+                    v[k] = np.nan
+                    tr = st.slice(t1, t1 + T - 1 / fsxml)
+                    if tr.get_gaps() == [] and len(tr) > 0:
+                        tr1 = tr[0]
+                        if tr1.stats.npts == Num:
+                            s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                            s = s[1:] * w1
+                            # asd_values = np.sqrt(s)
+                            psd_values_db = 10 * np.log10(s[frequency_index])
+                            v[k] = 0
+                    if np.isnan(v[k]):
+                        psd_values_db = np.nan
+                    else:
+                        pass
+
+                    temp_array = np.append(temp_array, psd_values_db)
+
+                    t1 = t1 + T * Ovl
+                    k += 1
+                time = time + TLong
+        print('Conversion to numpy arrays')
+
+        q1_array = np.append(q1_array, np.quantile(np.array(temp_array), q1))
+        q2_array = np.append(q2_array, np.quantile(np.array(temp_array), q2))
+        q3_array = np.append(q3_array, np.quantile(np.array(temp_array), q3))
 
     print(q1_array)
 
     if save_npz:
         print('Saving data to .npz file')
-        np.savez(r'C:\Users\Arc_MDC\Documents\ET\P2\data_ALL.npz', frequency=frequency_array, q1=q1_array,
+        np.savez(r'C:\Users\Arc_MDC\Documents\ET\P2\data_ALL.npz', frequency=f, q1=q1_array,
                  q2=q2_array, q3=q3_array)
 
     stop = timeit.default_timer()
@@ -1853,9 +1837,9 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
         fig1 = plt.figure(figsize=(19.2, 10.8))
         ax1 = fig1.add_subplot()
 
-        ax1.plot(frequency_array, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
-        ax1.plot(frequency_array, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
-        ax1.plot(frequency_array, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
+        ax1.plot(f, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
+        ax1.plot(f, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
+        ax1.plot(f, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
 
         ax1.set_xlabel(r'Frequency [Hz]', fontsize=24)
         ax1.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
@@ -1876,9 +1860,9 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
         ax2.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
         ax2.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
 
-        ax2.plot(frequency_array, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
-        ax2.plot(frequency_array, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
-        ax2.plot(frequency_array, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
+        ax2.plot(f, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
+        ax2.plot(f, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
+        ax2.plot(f, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
 
         ax2.set_xlabel(r'Frequency [Hz]', fontsize=24)
         ax2.set_ylabel(r'PSD $[(m^2/s^4)/Hz]$ [dB]', fontsize=24)
@@ -1899,63 +1883,93 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, ts
             config = configparser.ConfigParser()
             config.read('config.ini')
             img_path = config['Paths']['images_dir']
+
+        xscales = ['linear', 'log', 'both']
+        if xscale.lower() in xscales:
+            pass
+        else:
+            import warnings
+            msg = "Invalid xscale chosen. Set to default, xscale='log'"
+            warnings.warn(msg)
+            xscale = 'log'
+
         print('Saving images...')
-        fig1.savefig(
-            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.png'.format(sensor, channel, location,
-                                                                                startdate.strftime(
-                                                                                    '%d-%b-%Y'),
-                                                                                stopdate.strftime(
-                                                                                    '%d-%b-%Y'), unit),
-            dpi=1200)
-        fig1.savefig(
-            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.pdf'.format(sensor, channel, location,
-                                                                                startdate.strftime(
-                                                                                    '%d-%b-%Y'),
-                                                                                stopdate.strftime(
-                                                                                    '%d-%b-%Y'), unit),
-            dpi=1200)
-        fig2.savefig(
-            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.png'.format(sensor, channel, location,
-                                                                                    startdate.strftime(
-                                                                                        '%d-%b-%Y'),
-                                                                                    stopdate.strftime(
-                                                                                        '%d-%b-%Y'), unit),
-            dpi=1200)
-        fig2.savefig(
-            img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.pdf'.format(sensor, channel, location,
-                                                                                    startdate.strftime(
-                                                                                        '%d-%b-%Y'),
-                                                                                    stopdate.strftime(
-                                                                                        '%d-%b-%Y'), unit),
-            dpi=1200)
-        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.png'.format(sensor, channel, location,
-                                                                                      startdate.strftime(
-                                                                                          '%d-%b-%Y'),
-                                                                                      stopdate.strftime(
-                                                                                          '%d-%b-%Y'), unit),
-                     dpi=300)
-        fig1.savefig(img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.pdf'.format(sensor, channel, location,
-                                                                                      startdate.strftime(
-                                                                                          '%d-%b-%Y'),
-                                                                                      stopdate.strftime(
-                                                                                          '%d-%b-%Y'), unit),
-                     dpi=300)
-        fig2.savefig(
-            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.png'.format(sensor, channel, location,
-                                                                                 startdate.strftime(
-                                                                                     '%d-%b-%Y'),
-                                                                                 stopdate.strftime(
-                                                                                     '%d-%b-%Y'), unit),
-            dpi=300)
-        fig2.savefig(
-            img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.pdf'.format(sensor, channel, location,
-                                                                                 startdate.strftime(
-                                                                                     '%d-%b-%Y'),
-                                                                                 stopdate.strftime(
-                                                                                     '%d-%b-%Y'), unit),
-            dpi=300)
+
+        if xscale == 'linear' or xscale == 'both':
+            fig1.savefig(
+                img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.png'.format(sensor, channel, location,
+                                                                                    startdate.strftime('%d-%b-%Y'),
+                                                                                    stopdate.strftime('%d-%b-%Y'),
+                                                                                    unit), dpi=1200)
+            fig1.savefig(
+                img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}.pdf'.format(sensor, channel, location,
+                                                                                    startdate.strftime('%d-%b-%Y'),
+                                                                                    stopdate.strftime('%d-%b-%Y'),
+                                                                                    unit), dpi=1200)
+            fig1.savefig(
+                img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.png'.format(sensor, channel, location,
+                                                                                 startdate.strftime('%d-%b-%Y'),
+                                                                                 stopdate.strftime('%d-%b-%Y'), unit),
+                dpi=300)
+            fig1.savefig(
+                img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}.pdf'.format(sensor, channel, location,
+                                                                                 startdate.strftime('%d-%b-%Y'),
+                                                                                 stopdate.strftime('%d-%b-%Y'), unit),
+                dpi=300)
+        if xscale == 'log' or xscale == 'both':
+            fig2.savefig(
+                img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.png'.format(sensor, channel, location,
+                                                                                        startdate.strftime('%d-%b-%Y'),
+                                                                                        stopdate.strftime('%d-%b-%Y'),
+                                                                                        unit), dpi=1200)
+            fig2.savefig(
+                img_path + r'HD\{0}\{0}{2}_QuantilePlot-{3}_{4}_{1}_{5}_log.pdf'.format(sensor, channel, location,
+                                                                                        startdate.strftime('%d-%b-%Y'),
+                                                                                        stopdate.strftime('%d-%b-%Y'),
+                                                                                        unit), dpi=1200)
+            fig2.savefig(
+                img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.png'.format(sensor, channel, location,
+                                                                                     startdate.strftime('%d-%b-%Y'),
+                                                                                     stopdate.strftime('%d-%b-%Y'),
+                                                                                     unit), dpi=300)
+            fig2.savefig(
+                img_path + r'{0}\{0}{2}_QuantilePlot_{1}-{3}_{4}_{5}_log.pdf'.format(sensor, channel, location,
+                                                                                     startdate.strftime('%d-%b-%Y'),
+                                                                                     stopdate.strftime('%d-%b-%Y'),
+                                                                                     unit), dpi=300)
         print('Images correctly saved')
     plt.show() if show_plot else ''
+
+
+def plot_from_npz(npz_file, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24, q1=0.1,
+                  q2=0.5, q3=0.9, xscale='log', yscale='linear'):
+    data = np.load(npz_file)
+    freq_data = data['frequency']
+    q1_array = data['q1']
+    q2_array = data['q2']
+    q3_array = data['q3']
+
+    fig = plt.figure(figsize=(19.2, 10.8))
+    ax = fig.add_subplot()
+
+    ax.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
+    ax.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
+    ax.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
+    ax.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
+    ax.plot(freq_data, q1_array, linewidth=2, label='{0}%'.format(q1 * 100))
+    ax.plot(freq_data, q2_array, linewidth=2, label='{0}%'.format(q2 * 100))
+    ax.plot(freq_data, q3_array, linewidth=2, label='{0}%'.format(q3 * 100))
+
+    ax.set_xlim([freq_data.min(), 20])
+    ax.set_ylim([-200, -30])
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
+    ax.set_xlabel(xlabel, fontsize=label_size)
+    ax.set_ylabel(ylabel, fontsize=label_size)
+    ax.legend(loc='best', shadow=True, fontsize=24)
+    ax.grid(True, linestyle='--', axis='both', which='both')
+    fig.tight_layout()
+    plt.show()
 
 
 def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
@@ -2040,7 +2054,7 @@ def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
 
 
 def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, Twindow, Overlap, TLong,
-                 verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5, time_evo=False):
+                 verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5, time_evo=False, terziet=False):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
     frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
