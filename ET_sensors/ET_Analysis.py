@@ -27,7 +27,7 @@ Data_path2 = config['Paths']['data_path2']
 XML_file = config['Paths']['xml_filename']
 et_sens = config['Paths']['ET_sens_file']
 npz_data = config['Paths']['npz_file']
-npz_dir = config['Paths']['npz_directory']
+df_dir = config['Paths']['df_directory']
 img_path = config['Paths']['images_dir']
 outfile_path = config['Paths']['outfile_path']
 csv_path = config['Paths']['csv_path']
@@ -57,10 +57,10 @@ if __name__ == '__main__':
     # ET.comparison_from_csv(path_to_csv1=csv_path + csv_filename, path_to_csv2=csv_path + csv_filename2)
     # ET.asd_from_csv(csv_path + csv_filename)
 
-    ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, Twindow, Overlap,
-                         verbose, unit='ACC', out_path=outfile_path)
+    # ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, Twindow, Overlap,
+    #                      verbose, unit='ACC', out_path=outfile_path)
 
-    # ET.plot_from_npz(npz_directory=npz_dir)
+    ET.plot_from_df(df_directory=df_dir)
     # ET.et_sens_single_comparison(et_sens_path=et_sens, npz_file=npz_data, nlnm_comparison=False)
     # ET.et_sens_comparison(et_sens_path=et_sens, filexml=XML_path + XML_file, Data_path1=Data_path,
     #                       Data_path2=Data_path2, network=network, sensor1=sensor, sensor2=sensor2, location=location,

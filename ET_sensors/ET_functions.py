@@ -1755,37 +1755,43 @@ def new_quantile_plot(filexml, Data_path, network, sensor, location, channel, Tw
             out_path = config['Paths']['outfile_path']
         temp_df = pd.DataFrame(temp_array, columns=['psd'])
         temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
-        temp_df.to_parquet(out_path + fr'{filename}_C9.parquet.brotli', compression='brotli', compression_level=9)
+        temp_df.to_parquet(out_path + fr'{filename}.parquet.brotli', compression='brotli', compression_level=9)
         # np.savetxt(out_path + fr'{filename}.txt', temp_array)
 
     stop = timeit.default_timer()
     print('Elapsed time:', (stop - start), 's')
 
 
-def plot_from_npz(npz_directory, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24,
-                  q1=0.1, q2=0.5, q3=0.9, xscale='log', yscale='linear'):
-    filename_list = glob.glob(npz_directory + "*")
-    data = np.load(filename_list[0])
+def plot_from_df(df_directory, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]', label_size=24,
+                 q1=0.1, q2=0.5, q3=0.9, xscale='log', yscale='linear'):
+    filename_list = glob.glob(df_directory + "*.brotli")
+    data = np.load(df_directory + 'Frequency.npz')
     freq_data = data['frequency']
 
     q1_array = np.array([])
     q2_array = np.array([])
     q3_array = np.array([])
+    import timeit
+
+    start = timeit.default_timer()
     for freq_index, frequency in enumerate(freq_data):
-        j = (freq_index + 1) / freq_data.size
-        print("\r[%-50s] %g%%" % ('=' * int(100 * j), round(100 * j, 3)), end='')
-        # freq_perc = round(100 * freq_index / freq_data.size, 2)
-        # print('({0}%)'.format(freq_perc), '|', frequency, 'Hz')
+        j1 = (freq_index + 1) / len(freq_data)
+        print("\r[%-100s] %g%%" % ('=' * int(100 * j1), round(100 * j1, 3)), end='\n')
         temp_array = np.array([])
-        for file_index, npz_file in enumerate(filename_list):
-            # file_perc = round(100 * file_index / len(filename_list), 2)
-            # print('({0}%)/({1}%)'.format(freq_perc, file_perc), npz_file)
-            data = np.load(npz_file)
-            psd_array = data['psd']
-            temp_array = np.append(temp_array, psd_array[freq_index::freq_data.size])
+        for file_index, filename in enumerate(filename_list):
+            j = (file_index + 1) / len(filename_list)
+            print("\r[%-100s] %g%%" % ('*' * int(100 * j), round(100 * j, 3)), end='')
+            temp_df = pd.read_parquet(filename).dropna()
+            temp_array = np.append(temp_array, temp_df['psd'][frequency].values.flatten())
+
         q1_array = np.append(q1_array, np.quantile(temp_array, q1))
         q2_array = np.append(q2_array, np.quantile(temp_array, q2))
         q3_array = np.append(q3_array, np.quantile(temp_array, q3))
+
+    stop = timeit.default_timer()
+    print('Elapsed time before plot:', (stop - start), 'seconds')
+    print('Elapsed time before plot:', (stop - start)/60, 'minutes')
+    print('Elapsed time before plot:', (stop - start)/3600, 'hours')
 
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
