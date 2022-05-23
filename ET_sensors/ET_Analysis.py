@@ -23,14 +23,22 @@ config.read('config.ini')
 
 XML_path = config['Paths']['xml_path']
 Data_path = config['Paths']['data_path']
+Data_path2 = config['Paths']['data_path2']
 XML_file = config['Paths']['xml_filename']
 et_sens = config['Paths']['ET_sens_file']
 npz_data = config['Paths']['npz_file']
+npz_dir = config['Paths']['npz_directory']
 img_path = config['Paths']['images_dir']
+outfile_path = config['Paths']['outfile_path']
+csv_path = config['Paths']['csv_path']
+csv_filename = config['Paths']['csv_filename']
+csv_filename2 = config['Paths']['csv_filename2']
 
 network = config['Instrument']['network']
 sensor = config['Instrument']['sensor']
+sensor2 = config['Instrument']['sensor2']
 location = config['Instrument']['location']
+location2 = config['Instrument']['location2']
 channel = config['Instrument']['channel']
 
 ti = UTCDateTime(config['Quantities']['start_date'])
@@ -40,13 +48,8 @@ TLong = int(config['Quantities']['TLong'])
 means = float(config['Quantities']['number_of_means'])
 verbose = config.getboolean('Quantities', 'verbose')
 savedata = config.getboolean('Quantities', 'save_data')
+quantile = float(config['Quantities']['quantile'])
 
-Data_path2 = config['Paths']['data_path2']
-sensor2 = config['Instrument']['sensor2']
-
-csv_path = config['Paths']['csv_path']
-csv_filename = config['Paths']['csv_filename']
-csv_filename2 = config['Paths']['csv_filename2']
 
 if __name__ == '__main__':
     # ET.csv_creators(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap, verbose)
@@ -54,14 +57,16 @@ if __name__ == '__main__':
     # ET.comparison_from_csv(path_to_csv1=csv_path + csv_filename, path_to_csv2=csv_path + csv_filename2)
     # ET.asd_from_csv(csv_path + csv_filename)
 
-    ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, ti, Twindow, Overlap,
-                         verbose, save_img=True, xscale='log', show_plot=False, unit='ACC', img_path=img_path)
+    ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, Twindow, Overlap,
+                         verbose, unit='ACC', out_path=outfile_path)
 
+    # ET.plot_from_npz(npz_directory=npz_dir)
     # ET.et_sens_single_comparison(et_sens_path=et_sens, npz_file=npz_data, nlnm_comparison=False)
     # ET.et_sens_comparison(et_sens_path=et_sens, filexml=XML_path + XML_file, Data_path1=Data_path,
     #                       Data_path2=Data_path2, network=network, sensor1=sensor, sensor2=sensor2, location=location,
-    #                       channel=channel, tstart=ti, Twindow=Twindow, Overlap=Overlap, TLong=TLong, verbose=verbose,
-    #                       show_plot=True, unit='VEL', save_img=True, nbins=10, save_data=True)
+    #                       location2=location2, channel=channel, Twindow=Twindow, Overlap=Overlap, TLong=TLong,
+    #                       verbose=verbose, show_plot=True, unit='VEL', q1=quantile, save_img=True, nbins=10,
+    #                       save_data=True, terziet=False, time_evo=True)
     # Read Inventory and get freq array, response array, sample freq.
     # fxml, respamp, fsxml, gain = ET.read_Inv(XML_path + XML_file, network, sensor, location, channel, ti, Twindow, verbose=verbose)
 
