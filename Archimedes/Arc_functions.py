@@ -303,7 +303,7 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, te
         - Actuator 1 : the output of the actuator 1 before amplification expressed in V
         - Actuator 2 : the output of the actuator 2 before amplification expressed in V
         - After Noise :
-        - Time : the timestamp of the data saved every milli second in human-readable format
+        - Time : the timestamp of the data saved every millisecond in human-readable format
     Returns
     -------
     out : tuple
@@ -528,8 +528,8 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
         - Actuator 1 : the output of the actuator 1 before amplification expressed in V
         - Actuator 2 : the output of the actuator 2 before amplification expressed in V
         - After Noise :
-        - Time : the timestamp of the data saved every milli second in human-readable format
-    This function can be perform using two different modes:
+        - Time : the timestamp of the data saved every millisecond in human-readable format
+    This function can be performed using two different modes:
         - 'low noise': the function search for the best array in order to find the lowest psd in a given range.
         - 'max interval': the function search for the longest array in which perform the psd.
     In the first case the frequency range is [*low_freq* , *high_freq*].

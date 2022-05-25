@@ -1,26 +1,73 @@
-import numpy as np
-from obspy import UTCDateTime
-from obspy import read
-import ET_functions as Ef
-import ET_common as Ec
-from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
+__author__ = "Luca Pesenti"
+__credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
+__version__ = "0.1.0"
+__maintainer__ = "Luca Pesenti"
+__email__ = "lpesenti@uniss.it"
+__status__ = "Development"
+
 import glob
-from matplotlib import mlab
-import matplotlib.pyplot as plt
-import pandas as pd
-import configparser
-import concurrent.futures
 import time
 import functools
+import numpy as np
+import configparser
+import pandas as pd
+import concurrent.futures
+import matplotlib.pyplot as plt
+from obspy import read
+from matplotlib import mlab
+from obspy import UTCDateTime
+from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
+
+import ET_common as Ec
+import ET_functions as Ef
+
+r"""
+[LAST UPDATE: 25 May 2022 - Luca Pesenti]
+
+!!! BEFORE CHANGING ANY PART OF THE CODE, PLEASE CONTACT THE MAINTAINER !!!
+
+This is a self-contained script and to use it, please change only the relative config file (Quantile_config.ini).
+For further information see the README file in this repository
+
+The following functions have been built to work with the data obtained by the seismometer used at the Sos Enattos site
+and uploaded to the et-repo.
+The data are saved stored in daily file with the name-format: 
+
+                {NETWORK}.{SENSOR}.{LOCATION}.{CHANNEL}.D.{YEAR}.{FILE_NUMBER}      
+                
+The logic of the code is:
+    1. Read file ---> Perform PSD [x 24_hours/(psd_time_window)] ---> Create a dataframe (daily_df)
+           ^                                                                             |            
+           |                                                                             | x number of files          
+           |                                                                             |             
+           +-----------------------------------------------------------------------------+
+           
+    2. Split frequency into sub-arrays of len=100 ---> Open daily_df ---> Group by frequency ---> Save frequency_df
+                                                            ^                                            |            
+                                                            |                                            |             
+                                                            |            x number sub-arrays             |             
+                                                            +--------------------------------------------+
+           
+    3. Open frequency_df ---> Evaluate quantile
+           ^                      |            
+           |                      | x number of quantiles            
+           |                      |             
+           +----------------------+  
+           
+    4. Plot results         
+"""
+
+# TODO: add check on python packages and add option for installing them
 
 config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
 savedata = config.getboolean('Quantities', 'save_data')
-df_path = config['Paths']['outDF_path']
+df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
+skip_daily = config.getboolean('DEFAULT', 'skip_daily')
+quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
-quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 
 
 def daily_df():
@@ -33,9 +80,10 @@ def daily_df():
     location = config['Instrument']['location']
     channel = config['Instrument']['channel']
     Twindow = int(config['Quantities']['psd_window'])
-    Overlap = float(config['Quantities']['psd_overlap'])
+    TLong = int(config['Quantities']['TLong'])
+    Overlap = float(config['Quantities']['psd_overlap'])  # TODO: check if it is the right way to perform overlap
     verbose = config.getboolean('DEFAULT', 'verbose')
-    unit = config['DEFAULT']['unit']
+    unit = config['DEFAULT']['unit']  # TODO: enable the VEL option
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
 
@@ -52,18 +100,15 @@ def daily_df():
     stopdate = st2[0].times('timestamp')[-1:][0]
     stopdate = UTCDateTime(stopdate)
 
-    T = Twindow
-    Ovl = Overlap
-    TLong = 12 * 3600
-    dT = TLong + T * Ovl
-    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+    dT = TLong + Twindow * Overlap
+    M = int((dT - Twindow) / (Twindow * (1 - Overlap)) + 1)
 
-    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+    K = int((stopdate - startdate) / (Twindow * (1 - Overlap)) + 1)
 
     v = np.empty(K)
 
     fsxml = 100
-    Num = int(T * fsxml)
+    Num = int(Twindow * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
@@ -118,7 +163,7 @@ def daily_df():
 
             for n in range(0, M):
                 v[k] = np.nan
-                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                tr = st.slice(t1, t1 + Twindow - 1 / fsxml)
                 if tr.get_gaps() == [] and len(tr) > 0:
                     tr1 = tr[0]
                     if tr1.stats.npts == Num:
@@ -131,7 +176,7 @@ def daily_df():
                     temp_array = np.append(temp_array, np.repeat(np.nan, f.size))
                 else:
                     temp_array = np.append(temp_array, psd_values_db)
-                t1 = t1 + T * Ovl
+                t1 = t1 + Twindow * Overlap
                 k += 1
             time = time + TLong
         print('\t*** Saving data to file ***')
@@ -139,6 +184,7 @@ def daily_df():
 
         temp_df = pd.DataFrame(temp_array, columns=['psd'])
         temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
+        # TODO: Change the format of the filename so that it contains the psd_window information
         temp_df.to_parquet(df_path + fr'{filename}.parquet.brotli', compression='brotli', compression_level=9)
 
         print('\t*** Data correctly saved ***')
@@ -219,20 +265,29 @@ if __name__ == '__main__':
     ax = fig.add_subplot()
 
     t1 = time.perf_counter()
-    daily_df()
+    daily_df() if not skip_daily else ''
     t2 = time.perf_counter()
+
+    # TODO : add function for printing and make log
+
     print('+', '-' * 98, '+', sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'), f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'), f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
+    print('| Daily DataFrame creation finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'),
+          sep='')
+    print('| Daily DataFrame creation finished in'.ljust(70, '.'),
+          f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
+    print('| Daily DataFrame creation finished in'.ljust(70, '.'),
+          f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
     print('+', '-' * 98, '+', sep='')
     t1 = time.perf_counter()
     f_data = to_frequency()
     t2 = time.perf_counter()
     print('+', '-' * 98, '+', sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'), f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'), f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
+    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
+          f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
+    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
+          f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
+    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
+          f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
     print('+', '-' * 98, '+', sep='')
     lst_array = []
     for quant in quantiles:
@@ -240,9 +295,12 @@ if __name__ == '__main__':
         lst_array.append(from_freq_to_quantile(q=quant))
         t2 = time.perf_counter()
         print('\t+', '-' * 98, '+', sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'), f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'), f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
+        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
+              f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
+        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
+              f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
+        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
+              f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
         print('\t+', '-' * 98, '+', sep='')
     t1 = time.perf_counter()
     for index, q in enumerate(quantiles):
