@@ -5,8 +5,6 @@ __maintainer__ = "Luca Pesenti and Davide Rozza"
 __email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
 __status__ = "Prototype"
 
-import os.path
-
 import numpy as np
 from obspy import UTCDateTime
 from obspy import read, read_inventory, Stream
@@ -19,11 +17,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pandas as pd
 import seaborn as sns
-from matplotlib.dates import date2num, num2date, DateFormatter
+from matplotlib.dates import date2num, num2date
 import matplotlib.dates as mdates
 from scipy.interpolate import interp1d
-from scipy import signal
-from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import datetime
 
 import ET_common as Ec

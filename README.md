@@ -92,7 +92,7 @@ Welcome to the GitHub repository of the Archimedes Experiment!
         * _verbose_ (Bool):  If True enable more verbosity
         * _skip_daily_ (Bool): If True the script does not create the daily dataframe (use it only if the code has
           already run before)
-        * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1.0 only the 'ACC' option is supported)
+        * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1 only the 'ACC' option is supported)
     * [Paths]
         * _xml_path_ (str): It is the path to the .xml file used to read the inventory in which is contained the
           response amplitude and other information

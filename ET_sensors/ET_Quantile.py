@@ -1,21 +1,22 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
 
+import concurrent.futures
+import configparser
+import functools
 import glob
 import time
-import functools
-import numpy as np
-import configparser
-import pandas as pd
-import concurrent.futures
+
 import matplotlib.pyplot as plt
-from obspy import read
+import numpy as np
+import pandas as pd
 from matplotlib import mlab
 from obspy import UTCDateTime
+from obspy import read
 from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
 
 import ET_common as Ec
@@ -68,10 +69,12 @@ skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
+daily_path = Ec.check_dir(df_path, 'daily_df')
+t_log = time.strftime('%d-%b-%Y')
 
 
 def daily_df():
-    global df_path, config
+    global daily_path, config
 
     filexml = config['Paths']['xml_path']
     Data_path = config['Paths']['data_path']
@@ -180,12 +183,13 @@ def daily_df():
                 k += 1
             time = time + TLong
         print('\t*** Saving data to file ***')
-        filename = file.split('.')[-1]
+        filename = file.split('.')[-2] + '-' + file.split('.')[-1]
 
         temp_df = pd.DataFrame(temp_array, columns=['psd'])
         temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
-        # TODO: Change the format of the filename so that it contains the psd_window information
-        temp_df.to_parquet(df_path + fr'{filename}.parquet.brotli', compression='brotli', compression_level=9)
+
+        temp_df.to_parquet(daily_path + fr'\{Twindow}_{filename}.parquet.brotli', compression='brotli',
+                           compression_level=9)
 
         print('\t*** Data correctly saved ***')
 
@@ -258,6 +262,41 @@ def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'
     return ax
 
 
+def print_on_screen(symbol1, message, quantity, symbol2=None):
+    global df_path, t_log
+
+    with open(df_path + fr'\{t_log}.txt', 'a') as text_file:
+        if symbol2 is not None:
+            if symbol1 == '+':
+                print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{quantity} seconds |".rjust(30, '.'), sep='', file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{quantity} minutes |".rjust(30, '.'), sep='', file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{quantity} hours |".rjust(30, '.'), sep='', file=text_file)
+                print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
+        else:
+            print(f'{symbol1}' * 100, file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} seconds {symbol1}".rjust(30, '.'), sep='',
+                  file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} minutes {symbol1}".rjust(30, '.'), sep='',
+                  file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} hours {symbol1}".rjust(30, '.'), sep='',
+                  file=text_file)
+            print(f'{symbol1}' * 100, file=text_file)
+    if symbol2 is not None:
+        if symbol1 == '+':
+            print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{quantity} seconds |".rjust(30, '.'), sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{quantity} minutes |".rjust(30, '.'), sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{quantity} hours |".rjust(30, '.'), sep='')
+            print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='')
+    else:
+        print(f'{symbol1}' * 100)
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} seconds {symbol1}".rjust(30, '.'), sep='')
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} minutes {symbol1}".rjust(30, '.'), sep='')
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} hours {symbol1}".rjust(30, '.'), sep='')
+        print(f'{symbol1}' * 100)
+
+
 if __name__ == '__main__':
     t0 = time.perf_counter()
 
@@ -268,53 +307,29 @@ if __name__ == '__main__':
     daily_df() if not skip_daily else ''
     t2 = time.perf_counter()
 
-    # TODO : add function for printing and make log
+    print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in',
+                    quantity=round(t2 - t1, 3))
 
-    print('+', '-' * 98, '+', sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'),
-          sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'),
-          f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-    print('| Daily DataFrame creation finished in'.ljust(70, '.'),
-          f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
-    print('+', '-' * 98, '+', sep='')
     t1 = time.perf_counter()
     f_data = to_frequency()
     t2 = time.perf_counter()
-    print('+', '-' * 98, '+', sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
-          f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
-          f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-    print('| Conversion to frequency DataFrame finished in'.ljust(70, '.'),
-          f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
-    print('+', '-' * 98, '+', sep='')
+
+    print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in',
+                    quantity=round(t2 - t1, 3))
+
     lst_array = []
     for quant in quantiles:
         t1 = time.perf_counter()
         lst_array.append(from_freq_to_quantile(q=quant))
         t2 = time.perf_counter()
-        print('\t+', '-' * 98, '+', sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
-              f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
-              f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-        print(f'\t| Search for the {quant} quantile array finished in'.ljust(70, '.'),
-              f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
-        print('\t+', '-' * 98, '+', sep='')
+        print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in',
+                        quantity=round(t2 - t1, 3))
+
     t1 = time.perf_counter()
     for index, q in enumerate(quantiles):
         plot_from_df(x_array=f_data, y_array=lst_array[index], quant=q, ax=ax)
     t2 = time.perf_counter()
 
-    print('+', '-' * 98, '+', sep='')
-    print('| Plot building finished in'.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds |".rjust(30, '.'), sep='')
-    print('| Plot building finished in'.ljust(70, '.'), f"{round((t2 - t1) / 60, 3)} minutes |".rjust(30, '.'), sep='')
-    print('| Plot building finished in'.ljust(70, '.'), f"{round((t2 - t1) / 3600, 3)} hours |".rjust(30, '.'), sep='')
-    print('+', '-' * 98, '+', sep='')
-    print('*' * 100)
-    print('* Total time elapsed '.ljust(70, '.'), f"{round(t2 - t1, 3)} seconds *".rjust(30, '.'), sep='')
-    print('* Total time elapsed '.ljust(70, '.'), f"{round((t2 - t1) / 60, 3)} minutes *".rjust(30, '.'), sep='')
-    print('* Total time elapsed '.ljust(70, '.'), f"{round((t2 - t1) / 3600, 3)} hours *".rjust(30, '.'), sep='')
-    print('*' * 100)
+    print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=round(t2 - t1, 3))
+    print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=round(t2 - t0, 3))
     plt.show()
