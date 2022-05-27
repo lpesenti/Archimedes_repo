@@ -65,6 +65,7 @@ config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
 df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
+only_daily = config.getboolean('DEFAULT', 'only_daily')
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
 skip_quant_eval = config.getboolean('DEFAULT', 'skip_quant_eval')
@@ -307,48 +308,54 @@ def print_on_screen(symbol1, message, quantity, symbol2=None):
 
 if __name__ == '__main__':
     t0 = time.perf_counter()
-
-    fig = plt.figure(figsize=(19.2, 10.8))
-    ax = fig.add_subplot()
-
-    t1 = time.perf_counter()
-
-    daily_df() if not skip_daily else ''
-
-    t2 = time.perf_counter()
-
-    print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in', quantity=t2 - t1)
-
-    t1 = time.perf_counter()
-    if not skip_freq_df:
-        f_data = to_frequency()
+    if only_daily:
+        daily_df()
+        t2 = time.perf_counter()
+        print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
     else:
-        f_data = np.load(npz_path + r'\Frequency.npz')['frequency']
-    f_data.sort()
-    t2 = time.perf_counter()
+        fig = plt.figure(figsize=(19.2, 10.8))
+        ax = fig.add_subplot()
 
-    print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in', quantity=t2 - t1)
+        t1 = time.perf_counter()
 
-    lst_array = []
-    if not skip_quant_eval:
-        for quant in quantiles:
-            t1 = time.perf_counter()
-            lst_array.append(from_freq_to_quantile(q=quant))
-            t2 = time.perf_counter()
-            print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in', quantity=t2 - t1)
-    else:
-        for quant in quantiles:
-            t1 = time.perf_counter()
-            q = np.load(npz_path + fr"\{str(quant).replace('.', '')}.npz")['q_array']
-            lst_array.append(q)
-            t2 = time.perf_counter()
-            print_on_screen(symbol1='+', message=f'Reading {quant} quantile array finished in', quantity=t2 - t1)
+        daily_df() if not skip_daily else ''
 
-    t1 = time.perf_counter()
-    for index, q in enumerate(quantiles):
-        plot_from_df(x_array=f_data, y_array=lst_array[index], quant=q, ax=ax)
-    t2 = time.perf_counter()
+        t2 = time.perf_counter()
 
-    print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=t2 - t1)
-    print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
-    plt.show()
+        print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in', quantity=t2 - t1)
+
+        t1 = time.perf_counter()
+        if not skip_freq_df:
+            f_data = to_frequency()
+        else:
+            f_data = np.load(npz_path + r'\Frequency.npz')['frequency']
+        f_data.sort()
+        t2 = time.perf_counter()
+
+        print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in',
+                        quantity=t2 - t1)
+
+        lst_array = []
+        if not skip_quant_eval:
+            for quant in quantiles:
+                t1 = time.perf_counter()
+                lst_array.append(from_freq_to_quantile(q=quant))
+                t2 = time.perf_counter()
+                print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in',
+                                quantity=t2 - t1)
+        else:
+            for quant in quantiles:
+                t1 = time.perf_counter()
+                q = np.load(npz_path + fr"\{str(quant).replace('.', '')}.npz")['q_array']
+                lst_array.append(q)
+                t2 = time.perf_counter()
+                print_on_screen(symbol1='+', message=f'Reading {quant} quantile array finished in', quantity=t2 - t1)
+
+        t1 = time.perf_counter()
+        for index, q in enumerate(quantiles):
+            plot_from_df(x_array=f_data, y_array=lst_array[index], quant=q, ax=ax)
+        t2 = time.perf_counter()
+
+        print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=t2 - t1)
+        print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
+        plt.show()
