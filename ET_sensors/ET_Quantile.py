@@ -9,6 +9,7 @@ import concurrent.futures
 import configparser
 import functools
 import glob
+import os
 import time
 
 import matplotlib.pyplot as plt
@@ -118,7 +119,8 @@ def daily_df():
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
-    np.savez(npz_path + fr'\Frequency.npz', frequency=f)
+    freq_path = npz_path + fr'\{Twindow}_Frequency.npz'
+    np.savez(freq_path, frequency=f) if not os.path.exists(freq_path) else ''
     w = 2.0 * np.pi * f
     if verbose:
         print('+', '-' * 84, '+', sep='')
@@ -220,7 +222,7 @@ def to_frequency():
             df = pd.DataFrame()
             for res in results:
                 df = pd.concat([df, res])
-            df.to_parquet(freq_df_path + fr'\{round(freq[0], 2)}-{round(freq[-1], 2)}.parquet.brotli',
+            df.to_parquet(freq_df_path + fr'\{str(index).zfill(len(str(num_chunk)))}.parquet.brotli',
                           compression='brotli', compression_level=9)
     return freq_data
 
