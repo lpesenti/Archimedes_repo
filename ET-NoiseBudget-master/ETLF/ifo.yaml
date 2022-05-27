@@ -1,0 +1,425 @@
+# GWINC aLIGO interferometer parameters
+#----Low frequency interferometer---
+# parameters for quad pendulum suspension updated 3rd May 2006, NAR
+# References:
+# LIGO-T000012-00-D
+#     * Differentiate between silica and sapphire substrate absorption
+#     * Change ribbon suspension aspect ratio
+#     * Change pendulum frequency
+# References:
+# 1. Electro-Optic Handbook, Waynant & Ediger (McGraw-Hill: 1993)
+# 2. LIGO/GEO data/experience
+# 3. Suspension reference design, LIGO-T000012-00
+# 4. Quartz Glass for Optics Data and Properties, Heraeus data sheet,
+#    numbers for suprasil
+# 5. Y.S. Touloukian (ed), Thermophysical Properties of Matter
+#    (IFI/Plenum,1970)
+# 6. Marvin J. Weber (ed) CRC Handbook of laser science and technology,
+#    Vol 4, Pt 2
+# 7. R.S. Krishnan et al.,Thermal Expansion of Crystals, Pergamon Press
+# 8. P. Klocek, Handbook of infrared and optical materials, Marcel Decker,
+#    1991
+# 9. Rai Weiss, electronic log from 5/10/2006
+# 10. Wikipedia online encyclopedia, 2006
+# 11. D.K. Davies, The Generation and Dissipation of Static Charge on
+# dielectrics in a Vacuum, page 29
+# 12. Gretarsson & Harry, Gretarsson thesis
+# 13. Fejer
+# 14. Braginsky
+#
+# Updated numbers March 2018: LIGO-T1800044
+
+Infrastructure:
+  Length: 10000                    # m
+  Temp: 290                       # K
+  ResidualGas:
+    # polarizabilities from https://cccbdb.nist.gov/pollistx.asp
+    H2:
+      BeamtubePressure: 2.0e-8      # Pa
+      ChamberPressure: 2.0e-7       # Pa
+      mass: 3.35e-27                # kg; Mass of H_2 (ref. 10)
+      polarizability: 7.87e-31      # m^3;
+
+    N2:
+      BeamtubePressure: 5.0e-10
+      ChamberPressure: 5.0e-8
+      mass: 4.65e-26
+      polarizability: 1.71e-30
+
+    H2O:
+      BeamtubePressure: 1.0e-9
+      ChamberPressure: 1.0e-7
+      mass: 2.99e-26
+      polarizability: 1.50e-30
+
+    O2:
+      BeamtubePressure: 5e-10
+      ChamberPressure: 5.0e-8
+      mass: 5.31e-26
+      polarizability: 1.56e-30
+
+TCS:
+  # The presumably dominant effect of a thermal lens in the ITMs is an increased
+  # mode mismatch into the SRC, and thus an increased effective loss of the SRC.
+  # The increase is estimated by calculating the round-trip loss S in the SRC as
+  # 1-S = |<Psi|exp(i*phi)|Psi>|^2, where
+  # |Psi> is the beam hitting the ITM and
+  # phi = P_coat*phi_coat + P_subs*phi_subs
+  # with phi_coat & phi_subs the specific lensing profiles
+  # and P_coat & P_subst the power absorbed in coating and substrate
+  #
+  # This expression can be expanded to 2nd order and is given by
+  # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2
+  # s_cc, s_cs and s_ss were calculated analytically by Phil Willems (4/2007)
+  s_cc: 7.024                     # Watt^-2
+  s_cs: 7.321                     # Watt^-2
+  s_ss: 7.631                     # Watt^-2
+  # The hardest part to model is how efficient the TCS system is in
+  # compensating this loss. Thus as a simple Ansatz we define the
+  # TCS efficiency TCSeff as the reduction in effective power that produces
+  # a phase distortion. E.g. TCSeff=0.99 means that the compensated distortion
+  # of 1 Watt absorbed is eqivalent to the uncompensated distortion of 10mWatt.
+  # The above formula thus becomes:
+  # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2 * (1-TCSeff)^2
+  #
+  # To avoid iterative calculation we define TCS.SCRloss = S as an input
+  # and calculate TCSeff as an output.
+  # TCS.SRCloss is incorporated as an additional loss in the SRC
+  SRCloss: 0.00
+
+Seismic:
+  Site: 'SosEnattos'                     # LHO or LLO (only used for Newtonian noise)
+  KneeFrequency: 1               # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevel: 5e-10         # m/rtHz; seismic noise level below f_knee
+  Gamma: 100                      # abruptness of change at f_knee
+  Rho: 2.3e3                      # kg/m^3; density of the ground nearby
+  Beta: 0.6                       # quiet times beta: 0.35-0.60
+                                  # noisy times beta: 0.15-1.4
+  Omicron: 3                     # Feedforward cancellation factor
+  TestMassHeight: 1.5             # m
+  RayleighWaveSpeed: 250          # m/s
+  Height: -250                    #Mirror height
+  CavernR: 15                     #Cavern radius
+
+Suspension:
+  Optcyl: 0
+  Type: 'Quad'
+  FiberType: 'Ribbon'
+  BreakStress: 750e6              # Pa; ref. K. Strain
+  Temp: 10
+  VHCoupling:
+    theta: 7.8e-4                   # vertical-horizontal x-coupling (computed in precompIFO)
+
+  Silica:
+    Rho   : 2.2e3                 # Kg/m^3;
+    C     : 772                   # J/Kg/K;
+    K     : 1.38                  # W/m/kg;
+    Alpha : 3.9e-7                # 1/K;
+    dlnEdT: 1.52e-4               # (1/K), dlnE/dT
+    Phi   : 4.1e-10               # from G Harry e-mail to NAR 27April06 dimensionless units
+    Y     : 7.2e10                # Pa; Youngs Modulus
+    Dissdepth: 1.5e-2             # from G Harry e-mail to NAR 27April06
+
+  C70Steel:
+    Rho: 7800
+    C: 486
+    K: 49
+    Alpha: 12e-6
+    dlnEdT: -2.5e-4
+    Phi: 2e-4
+    Y: 212e9                      # measured by MB for one set of wires
+
+  MaragingSteel:
+    Rho: 7800
+    C: 460
+    K: 20
+    Alpha: 11e-6
+    dlnEdT: 0
+    Phi: 1e-4
+    Y: 187e9
+
+  # ref http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html
+  # all properties should be for T ~ 120 K
+  Silicon:
+    Rho: 2331.5 #2329                           # Kg/m^3;  density
+    C: 2.7554e-1                        # J/kg/K   heat capacity
+    K: 1000                             # W/m/K    thermal conductivity
+    Alpha: 4.847e-10                    #1e-10  # 1/K      thermal expansion coeff
+    # from Gysin, et. al. PRB (2004)  E(T): E0 - B*T*exp(-T0/T)
+    # E0: 167.5e9 Pa   T0: 317 K   B: 15.8e6 Pa/K
+    dlnEdT: -7.88e-6                       # (1/K)    dlnE/dT  T=120K
+    Phi: 1e-8                           # Nawrodt (2010)      loss angle  1/Q
+    Y: 1.32e11                          # Pa       Youngs Modulus
+    Dissdepth: 0  #1.5e-3                   # 10x smaller surface loss depth (Nawrodt (2010))
+    
+  Tita:
+    Rho: 4453
+    C: 0.07
+    K: 0.14
+    Alpha: 0
+    dlnEdT: -4.6e-4
+    Phi: 1e-4
+    Y: 1.27e11
+    Dissdepth: 0
+
+  # Note stage numbering: mirror is at beginning of stack, not end
+  #
+  # last stage length adjusted for d: 10mm and and d_bend = 4mm
+  # (since 602mm is the CoM separation, and d_bend is accounted for
+  # in suspQuad, so including it here would double count)
+  Stage:
+    # Stage1
+    # Test mass
+    - Mass: 211                # kg; current numbers May 2006 NAR
+      # length adjusted for d = 10mm and d_bend = 4mm
+      # (since 602mm is the CoM separation, and d_bend is accounted for
+      # in suspQuad, so including it here would double count)
+      Temp: 10
+      WireMaterial : 'Silicon'
+      Length: 2.0               # m
+      Dilution: .nan              #
+      K: .nan                     # N/m; vertical spring constant
+      WireRadius: 1.5e-3
+      WireDiameter: 3e-3          # m
+      Blade: .nan                 # blade thickness
+      NWires: 4
+      WireDiameter1: 800e-6
+      WireDiameter2: 300e-6
+      WireDiameter3: 800e-6
+      Length1: 0.05
+      Length2: 0.6
+      Length3: 0.05
+      Qvh: 1e20
+      Qvv: 1e20
+
+    # Stage2
+    # Mirror reaction mass
+    - Mass: 211
+      Temp: 10
+      WireMaterial : 'Silicon'
+      Length: 2.0
+      Dilution: 106
+      K: 5200
+      WireRadius: 1.5e-3
+      WireDiameter: 3e-3
+      Blade: 4200e-6
+      NWires: 4
+      Qvh: 1e20
+      Qvv: 1e20
+
+    # Stage3
+    # Marionetta
+    - Mass: 422
+      Temp: 2
+      WireMaterial : 'Tita'
+      Length: 2.0
+      Dilution: 80
+      K: 3900
+      WireRadius: 2.5e-3
+      WireDiameter: 5e-3
+      Blade: 4600e-6
+      NWires: 1
+      Qvh: 1e20
+      Qvv: 1e20
+
+    # Stage4
+    # Marionetta reaction mass
+    - Mass: 422
+      Length: 2.0
+      Dilution: 87
+      K: 3400
+      WireRadius: 1.5e-3
+      WireDiameter: 3e-3
+      Blade: 4300e-6
+      NWires: 1
+
+  Ribbon:
+    Thickness: 262.242e-6             # m
+    Width: 2622.42e-6                # m
+
+  Fiber:
+    Radius: 459.484e-6                # m
+    # for tapered fibers
+    # EndRadius is tuned to cancel thermo-elastic noise (delta_h in suspQuad)
+    # EndLength is tuned to match bounce mode frequency
+    EndRadius: 400e-6             # m; nominal 400um
+    EndLength: 45e-3              # m; nominal 20mm
+
+## Optic Material -------------------------------------------------------
+Materials:
+  MassRadius: 0.225                # m;
+  MassThickness: 0.57            # m; Peter F 8/11/2005
+
+  ## Dielectric coating material parameters----------------------------------
+  Coating:
+    ## high index material: tantala
+    Yhighn: 123e9                 # LMA (Granata at LVC) 2017 (was 140)
+    Sigmahighn: 0.28              # LMA (Granata at LVC) 2017 (was 0.23)
+    CVhighn: 2.1e6                # Crooks et al, Fejer et al
+    Alphahighn: 3.6e-6            # 3.6e-6 Fejer et al, 5e-6 from Braginsky
+    Betahighn: 1.4e-5             # dn/dT, value Gretarrson (G070161)
+    ThermalDiffusivityhighn: 33   # Fejer et al
+    Indexhighn: 2.07
+    Phihighn: 7e-4              # loss angle at 100Hz, 20K [I. Martin, 2010]
+    Phihighn_slope: 0.1
+
+    ## low index material: silica
+    Ylown: 72e9
+    Sigmalown: 0.17
+    CVlown: 1.6412e6              # Crooks et al, Fejer et al
+    Alphalown: 5.1e-7             # Fejer et al
+    Betalown: 8e-6                # dn/dT,  (ref. 14)
+    ThermalDiffusivitylown: 1.38  # Fejer et al
+    Indexlown: 1.45
+    Philown: 5e-4                 # loss angle at 100Hz, 20K [R. Robie, PhD thesis]
+    Philown_slope: 0
+  ## Substrate Material parameters--------------------------------------------
+  Substrate:
+    c2: 3e-13            # Coeff of freq dep. term for bulk loss (Lam & Douglass, 1981)
+    MechanicalLossExponent: 1 # Exponent for freq dependence of silicon loss
+    Alphas: 5.2e-12      # Surface loss limit ???
+    MirrorY: 1.62e11     # N/m^2; Youngs modulus (ioffe) -- what about anisotropy??
+    MirrorSigma: 0.22    # kg/m^3; Poisson ratio (ioffe) -- what about anisotropy??
+    MassDensity: 2331    # kg/m^3; (ioffe)
+    MassAlpha: 4.8e-10   # 1/K; CTE = 0 @ 10 K
+    MassCM: 0.276         # J/kg/K; specific heat (ioffe @ 10K)
+    MassKappa: 1000       # W/(m*K); thermal conductivity (ioffe @ 10)
+    RefractiveIndex: 3.45 # 3.38 * (1 + 4e-5 * T)   (ioffe)
+    dndT: 0.5e-6           # ~10K & 1550 nm, 5.8e-6 @ 30k: http://arxiv.org/abs/physics/0606168
+    Temp: 10             # mirror temperature [K]
+    ## parameters for semiconductor optics
+    isSemiConductor: True     # we are doing semiconductor optics
+    CarrierDensity: 1e19      # 1/m^3; carrier density for phosphorous-doped silicon
+    ElectronDiffusion: 9.7e-3 # m^2/s; electron diffusion coefficient for silicon at 120 K
+    HoleDiffusion: 3.5e-3     # m^2/s; hole diffusion coefficient for silicon at 120 K
+    ElectronEffMass: 9.747e-31 # kg; effective mass of each electron 1.07*m_e
+    HoleEffMass: 8.016e-31    # kg; effective mass of each hole 0.88*m_e
+    ElectronIndexGamma: -8.8e-28 # m**3; dependence of index of refraction on electron carrier density
+    HoleIndexGamma: -1.02e-27 # m**3; dependence of index of refraction on hole carrier density
+
+
+## Laser-------------------------------------------------------------------
+Laser:
+  Wavelength: 1.550e-6            # m
+  Power: 1.7                      # W
+
+## Optics------------------------------------------------------------------
+Optics:
+  Type: 'SignalRecycled'
+  PhotoDetectorEfficiency: 0.97    # photo-detector quantum efficiency
+  Loss: 20e-6                   # average per mirror power loss
+  BSLoss: 1e-3                  # power loss near beamsplitter
+  coupling: 1.0                   # mismatch btwn arms & SRC modes; used to
+                                  # calculate an effective r_srm
+  SubstrateAbsorption: 0.5e-4     # 1/m; bulk absorption coef (ref. 2)
+  pcrit: 10                       # W; tolerable heating power (factor 1 ATC)
+  Quadrature:
+    dc: 1.5707963                 # pi/2 # demod/detection/homodyne phase
+
+  ITM:
+    Transmittance: 0.007
+   # CoatingThicknessLown: 0.308
+   # CoatingThicknessCap: 0.5
+    CoatingAbsorption: 0.5e-6
+    CoatLayerOpticalThickness:    # 8 quarter-wave bilayers silica/tantala
+      - 0.5
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.38254
+
+
+  ETM:
+    Transmittance: 5e-6
+    #CoatingThicknessLown: 0.27
+    #CoatingThicknessCap: 0.5
+    CoatLayerOpticalThickness:    # 17 quarter-wave bilayers silica/tantala
+      - 0.0
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+      - 0.25
+
+
+  PRM:
+    Transmittance: 0.026
+  SRM:
+    Transmittance: 0.2
+    CavityLength: 200              # m, ITM to SRM distance
+    Tunephase: 0.6               # SEC tuning
+
+  Curvature:                      # ROC
+    ITM: 5580
+    ETM: 5580
+
+## Squeezer Parameters------------------------------------------------------
+# Define the squeezing you want:
+#   None: ignore the squeezer settings
+#   Freq Independent: nothing special (no filter cavties)
+#   Freq Dependent = applies the specified filter cavites
+#   Optimal = find the best squeeze angle, assuming no output filtering
+#   OptimalOptimal = optimal squeeze angle, assuming optimal readout phase
+Squeezer:
+  Type: 'Freq Dependent'
+  AmplitudedB: 15                 # SQZ amplitude [dB]
+  InjectionLoss: 0.02            # power loss to sqz
+  SQZAngle: -0.37                     # SQZ phase [radians]
+  LOAngleRMS: 1e-6               # quadrature noise [radians]
+
+  # Parameters for frequency dependent squeezing
+  FilterCavity:
+    - L: 1000                        # cavity length
+      Te: 5e-6                      # end mirror trasmission
+      Lrt: 15e-6                    # round-trip loss in the cavity
+      Rot: 0                        # phase rotation after cavity
+      fdetune: -6.663358              # detuning [Hz]
+      Ti:  0.000121919                 # input mirror trasmission [Power]
+
+    - L: 1000                       # cavity length
+      Te: 5e-6                      # end mirror trasmission
+      Lrt: 15e-6                    # round-trip loss in the cavity
+      Rot: 0                        # phase rotation after cavity
+      fdetune: 25.3518            # detuning [Hz]
+      Ti: 0.000476824                   # input mirror trasmission [Power]
