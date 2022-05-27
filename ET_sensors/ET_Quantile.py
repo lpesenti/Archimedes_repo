@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -65,6 +65,7 @@ config.read('Quantile_config.ini')
 
 df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
+skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
 quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
@@ -224,6 +225,7 @@ def to_frequency():
 def read_freq_df(q, filename):
     # print(filename)
     temp_df = pd.read_parquet(filename)
+    temp_df = temp_df.sort_index()
     return temp_df.groupby(temp_df.index)['psd'].quantile(q).values.flatten()
 
 
@@ -268,31 +270,36 @@ def print_on_screen(symbol1, message, quantity, symbol2=None):
         if symbol2 is not None:
             if symbol1 == '+':
                 print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
-                print(f'| {message}'.ljust(70, '.'), f"{quantity} seconds |".rjust(30, '.'), sep='', file=text_file)
-                print(f'| {message}'.ljust(70, '.'), f"{quantity} minutes |".rjust(30, '.'), sep='', file=text_file)
-                print(f'| {message}'.ljust(70, '.'), f"{quantity} hours |".rjust(30, '.'), sep='', file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{round(quantity, 3)} seconds |".rjust(30, '.'), sep='',
+                      file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{round(quantity / 60, 3)} minutes |".rjust(30, '.'), sep='',
+                      file=text_file)
+                print(f'| {message}'.ljust(70, '.'), f"{round(quantity / 3600, 3)} hours |".rjust(30, '.'), sep='',
+                      file=text_file)
                 print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
         else:
             print(f'{symbol1}' * 100, file=text_file)
-            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} seconds {symbol1}".rjust(30, '.'), sep='',
-                  file=text_file)
-            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} minutes {symbol1}".rjust(30, '.'), sep='',
-                  file=text_file)
-            print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} hours {symbol1}".rjust(30, '.'), sep='',
-                  file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity, 3)} seconds {symbol1}".rjust(30, '.'),
+                  sep='', file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity / 60, 3)} minutes {symbol1}".rjust(30, '.'),
+                  sep='', file=text_file)
+            print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity / 3600, 3)} hours {symbol1}".rjust(30, '.'),
+                  sep='', file=text_file)
             print(f'{symbol1}' * 100, file=text_file)
     if symbol2 is not None:
         if symbol1 == '+':
             print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='')
-            print(f'| {message}'.ljust(70, '.'), f"{quantity} seconds |".rjust(30, '.'), sep='')
-            print(f'| {message}'.ljust(70, '.'), f"{quantity} minutes |".rjust(30, '.'), sep='')
-            print(f'| {message}'.ljust(70, '.'), f"{quantity} hours |".rjust(30, '.'), sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{round(quantity, 3)} seconds |".rjust(30, '.'), sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{round(quantity / 60, 3)} minutes |".rjust(30, '.'), sep='')
+            print(f'| {message}'.ljust(70, '.'), f"{round(quantity / 3600, 3)} hours |".rjust(30, '.'), sep='')
             print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='')
     else:
         print(f'{symbol1}' * 100)
-        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} seconds {symbol1}".rjust(30, '.'), sep='')
-        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} minutes {symbol1}".rjust(30, '.'), sep='')
-        print(f'{symbol1} {message}'.ljust(70, '.'), f"{quantity} hours {symbol1}".rjust(30, '.'), sep='')
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity, 3)} seconds {symbol1}".rjust(30, '.'), sep='')
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity / 60, 3)} minutes {symbol1}".rjust(30, '.'),
+              sep='')
+        print(f'{symbol1} {message}'.ljust(70, '.'), f"{round(quantity / 3600, 3)} hours {symbol1}".rjust(30, '.'),
+              sep='')
         print(f'{symbol1}' * 100)
 
 
@@ -307,14 +314,14 @@ if __name__ == '__main__':
     t2 = time.perf_counter()
 
     print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in',
-                    quantity=round(t2 - t1, 3))
+                    quantity=t2 - t1)
 
     t1 = time.perf_counter()
-    f_data = to_frequency()
+    f_data = to_frequency() if not skip_freq_df else ''
     t2 = time.perf_counter()
 
     print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in',
-                    quantity=round(t2 - t1, 3))
+                    quantity=t2 - t1)
 
     lst_array = []
     for quant in quantiles:
@@ -322,13 +329,13 @@ if __name__ == '__main__':
         lst_array.append(from_freq_to_quantile(q=quant))
         t2 = time.perf_counter()
         print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in',
-                        quantity=round(t2 - t1, 3))
+                        quantity=t2 - t1)
 
     t1 = time.perf_counter()
     for index, q in enumerate(quantiles):
         plot_from_df(x_array=f_data, y_array=lst_array[index], quant=q, ax=ax)
     t2 = time.perf_counter()
 
-    print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=round(t2 - t1, 3))
-    print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=round(t2 - t0, 3))
+    print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=t2 - t1)
+    print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
     plt.show()
