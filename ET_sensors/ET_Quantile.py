@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -59,6 +59,7 @@ The logic of the code is:
 """
 
 # TODO: add check on python packages and add option for installing them
+# TODO: add sensibility of the seismometer (e.g. x_lim = 1/240s)
 
 config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
@@ -66,6 +67,7 @@ config.read('Quantile_config.ini')
 df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
+skip_quant_eval = config.getboolean('DEFAULT', 'skip_quant_eval')
 quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
@@ -310,26 +312,37 @@ if __name__ == '__main__':
     ax = fig.add_subplot()
 
     t1 = time.perf_counter()
+
     daily_df() if not skip_daily else ''
+
     t2 = time.perf_counter()
 
-    print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in',
-                    quantity=t2 - t1)
+    print_on_screen(symbol1='+', symbol2='-', message='Daily DataFrame creation finished in', quantity=t2 - t1)
 
     t1 = time.perf_counter()
-    f_data = to_frequency() if not skip_freq_df else ''
+    if not skip_freq_df:
+        f_data = to_frequency()
+    else:
+        f_data = np.load(npz_path + r'\Frequency.npz')['frequency']
+    f_data.sort()
     t2 = time.perf_counter()
 
-    print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in',
-                    quantity=t2 - t1)
+    print_on_screen(symbol1='+', symbol2='-', message='Conversion to frequency DataFrame finished in', quantity=t2 - t1)
 
     lst_array = []
-    for quant in quantiles:
-        t1 = time.perf_counter()
-        lst_array.append(from_freq_to_quantile(q=quant))
-        t2 = time.perf_counter()
-        print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in',
-                        quantity=t2 - t1)
+    if not skip_quant_eval:
+        for quant in quantiles:
+            t1 = time.perf_counter()
+            lst_array.append(from_freq_to_quantile(q=quant))
+            t2 = time.perf_counter()
+            print_on_screen(symbol1='+', message=f'Search for the {quant} quantile array finished in', quantity=t2 - t1)
+    else:
+        for quant in quantiles:
+            t1 = time.perf_counter()
+            q = np.load(npz_path + fr"\{str(quant).replace('.', '')}.npz")['q_array']
+            lst_array.append(q)
+            t2 = time.perf_counter()
+            print_on_screen(symbol1='+', message=f'Reading {quant} quantile array finished in', quantity=t2 - t1)
 
     t1 = time.perf_counter()
     for index, q in enumerate(quantiles):
