@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -63,14 +63,13 @@ The logic of the code is:
 config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
-savedata = config.getboolean('Quantities', 'save_data')
 df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
-t_log = time.strftime('%d-%b-%Y')
+t_log = time.strftime('%Y%m%d_%H%M')
 
 
 def daily_df():
@@ -201,8 +200,8 @@ def read_daily_df(freq_indeces, filename):
 
 
 def to_frequency():
-    global df_path, freq_df_path, npz_path
-    filename_list = glob.glob(df_path + "*.brotli")
+    global daily_path, freq_df_path, npz_path
+    filename_list = glob.glob(daily_path + r"\*.brotli")
     data = np.load(npz_path + r'\Frequency.npz')
     freq_data = data['frequency']
     num_chunk = int(freq_data.size / 100)
@@ -217,7 +216,7 @@ def to_frequency():
             df = pd.DataFrame()
             for res in results:
                 df = pd.concat([df, res])
-            df.to_parquet(freq_df_path + fr'\{str(index).zfill(len(str(num_chunk)))}.parquet.brotli',
+            df.to_parquet(freq_df_path + fr'\{round(freq[0], 2)}-{round(freq[-1], 2)}.parquet.brotli',
                           compression='brotli', compression_level=9)
     return freq_data
 
