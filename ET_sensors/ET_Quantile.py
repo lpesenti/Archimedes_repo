@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -66,6 +66,7 @@ config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
 df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
+Twindow = int(config['Quantities']['psd_window'])
 only_daily = config.getboolean('DEFAULT', 'only_daily')
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
@@ -78,7 +79,7 @@ t_log = time.strftime('%Y%m%d_%H%M')
 
 
 def daily_df():
-    global daily_path, config
+    global daily_path, config, Twindow
 
     filexml = config['Paths']['xml_path']
     Data_path = config['Paths']['data_path']
@@ -86,7 +87,7 @@ def daily_df():
     sensor = config['Instrument']['sensor']
     location = config['Instrument']['location']
     channel = config['Instrument']['channel']
-    Twindow = int(config['Quantities']['psd_window'])
+    # Twindow = int(config['Quantities']['psd_window'])
     TLong = int(config['Quantities']['TLong'])
     Overlap = float(config['Quantities']['psd_overlap'])  # TODO: check if it is the right way to perform overlap
     verbose = config.getboolean('DEFAULT', 'verbose')
@@ -206,9 +207,9 @@ def read_daily_df(freq_indeces, filename):
 
 
 def to_frequency():
-    global daily_path, freq_df_path, npz_path
+    global daily_path, freq_df_path, npz_path, Twindow
     filename_list = glob.glob(daily_path + r"\*.brotli")
-    data = np.load(npz_path + r'\Frequency.npz')
+    data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')
     freq_data = data['frequency']
     num_chunk = int(freq_data.size / 100)
     f_lst = np.split(freq_data, num_chunk)
@@ -249,14 +250,17 @@ def from_freq_to_quantile(q):
 
 def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]',
                  label_size=24, xscale='log', yscale='linear'):
+
+    y_min = float(config['Quantities']['range_y_min'])
+    y_max = float(config['Quantities']['range_y_max'])
+
     ax.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
     ax.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
     ax.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
     ax.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
     ax.plot(x_array, y_array, linewidth=2, label='{0}%'.format(quant * 100))
-
     ax.set_xlim([x_array.min(), 20])
-    ax.set_ylim([-200, -30])
+    ax.set_ylim([y_min, y_max])
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlabel(xlabel, fontsize=label_size)
@@ -330,7 +334,7 @@ if __name__ == '__main__':
         if not skip_freq_df:
             f_data = to_frequency()
         else:
-            f_data = np.load(npz_path + r'\Frequency.npz')['frequency']
+            f_data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')['frequency']
         f_data.sort()
         t2 = time.perf_counter()
 
