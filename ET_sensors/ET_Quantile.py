@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -254,12 +254,21 @@ def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'
     y_min = float(config['Quantities']['range_y_min'])
     y_max = float(config['Quantities']['range_y_max'])
 
+    if config['Quantities']['range_x_min'] != '':
+        x_min = float(config['Quantities']['range_x_min'])
+    else:
+        x_min = x_array.min()
+    if config['Quantities']['x_max'] != '':
+        x_max = float(config['Quantities']['x_max'])
+    else:
+        x_max = 20
+
     ax.plot(1 / get_nlnm()[0], get_nlnm()[1], 'k--')
     ax.plot(1 / get_nhnm()[0], get_nhnm()[1], 'k--')
     ax.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
     ax.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
     ax.plot(x_array, y_array, linewidth=2, label='{0}%'.format(quant * 100))
-    ax.set_xlim([x_array.min(), 20])
+    ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)

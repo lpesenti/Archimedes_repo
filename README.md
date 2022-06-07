@@ -90,7 +90,12 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 * Below is a description of the variables contained in the file:
     * [DEFAULT]
         * _verbose_ (Bool):  If True enable more verbosity
+        * _only_daily_ (Bool): If True the script simply create daily dataframe without doing anything else
         * _skip_daily_ (Bool): If True the script does not create the daily dataframe (use it only if the code has
+          already run before)
+        * _skip_freq_df_ (Bool): If True the script does not create the frequency dataframe (use it only if the code has
+          already run before)
+        * _skip_quant_eval_ (Bool): If True the script does not evaluate the quantile curves (use it only if the code has
           already run before)
         * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1 only the 'ACC' option is supported)
     * [Paths]
