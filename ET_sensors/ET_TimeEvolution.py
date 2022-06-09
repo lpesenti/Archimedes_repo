@@ -7,16 +7,15 @@ __status__ = "Development"
 
 import concurrent.futures
 import configparser
+import datetime
 import functools
 import glob
 import time
 
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
-import datetime
 
 import ET_common as Ec
 
@@ -40,6 +39,8 @@ daily_path = Ec.check_dir(df_path, 'daily_df')
 t_log = time.strftime('%Y%m%d_%H%M')
 f_len = 0
 
+Twindow = int(config['Quantities']['psd_window'])  # TODO: remove this line and make it automatically check on filename
+
 
 def eval_rms(filename, freq_len, psd_len, chunk_index):
     global i_min, i_max
@@ -54,14 +55,14 @@ def eval_rms(filename, freq_len, psd_len, chunk_index):
 
 
 def to_rms():
-    global daily_path, freq_df_path, npz_path, f_len
+    global daily_path, freq_df_path, npz_path, f_len, Twindow
     filename_list = glob.glob(daily_path + r"\*.brotli")
-    data = np.load(npz_path + r'\Frequency.npz')
+    data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')
     freq_data = data['frequency']
     f_len = len(freq_data)
     temporary_df = pd.read_parquet(filename_list[0])  # assuming all the df have the same length (i.e. number of psd)
     for_length = len(temporary_df.loc[freq_data.min()])  # number of psd in the df by looking at the freqs repetitions
-    psd_length = 24*3600/for_length
+    psd_length = 24 * 3600 / for_length
     rms_date_lst = []
     num_asd = np.arange(for_length)
     with concurrent.futures.ProcessPoolExecutor() as executor:
