@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Sara Anzuinelli", "Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.0.9"
+__version__ = "0.1.0"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -25,12 +25,8 @@ import ET_common as Ec
 config = configparser.ConfigParser()
 config.read('Time_Evolution.ini')
 
-df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
-only_daily = config.getboolean('DEFAULT', 'only_daily')
-skip_daily = config.getboolean('DEFAULT', 'skip_daily')
-skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
-skip_quant_eval = config.getboolean('DEFAULT', 'skip_quant_eval')
-quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
+# TODO: add check for file already existing
+df_path = config['Paths']['outDF_path']  # TODO: change outDF_path name in a more right one
 i_min = float(config['Quantities']['integral_min'])
 i_max = float(config['Quantities']['integral_max'])
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')

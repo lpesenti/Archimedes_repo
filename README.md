@@ -84,6 +84,13 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 * This is a completely ___self-contained___ script which should not be modified.
     * All the variable that must be modified are contained in the relative config file (see _Quantile_config.ini_)
 
+#### ET_RMS_TimeEvolution.py
+
+* This script is used to evaluate the integral under the asd evaluated by the _ET_Quantile.py_ and then plot the time
+  evolution of this quantity.
+* This is a completely ___self-contained___ script which should not be modified.
+    * All the variable that must be modified are contained in the relative config file (see _RMS_time_config.ini_)
+
 #### Quantile_config.ini
 
 * In this file are contained several variables needed for the _ET_Quantile.py_ file.
@@ -95,7 +102,8 @@ Welcome to the GitHub repository of the Archimedes Experiment!
           already run before)
         * _skip_freq_df_ (Bool): If True the script does not create the frequency dataframe (use it only if the code has
           already run before)
-        * _skip_quant_eval_ (Bool): If True the script does not evaluate the quantile curves (use it only if the code has
+        * _skip_quant_eval_ (Bool): If True the script does not evaluate the quantile curves (use it only if the code
+          has
           already run before)
         * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1 only the 'ACC' option is supported)
     * [Paths]
@@ -114,6 +122,17 @@ Welcome to the GitHub repository of the Archimedes Experiment!
           seconds (this quantity must be greater or equal to the _psd_window_ parameter)
         * _psd_overlap_ (float): The overlap used in the PSD evaluation (from 0 to 1)
         * _quantiles_ (list): The list of quantiles you wish to calculate
+
+#### RMS_time_config.ini
+
+* In this file are contained several variables needed for the _ET_RMS_TimeEvolution.py_ file.
+* Below is a description of the variables contained in the file:
+    * [Paths]
+        * _outDF_path_ (str): The path to the directory in which the script will store the DataFrame created
+    * [Quantities]
+        * _psd_window_ (int): Length of the PSD expressed in seconds
+        * _integral_min_ (float): The lower limit of the integral
+        * _integral_max_ (float): The upper limit of the integral
 
 #### config.ini
 
