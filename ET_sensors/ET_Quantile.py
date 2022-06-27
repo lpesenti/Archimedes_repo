@@ -166,6 +166,7 @@ def daily_df():
             tstart = time
             tstop = time + dT - 1 / fsxml
             st = read(file, starttime=tstart, endtime=tstop)
+            st = st.sort()
             t1 = time
 
             print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop) if verbose else ''
@@ -213,7 +214,6 @@ def to_frequency():
     freq_data = data['frequency']
     num_chunk = int(freq_data.size / 100)
     f_lst = np.split(freq_data, num_chunk)
-
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for index, freq in enumerate(f_lst):
             j1 = (index + 1) / len(f_lst)
