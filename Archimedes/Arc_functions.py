@@ -926,7 +926,7 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
 
 
 def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_start=None, file_stop=None,
-                  verbose=False):
+                  verbose=False, scitype='SCI'):
     """
     Search data present in a specific folder and read only the column associated with the quantity you are interested in
 
@@ -1018,7 +1018,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     for i in range(num_d):  # Loop over number of days
         day = '%02d' % (day + i)
         temp_data = glob.glob(
-            os.path.join(path_to_data, "SCI_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day)))
+            os.path.join(path_to_data, "{3}_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day, scitype)))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
     i = 1
@@ -1118,12 +1118,15 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
 
 def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
-            file_stop=None, ax2=None, pick_off=True, label=None):
+            file_stop=None, ax2=None, pick_off=True, label=None, scitype='SCI'):
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
-                                         file_stop=file_stop, verbose=verbose)
-
-    df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False, file_start=file_start,
-                                file_stop=file_stop, verbose=verbose)
+                                         file_stop=file_stop, verbose=verbose, scitype=scitype)
+    if pick_off:
+        df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False, file_start=file_start,
+                                    file_stop=file_stop, verbose=verbose, scitype=scitype)
+        df_po_mean = np.abs(df_po.values.flatten().mean())
+    else:
+        pass
 
     num = int(psd_len * freq)
 
@@ -1131,7 +1134,6 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     psd_s = psd_s[1:]
     psd_f = psd_f[1:]
 
-    df_po_mean = np.abs(df_po.values.flatten().mean())
     if pick_off:
         asd = np.sqrt(psd_s) * df_po_mean
     else:
@@ -1154,8 +1156,8 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     ax.grid(True, linestyle='--', which='both')
     ax.legend(loc='best', shadow=True, fontsize='xx-large')
     ax.set_xscale("linear")
-    ax.set_xlim([2, 20])
-    # ax.set_ylim([1.e-13, 1.e-8])
+    # ax.set_xlim([2, 20])  # TODO: add option in config
+    # ax.set_ylim([1.e-13, 1.e-8])  # TODO: add option in config
     ax.set_yscale("log")
     ax.set_title('{0}'.format(quantity.upper()), fontsize=22)
 
@@ -1166,8 +1168,8 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     ax1.grid(True, linestyle='--', which='both')
     ax1.legend(loc='best', shadow=True, fontsize='xx-large')
     ax1.set_xscale("log")
-    ax1.set_xlim([1e-2, 1])
-    # ax.set_ylim([1.e-13, 1.e-8])
+    # ax1.set_xlim([1e-2, 1])  # TODO: add option in config
+    # ax.set_ylim([1.e-13, 1.e-8])  # TODO: add option in config
     ax1.set_yscale("log")
     ax1.set_title('{0}'.format(quantity.upper()), fontsize=22)
 
