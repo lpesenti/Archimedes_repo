@@ -33,7 +33,7 @@ For further information see the README file in this repository
 
 The following functions have been built to work with the data obtained by the seismometer used at the Sos Enattos site
 and uploaded to the et-repo.
-The data are saved stored in daily file with the name-format: 
+The data are stored in daily file with the name-format: 
 
                 {NETWORK}.{SENSOR}.{LOCATION}.{CHANNEL}.D.{YEAR}.{FILE_NUMBER}      
                 
@@ -65,7 +65,7 @@ The logic of the code is:
 config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
-df_path = config['Paths']['outDF_path']  # TODO: add check for file already existing
+df_path = config['Paths']['sensor_path']  # TODO: add check for file already existing
 Twindow = int(config['Quantities']['psd_window'])
 only_daily = config.getboolean('DEFAULT', 'only_daily')
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')

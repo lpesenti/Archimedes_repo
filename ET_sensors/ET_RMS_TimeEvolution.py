@@ -26,13 +26,17 @@ config = configparser.ConfigParser()
 config.read('RMS_time_config.ini')
 
 # TODO: add check for file already existing
-df_path = config['Paths']['outDF_path']  # TODO: change outDF_path name in a more right one
+df_path = config['Paths']['sensor_path']  # TODO: change outDF_path name in a more right one
 i_min = float(config['Quantities']['integral_min'])
 i_max = float(config['Quantities']['integral_max'])
 out_error = config.getboolean('DEFAULT', 'save_error')
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
+log_path = Ec.check_dir(df_path, 'logs')
+data_path = Ec.check_dir(df_path, 'Data')
+save_rms_df = config.getboolean('Bool', 'save_rms_df')
+
 t_log = time.strftime('%Y%m%d_%H%M')
 f_len = 0
 
@@ -51,8 +55,7 @@ def eval_rms(filename, freq_len, psd_len, Twindow, chunk_index):
         print(temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max])
         with open(df_path + fr'\RMS-Error_{t_log}.txt', 'a') as text_file:
             print(f'{filename}|{date}|{Twindow}', file=text_file)
-    # date = date.timestamp()
-    return rms, date
+    return date, rms
 
 
 def to_rms():
@@ -77,6 +80,14 @@ def to_rms():
     return rms_date_lst
 
 
+def rms_to_df(rms_data):
+    sensor_name = glob.glob(data_path + r"\*")[0].split('.')[1] + glob.glob(data_path + r"\*")[0].split('.')[2]
+    rms_df = pd.DataFrame()  # TODO: find a better way to retrieve sensor name
+    rms_df['time'] = [x[0] for x in rms_data]
+    rms_df[f'{sensor_name}'] = [x[1] for x in rms_data]
+    rms_df.to_parquet(df_path + f'{sensor_name}_rms_df', compression='brotli', compression_level=9)
+
+
 def plot_from_df(x_array, y_array, ax, xlabel='', ylabel=r'RMS', label_size=24, xscale='linear', yscale='linear'):
     ax.plot(x_array, y_array, linestyle='--', marker='o', markersize=10, linewidth=2)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%Y %H:%M:%S"))
@@ -96,7 +107,7 @@ def plot_from_df(x_array, y_array, ax, xlabel='', ylabel=r'RMS', label_size=24, 
 def print_on_screen(symbol1, message, quantity, symbol2=None):
     global df_path, t_log
 
-    with open(df_path + fr'\{t_log}.txt', 'a') as text_file:
+    with open(log_path + fr'\{t_log}.txt', 'a') as text_file:
         if symbol2 is not None:
             if symbol1 == '+':
                 print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
@@ -139,9 +150,8 @@ if __name__ == '__main__':
     ax = fig.add_subplot()
 
     data = to_rms()
-    plot_from_df([x[1] for x in data], [x[0] for x in data], ax=ax)
+    rms_to_df(data) if save_rms_df else ''
+    plot_from_df([x[0] for x in data], [x[1] for x in data], ax=ax)
     t1 = time.perf_counter()
     print_on_screen(symbol1='+', symbol2='-', message='RMS evaluation', quantity=t1 - t0)
-
-    # print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t1 - t0)
     plt.show()

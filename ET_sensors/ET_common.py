@@ -1,5 +1,7 @@
 import os
+
 import numpy as np
+import pandas as pd
 
 
 def NLNM(unit):
@@ -50,3 +52,12 @@ def check_dir(path1, name_dir):
     if not os.path.exists(new_path):
         os.mkdir(new_path)
     return new_path
+
+
+# work in progress ...
+def check_df(path1, df_name):
+    new_path = path1 + df_name + '.parquet.brotli'
+    if not os.path.exists(new_path):
+        df = pd.DataFrame()
+        df.to_parquet(new_path, compression='brotli', compression_level=9)
+    return pd.read_parquet(new_path)
