@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.8"
+__version__ = "0.2.0"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -96,11 +96,10 @@ npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
 log_path = Ec.check_dir(df_path, 'logs')
 
-
 t_log = time.strftime('%Y%m%d_%H%M')
 
 
-def daily_df():
+def OLD_daily_df():
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
 
     filename_list = glob.glob(Data_path + seed_id + "*")
@@ -209,6 +208,119 @@ def daily_df():
         print('\t*** Data correctly saved ***')
 
 
+def make_daily():
+    seed_id = network + '.' + sensor + '.' + location + '.' + channel
+
+    filename_list = glob.glob(Data_path + seed_id + "*")
+    filename_list.sort()
+
+    st1 = read(filename_list[0])
+    st1 = st1.sort()
+    startdate = st1[-1:][0].times('timestamp')[0]
+    startdate = UTCDateTime(startdate)
+    st2 = read(filename_list[len(filename_list) - 1])
+    st2 = st2.sort()
+    stopdate = st2[0].times('timestamp')[-1:][0]
+    stopdate = UTCDateTime(stopdate)
+
+    # TODO: thread or pool? Read: https://superfastpython.com/threadpoolexecutorv-vs-processpoolexecutor/
+    with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:  # os.cpu_count()//2
+        for f_index, file in enumerate(filename_list):
+            j1 = (f_index + 1) / len(filename_list)
+            print("\r[%-75s] %g%%" % ('=' * int(75 * j1), round(100 * j1, 3)), end='\n')
+            executor.map(functools.partial(daily_df, startdate, stopdate), filename_list)
+
+
+def daily_df(startdate, stopdate, file):
+    dT = TLong + Twindow * Overlap
+    M = int((dT - Twindow) / (Twindow * (1 - Overlap)) + 1)
+    K = int((stopdate - startdate) / (Twindow * (1 - Overlap)) + 1)
+    v = np.empty(K)
+    fsxml = 100
+    Num = int(Twindow * fsxml)
+
+    _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
+    f = f[1:]
+    freq_path = npz_path + fr'\{Twindow}_Frequency.npz'
+    np.savez(freq_path, frequency=f) if not os.path.exists(freq_path) else ''
+    w = 2.0 * np.pi * f
+
+    temp_array = np.array([])
+
+    if verbose:
+        print('+', '-' * 84, '+', sep='')
+        print('| The analysis start from', startdate, 'to', stopdate, '|')
+        print('| K:'.ljust(30, '.'), '{0} |'.format(K).rjust(56, '.'), sep='')
+        print('| M:'.ljust(30, '.'), '{0} |'.format(M).rjust(56, '.'), sep='')
+        print('| Minimum Frequency:'.ljust(30, '.'), '{0} |'.format(f.min()).rjust(56, '.'), sep='')
+        print('| Maximum Frequency:'.ljust(30, '.'), '{0} |'.format(f.max()).rjust(56, '.'), sep='')
+        print('| Frequency Length'.ljust(30, '.'), '{0} |'.format(len(f)).rjust(56, '.'), sep='')
+        print('| PSD time window'.ljust(30, '.'), '{0} |'.format(Twindow).rjust(56, '.'), sep='')
+        print('| Overlap'.ljust(30, '.'), '{0} |'.format(Overlap).rjust(56, '.'), sep='')
+        print('| Slice length'.ljust(30, '.'), '{0} |'.format(TLong).rjust(56, '.'), sep='')
+        print('+', '-' * 84, '+', sep='')
+
+    k = 0
+
+    st = read(file)
+    st = st.sort()
+
+    Tstop = st[-1:][0].times('timestamp')[-1:][0]
+    Tstop = UTCDateTime(Tstop)
+    time = st[0].times('timestamp')[0]
+    time = UTCDateTime(time)
+
+    fxml, respamp, fsxml, gain = Ef.read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                             verbose=verbose)
+    if unit.upper() == 'VEL':
+        w1 = 1 / respamp
+    elif unit.upper() == 'ACC':
+        w1 = w ** 2 / respamp
+    else:
+        import warnings
+        msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+        warnings.warn(msg)
+        w1 = 1 / respamp
+
+    while time < Tstop:
+        tstart = time
+        tstop = time + dT - 1 / fsxml
+        st = read(file, starttime=tstart, endtime=tstop)
+        st = st.sort()
+        t1 = time
+
+        # print('\t({0}{1}) Evaluating from\t'.format(sensor, location), time, '\tto\t', tstop) if verbose else ''
+
+        for n in range(0, M):
+            v[k] = np.nan
+            tr = st.slice(t1, t1 + Twindow - 1 / fsxml)
+            if tr.get_gaps() == [] and len(tr) > 0:
+                tr1 = tr[0]
+                if tr1.stats.npts == Num:
+                    s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
+                    s = s[1:] * w1
+                    psd_values_db = 10 * np.log10(s)
+                    v[k] = 0
+
+            if np.isnan(v[k]):
+                temp_array = np.append(temp_array, np.repeat(np.nan, f.size))
+            else:
+                temp_array = np.append(temp_array, psd_values_db)
+            t1 = t1 + Twindow * Overlap
+            k += 1
+        time = time + TLong
+    # print('\t*** Saving data to file ***')
+    filename = file.split('.')[-2] + '-' + file.split('.')[-1]
+
+    temp_df = pd.DataFrame(temp_array, columns=['psd'])
+    temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
+
+    temp_df.to_parquet(daily_path + fr'\{Twindow}_{channel}_{filename}.parquet.brotli', compression='brotli',
+                       compression_level=9)
+
+    # print('\t*** Data correctly saved ***')
+
+
 def read_daily_df(freq_indeces, filename):
     # print(filename)
     temp_df = pd.read_parquet(filename).dropna()
@@ -256,7 +368,6 @@ def from_freq_to_quantile(q):
 
 def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'ASD $\frac{m^2/s^4}{Hz}$ [dB]',
                  label_size=24, xscale='log', yscale='linear'):
-
     y_min = float(config['Quantities']['range_y_min'])
     y_max = float(config['Quantities']['range_y_max'])
 
@@ -329,7 +440,7 @@ def print_on_screen(symbol1, message, quantity, symbol2=None):
 if __name__ == '__main__':
     t0 = time.perf_counter()
     if only_daily:
-        daily_df()
+        make_daily()
         t2 = time.perf_counter()
         print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
     else:
@@ -338,7 +449,7 @@ if __name__ == '__main__':
 
         t1 = time.perf_counter()
 
-        daily_df() if not skip_daily else ''
+        make_daily() if not skip_daily else ''
 
         t2 = time.perf_counter()
 
