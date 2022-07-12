@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -65,35 +65,42 @@ The logic of the code is:
 config = configparser.ConfigParser()
 config.read('Quantile_config.ini')
 
+# Paths
 df_path = config['Paths']['sensor_path']  # TODO: add check for file already existing
+filexml = config['Paths']['xml_path']
+Data_path = config['Paths']['data_path']
+
+# Quantities
 Twindow = int(config['Quantities']['psd_window'])
+TLong = int(config['Quantities']['TLong'])
+Overlap = float(config['Quantities']['psd_overlap'])  # TODO: check if it is the right way to perform overlap
+quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
+
+# Instrument
+network = config['Instrument']['network']
+sensor = config['Instrument']['sensor']
+location = config['Instrument']['location']
+channel = config['Instrument']['channel']
+
+# Booleans
+verbose = config.getboolean('DEFAULT', 'verbose')
+unit = config['DEFAULT']['unit']  # TODO: enable the VEL option
 only_daily = config.getboolean('DEFAULT', 'only_daily')
 skip_daily = config.getboolean('DEFAULT', 'skip_daily')
 skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
 skip_quant_eval = config.getboolean('DEFAULT', 'skip_quant_eval')
-quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
+
+# Directory check and creation
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
 log_path = Ec.check_dir(df_path, 'logs')
+
+
 t_log = time.strftime('%Y%m%d_%H%M')
 
 
 def daily_df():
-    global daily_path, config, Twindow
-
-    filexml = config['Paths']['xml_path']
-    Data_path = config['Paths']['data_path']
-    network = config['Instrument']['network']
-    sensor = config['Instrument']['sensor']
-    location = config['Instrument']['location']
-    channel = config['Instrument']['channel']
-    # Twindow = int(config['Quantities']['psd_window'])
-    TLong = int(config['Quantities']['TLong'])
-    Overlap = float(config['Quantities']['psd_overlap'])  # TODO: check if it is the right way to perform overlap
-    verbose = config.getboolean('DEFAULT', 'verbose')
-    unit = config['DEFAULT']['unit']  # TODO: enable the VEL option
-
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
 
     filename_list = glob.glob(Data_path + seed_id + "*")
@@ -209,7 +216,6 @@ def read_daily_df(freq_indeces, filename):
 
 
 def to_frequency():
-    global daily_path, freq_df_path, npz_path, Twindow
     filename_list = glob.glob(daily_path + r"\*.brotli")
     data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')
     freq_data = data['frequency']
@@ -224,7 +230,7 @@ def to_frequency():
             df = pd.DataFrame()
             for res in results:
                 df = pd.concat([df, res])
-            df.to_parquet(freq_df_path + fr'\{str(index).zfill(len(str(num_chunk)))}.parquet.brotli',
+            df.to_parquet(freq_df_path + fr'\{str(index).zfill(len(str(num_chunk)))}_{channel}.parquet.brotli',
                           compression='brotli', compression_level=9)
     return freq_data
 
@@ -237,7 +243,6 @@ def read_freq_df(q, filename):
 
 
 def from_freq_to_quantile(q):
-    global freq_df_path, npz_path
     filename_list = glob.glob(freq_df_path + r"\*.brotli")
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(functools.partial(read_freq_df, q), filename_list)
@@ -245,7 +250,7 @@ def from_freq_to_quantile(q):
         for res in results:
             quantile_array = np.append(quantile_array, res)
 
-    np.savez(npz_path + fr"\{str(q).replace('.', '')}.npz", q_array=quantile_array)
+    np.savez(npz_path + fr"\{str(q).replace('.', '')}_{channel}.npz", q_array=quantile_array)
     return quantile_array
 
 
@@ -269,6 +274,7 @@ def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'
     ax.annotate('NHNM', xy=(1.25, -112), ha='center', fontsize=20)
     ax.annotate('NLNM', xy=(1.25, -176), ha='center', fontsize=20)
     ax.plot(x_array, y_array, linewidth=2, label='{0}%'.format(quant * 100))
+    ax.set_title(f'{channel}', fontsize=22)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
     ax.set_xscale(xscale)
@@ -283,8 +289,6 @@ def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'
 
 
 def print_on_screen(symbol1, message, quantity, symbol2=None):
-    global df_path, t_log
-
     with open(log_path + fr'\{t_log}.txt', 'a') as text_file:
         if symbol2 is not None:
             if symbol1 == '+':

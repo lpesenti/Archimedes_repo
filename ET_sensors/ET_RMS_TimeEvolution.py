@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Sara Anzuinelli", "Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -26,16 +26,26 @@ config = configparser.ConfigParser()
 config.read('RMS_time_config.ini')
 
 # TODO: add check for file already existing
+# Paths
 df_path = config['Paths']['sensor_path']
+
+# Booleans
+out_error = config.getboolean('Bool', 'save_error')
+save_rms_df = config.getboolean('Bool', 'save_rms_df')
+
+# Instrument
+channel = config['Instrument']['channel']
+
+# Quantities
 i_min = float(config['Quantities']['integral_min'])
 i_max = float(config['Quantities']['integral_max'])
-out_error = config.getboolean('DEFAULT', 'save_error')
+
+# Directory check and creation
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
 log_path = Ec.check_dir(df_path, 'logs')
 data_path = Ec.check_dir(df_path, 'Data')
-save_rms_df = config.getboolean('Bool', 'save_rms_df')
 
 t_log = time.strftime('%Y%m%d_%H%M')
 f_len = 0
@@ -49,14 +59,14 @@ def eval_rms(filename, freq_len, psd_len, Twindow, chunk_index):
     rms = temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max].sum()[0] * freq_len
     date = datetime.datetime.strptime(year + "-" + day_num, "%Y-%j") + datetime.timedelta(seconds=psd_len * chunk_index)
     if out_error and rms == 0:
-        print(temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max])
+        # print(temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max])
         with open(df_path + fr'\RMS-Error_{t_log}.txt', 'a') as text_file:
-            print(f'{filename}|{date}|{Twindow}', file=text_file)
+            print(f'{filename}|{date}|{Twindow}|{channel}', file=text_file)
     return date, rms
 
 
 def to_rms():
-    filename_list = glob.glob(daily_path + r"\*.brotli")
+    filename_list = glob.glob(daily_path + fr"\*{channel}*.brotli")
     Twindow = filename_list[0].split('_')[2][-4:]  # TODO: find a better way
     data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')
     freq_data = data['frequency']
@@ -77,11 +87,11 @@ def to_rms():
 
 
 def rms_to_df(rms_data):
-    sensor_name = glob.glob(data_path + r"\*")[0].split('.')[1] + glob.glob(data_path + r"\*")[0].split('.')[2]
+    sensor_name = glob.glob(data_path + fr"\*")[0].split('.')[1] + glob.glob(data_path + r"\*")[0].split('.')[2]
     rms_df = pd.DataFrame()  # TODO: find a better way to retrieve sensor name
     rms_df['time'] = [x[0] for x in rms_data]
     rms_df[f'{sensor_name}'] = [x[1] for x in rms_data]
-    rms_df.to_parquet(df_path + f'{sensor_name}_rms_df', compression='brotli', compression_level=9)
+    rms_df.to_parquet(df_path + f'{sensor_name}_{channel}_rms_df', compression='brotli', compression_level=9)
 
 
 def plot_from_df(x_array, y_array, ax, xlabel='', ylabel=r'RMS', label_size=24, xscale='linear', yscale='linear'):
@@ -93,6 +103,7 @@ def plot_from_df(x_array, y_array, ax, xlabel='', ylabel=r'RMS', label_size=24, 
     ax.set_yscale(yscale)
     ax.set_xlabel(xlabel, fontsize=label_size)
     ax.set_ylabel(ylabel, fontsize=label_size)
+    ax.set_title(f'{channel}', fontsize=22)
     # ax.legend(loc='best', shadow=True, fontsize=24)
     ax.grid(True, linestyle='--', axis='both', which='both')
     fig.tight_layout()
