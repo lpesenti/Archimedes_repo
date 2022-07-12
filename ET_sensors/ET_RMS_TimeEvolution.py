@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Sara Anzuinelli", "Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -26,7 +26,7 @@ config = configparser.ConfigParser()
 config.read('RMS_time_config.ini')
 
 # TODO: add check for file already existing
-df_path = config['Paths']['sensor_path']  # TODO: change outDF_path name in a more right one
+df_path = config['Paths']['sensor_path']
 i_min = float(config['Quantities']['integral_min'])
 i_max = float(config['Quantities']['integral_max'])
 out_error = config.getboolean('DEFAULT', 'save_error')
@@ -40,11 +40,8 @@ save_rms_df = config.getboolean('Bool', 'save_rms_df')
 t_log = time.strftime('%Y%m%d_%H%M')
 f_len = 0
 
-# Twindow = int(config['Quantities']['psd_window'])  # TODO: remove this line and make it automatically check on filename
-
 
 def eval_rms(filename, freq_len, psd_len, Twindow, chunk_index):
-    # global i_min, i_max
     temp_df = pd.read_parquet(filename)
     day_num = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[1].split('-')[1]
     year = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[1].split('-')[0]
@@ -59,7 +56,6 @@ def eval_rms(filename, freq_len, psd_len, Twindow, chunk_index):
 
 
 def to_rms():
-    # global daily_path, freq_df_path, npz_path, f_len  # , Twindow
     filename_list = glob.glob(daily_path + r"\*.brotli")
     Twindow = filename_list[0].split('_')[2][-4:]  # TODO: find a better way
     data = np.load(npz_path + fr'\{Twindow}_Frequency.npz')
@@ -105,8 +101,6 @@ def plot_from_df(x_array, y_array, ax, xlabel='', ylabel=r'RMS', label_size=24, 
 
 
 def print_on_screen(symbol1, message, quantity, symbol2=None):
-    global df_path, t_log
-
     with open(log_path + fr'\{t_log}.txt', 'a') as text_file:
         if symbol2 is not None:
             if symbol1 == '+':

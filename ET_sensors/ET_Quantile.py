@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -75,6 +75,7 @@ quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
 npz_path = Ec.check_dir(df_path, 'npz_files')
 daily_path = Ec.check_dir(df_path, 'daily_df')
+log_path = Ec.check_dir(df_path, 'logs')
 t_log = time.strftime('%Y%m%d_%H%M')
 
 
@@ -195,7 +196,7 @@ def daily_df():
         temp_df = pd.DataFrame(temp_array, columns=['psd'])
         temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
 
-        temp_df.to_parquet(daily_path + fr'\{Twindow}_{filename}.parquet.brotli', compression='brotli',
+        temp_df.to_parquet(daily_path + fr'\{Twindow}_{channel}_{filename}.parquet.brotli', compression='brotli',
                            compression_level=9)
 
         print('\t*** Data correctly saved ***')
@@ -284,7 +285,7 @@ def plot_from_df(x_array, y_array, quant, ax, xlabel='Frequency [Hz]', ylabel=r'
 def print_on_screen(symbol1, message, quantity, symbol2=None):
     global df_path, t_log
 
-    with open(df_path + fr'\{t_log}.txt', 'a') as text_file:
+    with open(log_path + fr'\{t_log}.txt', 'a') as text_file:
         if symbol2 is not None:
             if symbol1 == '+':
                 print(f'{symbol1}', f'{symbol2}' * 98, f'{symbol1}', sep='', file=text_file)
