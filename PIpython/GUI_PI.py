@@ -3,6 +3,7 @@
 
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter import ttk
 from tkinter import *
 import subprocess
 import webbrowser
@@ -43,11 +44,6 @@ def import_VEL():
     Vel.set(v)
 
 
-# def import_StepSize():
-#     global StepSize
-#     ss = bool(entry.get())
-#     StepSize.set(ss)
-
 def import_NAxis():
     global NAxis
     naxis = int(entry.get())
@@ -85,7 +81,19 @@ root = tk.Tk()
 root.title("Physical Instrument Python GUI for Archimedes")
 
 ########################################################################################
-frameStart = tk.LabelFrame(root, text='Choose Motor', relief=tk.GROOVE)
+
+tabControl = ttk.Notebook(root)
+tab1 = ttk.Frame(tabControl)
+tab2 = ttk.Frame(tabControl)
+tab3 = ttk.Frame(tabControl)
+tabControl.add(tab1, text='Overview')
+tabControl.pack(expand=1, fill="both")
+tabControl.add(tab2, text='C-663')
+tabControl.add(tab3, text='E-872')
+
+########################################################################################
+
+frameStart = tk.LabelFrame(tab1, text='Choose Motor', relief=tk.GROOVE)
 frameStart.grid(row=0, column=0, padx=10, pady=2)
 
 M1 = IntVar(value=True)
@@ -98,7 +106,7 @@ Vel = tk.StringVar(value=0.25)
 tk.Entry(frameStart, textvariable=Vel).grid(row=2, column=1)
 
 ########################################################################################
-frame1 = tk.LabelFrame(root, text='Read and Write', relief=tk.GROOVE)
+frame1 = tk.LabelFrame(tab2, text='Read and Write', relief=tk.GROOVE)
 frame1.grid(row=0, column=1, padx=10, pady=2)
 
 tk.Label(frame1, text='Axis').grid(row=0, column=0)
@@ -130,9 +138,11 @@ Axis1CLOSE = tk.StringVar()
 tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=3, column=3)
 
 ########################################################################################
+
+
 ########################################################################################
 # Close
-frameEnd = tk.LabelFrame(root, text='Quit program', relief=tk.GROOVE)
+frameEnd = tk.LabelFrame(tab1, text='Quit program', relief=tk.GROOVE)
 frameEnd.grid(row=3, column=0, padx=10, pady=2)
 tk.Button(frameEnd, text='Close', command=root.destroy).grid(row=0, column=1)
 
