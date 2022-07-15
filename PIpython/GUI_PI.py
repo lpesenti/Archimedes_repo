@@ -50,6 +50,10 @@ def import_NAxis():
     NAxis.set(naxis)
 
 
+def StopAbort():
+    PI_functions.fz_StopAbort(bool(M1.get()), bool(M2.get()), int(Axis.get()))
+
+
 def ReadAxis():
     global axis0
     axis0 = PI_functions.fz_ReadAxis(bool(M1.get()), bool(M2.get()), int(Axis.get()))
@@ -101,41 +105,43 @@ Checkbutton(frameStart, text="C-663 (1 axis)", variable=M1).grid(row=0, column=0
 M2 = IntVar(value=False)
 Checkbutton(frameStart, text="E-872 (2 axis)", variable=M2).grid(row=1, column=0)
 
-tk.Label(frameStart, text='Velocity [mm/s]').grid(row=2, column=0)
-Vel = tk.StringVar(value=0.25)
-tk.Entry(frameStart, textvariable=Vel).grid(row=2, column=1)
-
 ########################################################################################
 frame1 = tk.LabelFrame(tab2, text='Read and Write', relief=tk.GROOVE)
 frame1.grid(row=0, column=1, padx=10, pady=2)
 
-tk.Label(frame1, text='Axis').grid(row=0, column=0)
+tk.Label(frame1, text='Velocity [mm/s]').grid(row=0, column=0)
+Vel = tk.StringVar(value=0.25)
+tk.Entry(frame1, textvariable=Vel).grid(row=0, column=1)
+
+tk.Button(frame1, text='Stop Move', command=StopAbort).grid(row=0, column=3)
+
+tk.Label(frame1, text='Axis').grid(row=1, column=0)
 Axis = tk.StringVar(value=1)
-tk.Entry(frame1, textvariable=Axis).grid(row=0, column=1)
-tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=0, column=2)
+tk.Entry(frame1, textvariable=Axis).grid(row=1, column=1)
+tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=1, column=2)
 Axis0 = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis0).grid(row=0, column=3)
+tk.Entry(frame1, textvariable=Axis0).grid(row=1, column=3)
 
-tk.Label(frame1, text='Set value [0-10 mm]').grid(row=1, column=0)
+tk.Label(frame1, text='Set value [0-10 mm]').grid(row=2, column=0)
 Targ = tk.StringVar(value=5.)
-tk.Entry(frame1, textvariable=Targ).grid(row=1, column=1)
-tk.Button(frame1, text='Move to target value', command=MoveAxis).grid(row=1, column=2)
+tk.Entry(frame1, textvariable=Targ).grid(row=2, column=1)
+tk.Button(frame1, text='Move to target value', command=MoveAxis).grid(row=2, column=2)
 Axis1 = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1).grid(row=1, column=3)
+tk.Entry(frame1, textvariable=Axis1).grid(row=2, column=3)
 
-tk.Label(frame1, text='Set OPEN value [7.5 mm]').grid(row=2, column=0)
+tk.Label(frame1, text='Set OPEN value [7.5 mm]').grid(row=3, column=0)
 TargOPEN = tk.StringVar(value=7.5)
-tk.Entry(frame1, textvariable=TargOPEN).grid(row=2, column=1)
-tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisOPEN).grid(row=2, column=2)
+tk.Entry(frame1, textvariable=TargOPEN).grid(row=3, column=1)
+tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisOPEN).grid(row=3, column=2)
 Axis1OPEN = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1OPEN).grid(row=2, column=3)
+tk.Entry(frame1, textvariable=Axis1OPEN).grid(row=3, column=3)
 
-tk.Label(frame1, text='Set CLOSE value [8.3 mm]').grid(row=3, column=0)
+tk.Label(frame1, text='Set CLOSE value [8.3 mm]').grid(row=4, column=0)
 TargCLOSE = tk.StringVar(value=8.3)
-tk.Entry(frame1, textvariable=TargCLOSE).grid(row=3, column=1)
-tk.Button(frame1, text='Move to CLOSE target value', command=MoveAxisCLOSE).grid(row=3, column=2)
+tk.Entry(frame1, textvariable=TargCLOSE).grid(row=4, column=1)
+tk.Button(frame1, text='Move to CLOSE target value', command=MoveAxisCLOSE).grid(row=4, column=2)
 Axis1CLOSE = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=3, column=3)
+tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=4, column=3)
 
 ########################################################################################
 
