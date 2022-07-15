@@ -91,19 +91,27 @@ text.pack(expand= 1, fill= BOTH)
 frame1 = tk.LabelFrame(tab2, text='Read and Write', relief=tk.GROOVE)
 frame1.grid(row=0, column=1, padx=10, pady=2)
 
-radiobutton_variable = IntVar()
-Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = 0).grid(row = 0, column = 0)
-Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = 1).grid(row = 1, column = 0)
-CONTROLLERNAME = 'C-663.12'
-STAGES = 'M-228.10S'  # connect stages to axes
-REFMODE = 'FNL'  # reference the connected stages
-SN = '021550465'
-if radiobutton_variable == 0:
+xvar = StringVar()
+def selection():
+    xvar = radiobutton_variable.get()
+    print("You selected the option " + xvar)
+
+radiobutton_variable = StringVar()
+r1 = Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = '021550465', command=selection).grid(row = 0, column = 0)
+r2 = Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = '021550449', command=selection).grid(row = 1, column = 0)
+
+CONTROLLERNAME = tk.StringVar(value='C-663.12')
+STAGES = tk.StringVar(value='M-228.10S')  # connect stages to axes
+REFMODE = tk.StringVar(value='FNL')  # reference the connected stages
+SN = tk.StringVar(value='021550465')
+if xvar == '021550465':
+    print(radiobutton_variable.get())
     CONTROLLERNAME = 'C-663.12'
     STAGES = 'M-228.10S'  # connect stages to axes
     REFMODE = 'FNL'  # reference the connected stages
     SN = '021550465'  # 021550449 @ LULA ; 021550465 SN stage @ UNISS
-else:
+elif xvar == '021550449':
+    print(radiobutton_variable.get())
     CONTROLLERNAME = 'C-663.12'
     STAGES = 'M-228.10S'  # connect stages to axes
     REFMODE = 'FNL'  # reference the connected stages
