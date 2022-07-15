@@ -97,8 +97,8 @@ def selection():
     print("You selected the option " + xvar)
 
 radiobutton_variable = StringVar()
-r1 = Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = '021550465', command=selection).grid(row = 0, column = 0)
-r2 = Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = '021550449', command=selection).grid(row = 1, column = 0)
+Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = '021550465', command=selection).grid(row = 0, column = 0)
+Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = '021550449', command=selection).grid(row = 1, column = 0)
 
 CONTROLLERNAME = tk.StringVar(value='C-663.12')
 STAGES = tk.StringVar(value='M-228.10S')  # connect stages to axes
@@ -116,6 +116,8 @@ elif xvar == '021550449':
     STAGES = 'M-228.10S'  # connect stages to axes
     REFMODE = 'FNL'  # reference the connected stages
     SN = '021550449'  # 021550449 @ LULA ; 021550465 SN stage @ UNISS
+else:
+    print('none')
 
 tk.Label(frame1, text='Velocity [mm/s]').grid(row=2, column=0)
 Vel = tk.StringVar(value=0.25)
