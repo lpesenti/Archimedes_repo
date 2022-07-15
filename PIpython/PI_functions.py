@@ -4,11 +4,10 @@ import csv, time, datetime
 from pipython import GCSDevice, pitools
 from logging.handlers import TimedRotatingFileHandler
 import logging
-"""
-from pipython.pidevice.gcscommands import GCSCommands
-from pipython.pidevice.gcsmessages import GCSMessages
-from pipython.pidevice.interfaces.piusb import PIUSB
-"""
+
+# from pipython.pidevice.gcscommands import GCSCommands
+# from pipython.pidevice.gcsmessages import GCSMessages
+# from pipython.pidevice.interfaces.piusb import PIUSB
 
 # --- LOGGERS SETUP --- #
 
@@ -32,9 +31,9 @@ CHD_fh.setLevel(logging.DEBUG)
 CHD_fh.setFormatter(CHD_formatter)
 CHDLogger.addHandler(CHD_fh)
 
-
+"""
 def fz_Motor(M1, M2):
-    """
+    
     Read axis
 
     Parameters
@@ -50,7 +49,7 @@ def fz_Motor(M1, M2):
     Returns
     -------
     which motor: CONTROLLERNAME,STAGES,REFMODE,SN
-    """
+    
     # REFMODE:
     # FNL: Start a reference move to the negative limit switch.
     #      Moves all 'axes' synchronously to the negative physical limits
@@ -81,9 +80,9 @@ def fz_Motor(M1, M2):
         print('Choose only one motor')
 
     return CONTROLLERNAME, STAGES, REFMODE, SN
+"""
 
-
-def fz_ReadAxis(M1, M2, Axis):
+def fz_ReadAxisC663(CONTROLLERNAME, STAGES, REFMODE, SN, Axis):
     """
     Read axis
 
@@ -104,7 +103,7 @@ def fz_ReadAxis(M1, M2, Axis):
     axis position
     """
 
-    CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
+    #CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
     print(CONTROLLERNAME, STAGES, REFMODE, SN)
     """
     gateway = PIUSB()
@@ -132,7 +131,7 @@ def fz_ReadAxis(M1, M2, Axis):
     return positions[Axis]
 
 
-def fz_MoveAxis(M1, M2, Axis, target, Vel):
+def fz_MoveAxisC663(CONTROLLERNAME, STAGES, REFMODE, SN, Axis, target, Vel):
     """
     Move axis
 
@@ -159,7 +158,7 @@ def fz_MoveAxis(M1, M2, Axis, target, Vel):
     new axis position
     """
 
-    CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
+    #CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
     log_dict = {'CN': CONTROLLERNAME, 'STAGES': STAGES, 'SN': SN}
     print(CONTROLLERNAME, STAGES, REFMODE, SN)
     with GCSDevice(CONTROLLERNAME) as pidevice:

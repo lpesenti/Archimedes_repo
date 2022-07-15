@@ -25,19 +25,6 @@ def doNothing():
     print("nothing")
 
 
-def import_M1():
-    global M1
-    m1 = bool(entry.get())
-    print(m1)
-    M1.set(m1)
-
-
-def import_M2():
-    global M2
-    m2 = bool(entry.get())
-    M2.set(m2)
-
-
 def import_VEL():
     global Vel
     v = bool(entry.get())
@@ -50,34 +37,27 @@ def import_NAxis():
     NAxis.set(naxis)
 
 
-def StopAbort():
-    PI_functions.fz_StopAbort(bool(M1.get()), bool(M2.get()), int(Axis.get()))
-
-
-def ReadAxis():
+def ReadAxisC663():
     global axis0
-    axis0 = PI_functions.fz_ReadAxis(bool(M1.get()), bool(M2.get()), int(Axis.get()))
+    axis0 = PI_functions.fz_ReadAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()))
     Axis0.set(axis0)
 
 
-def MoveAxis():
+def MoveAxisC663():
     global axis1
-    axis1 = PI_functions.fz_MoveAxis(bool(M1.get()), bool(M2.get()), int(Axis.get()), float(Targ.get()),
-                                     float(Vel.get()))
+    axis1 = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(Targ.get()), float(Vel.get()))
     Axis1.set(axis1)
 
 
-def MoveAxisOPEN():
+def MoveAxisOPENC663():
     global axis1OPEN
-    axis1OPEN = PI_functions.fz_MoveAxis(bool(M1.get()), bool(M2.get()), int(Axis.get()), float(TargOPEN.get()),
-                                         float(Vel.get()))
+    axis1OPEN = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(TargOPEN.get()), float(Vel.get()))
     Axis1OPEN.set(axis1OPEN)
 
 
-def MoveAxisCLOSE():
+def MoveAxisCLOSEC663():
     global axis1CLOSE
-    axis1CLOSE = PI_functions.fz_MoveAxis(bool(M1.get()), bool(M2.get()), int(Axis.get()), float(TargCLOSE.get()),
-                                          float(Vel.get()))
+    axis1CLOSE = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(TargCLOSE.get()), float(Vel.get()))
     Axis1CLOSE.set(axis1CLOSE)
 
 
@@ -97,51 +77,71 @@ tabControl.add(tab3, text='E-872')
 
 ########################################################################################
 
-frameStart = tk.LabelFrame(tab1, text='Choose Motor', relief=tk.GROOVE)
+frameStart = tk.LabelFrame(tab1, text='PI motor GUI', relief=tk.GROOVE)
 frameStart.grid(row=0, column=0, padx=10, pady=2)
+text= Text(frameStart, width= 100, height= 10, background="gray71",foreground="#fff",font= ('Sans Serif', 13, 'italic bold'))
+#Insert the text at the begining
+text.insert(INSERT, "This GUI was deployed to connect the PI motors for Archimedes experiment\n\n"
+                    "test\n"
+                    "\n")
 
-M1 = IntVar(value=True)
-Checkbutton(frameStart, text="C-663 (1 axis)", variable=M1).grid(row=0, column=0)
-M2 = IntVar(value=False)
-Checkbutton(frameStart, text="E-872 (2 axis)", variable=M2).grid(row=1, column=0)
+text.pack(expand= 1, fill= BOTH)
 
 ########################################################################################
 frame1 = tk.LabelFrame(tab2, text='Read and Write', relief=tk.GROOVE)
 frame1.grid(row=0, column=1, padx=10, pady=2)
 
-tk.Label(frame1, text='Velocity [mm/s]').grid(row=0, column=0)
+radiobutton_variable = IntVar()
+Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = 0).grid(row = 0, column = 0)
+Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = 1).grid(row = 1, column = 0)
+CONTROLLERNAME = 'C-663.12'
+STAGES = 'M-228.10S'  # connect stages to axes
+REFMODE = 'FNL'  # reference the connected stages
+SN = '021550465'
+if radiobutton_variable == 0:
+    CONTROLLERNAME = 'C-663.12'
+    STAGES = 'M-228.10S'  # connect stages to axes
+    REFMODE = 'FNL'  # reference the connected stages
+    SN = '021550465'  # 021550449 @ LULA ; 021550465 SN stage @ UNISS
+else:
+    CONTROLLERNAME = 'C-663.12'
+    STAGES = 'M-228.10S'  # connect stages to axes
+    REFMODE = 'FNL'  # reference the connected stages
+    SN = '021550449'  # 021550449 @ LULA ; 021550465 SN stage @ UNISS
+
+tk.Label(frame1, text='Velocity [mm/s]').grid(row=2, column=0)
 Vel = tk.StringVar(value=0.25)
-tk.Entry(frame1, textvariable=Vel).grid(row=0, column=1)
+tk.Entry(frame1, textvariable=Vel).grid(row=2, column=1)
 
-tk.Button(frame1, text='Stop Move', command=StopAbort).grid(row=0, column=3)
+# tk.Button(frame1, text='Stop Move', command=StopAbort).grid(row=0, column=3)
 
-tk.Label(frame1, text='Axis').grid(row=1, column=0)
+tk.Label(frame1, text='Axis').grid(row=3, column=0)
 Axis = tk.StringVar(value=1)
-tk.Entry(frame1, textvariable=Axis).grid(row=1, column=1)
-tk.Button(frame1, text='Read axis value', command=ReadAxis).grid(row=1, column=2)
+tk.Entry(frame1, textvariable=Axis).grid(row=3, column=1)
+tk.Button(frame1, text='Read axis value', command=ReadAxisC663).grid(row=3, column=2)
 Axis0 = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis0).grid(row=1, column=3)
+tk.Entry(frame1, textvariable=Axis0).grid(row=3, column=3)
 
-tk.Label(frame1, text='Set value [0-10 mm]').grid(row=2, column=0)
+tk.Label(frame1, text='Set value [0-10 mm]').grid(row=4, column=0)
 Targ = tk.StringVar(value=5.)
-tk.Entry(frame1, textvariable=Targ).grid(row=2, column=1)
-tk.Button(frame1, text='Move to target value', command=MoveAxis).grid(row=2, column=2)
+tk.Entry(frame1, textvariable=Targ).grid(row=4, column=1)
+tk.Button(frame1, text='Move to target value', command=MoveAxisC663).grid(row=4, column=2)
 Axis1 = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1).grid(row=2, column=3)
+tk.Entry(frame1, textvariable=Axis1).grid(row=4, column=3)
 
-tk.Label(frame1, text='Set OPEN value [7.5 mm]').grid(row=3, column=0)
+tk.Label(frame1, text='Set OPEN value [7.5 mm]').grid(row=5, column=0)
 TargOPEN = tk.StringVar(value=7.5)
-tk.Entry(frame1, textvariable=TargOPEN).grid(row=3, column=1)
-tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisOPEN).grid(row=3, column=2)
+tk.Entry(frame1, textvariable=TargOPEN).grid(row=5, column=1)
+tk.Button(frame1, text='Move to OPEN target value', command=MoveAxisOPENC663).grid(row=5, column=2)
 Axis1OPEN = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1OPEN).grid(row=3, column=3)
+tk.Entry(frame1, textvariable=Axis1OPEN).grid(row=5, column=3)
 
-tk.Label(frame1, text='Set CLOSE value [8.3 mm]').grid(row=4, column=0)
+tk.Label(frame1, text='Set CLOSE value [8.3 mm]').grid(row=6, column=0)
 TargCLOSE = tk.StringVar(value=8.3)
-tk.Entry(frame1, textvariable=TargCLOSE).grid(row=4, column=1)
-tk.Button(frame1, text='Move to CLOSE target value', command=MoveAxisCLOSE).grid(row=4, column=2)
+tk.Entry(frame1, textvariable=TargCLOSE).grid(row=6, column=1)
+tk.Button(frame1, text='Move to CLOSE target value', command=MoveAxisCLOSEC663).grid(row=6, column=2)
 Axis1CLOSE = tk.StringVar()
-tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=4, column=3)
+tk.Entry(frame1, textvariable=Axis1CLOSE).grid(row=6, column=3)
 
 ########################################################################################
 
