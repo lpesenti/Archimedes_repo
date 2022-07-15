@@ -4,10 +4,11 @@ import csv, time, datetime
 from pipython import GCSDevice, pitools
 from logging.handlers import TimedRotatingFileHandler
 import logging
-
+"""
 from pipython.pidevice.gcscommands import GCSCommands
 from pipython.pidevice.gcsmessages import GCSMessages
 from pipython.pidevice.interfaces.piusb import PIUSB
+"""
 
 # --- LOGGERS SETUP --- #
 
@@ -70,7 +71,7 @@ def fz_Motor(M1, M2):
         CONTROLLERNAME = 'C-663.12'
         STAGES = ('M-228.10S')  # connect stages to axes
         REFMODE = ('FNL')  # reference the connected stages
-        SN = '021550449'  # 021550465 SN stage @ UNISS
+        SN = '021550465'  # 021550449 @ LULA ; 021550465 SN stage @ UNISS
     elif M1 == False and M2 == True:
         CONTROLLERNAME = 'E-872.401'
         STAGES = ('N-480.210CV', 'N-480.210CV', 'NOSTAGE', 'NOSTAGE')  # connect stages to axes
@@ -105,30 +106,28 @@ def fz_ReadAxis(M1, M2, Axis):
 
     CONTROLLERNAME, STAGES, REFMODE, SN = fz_Motor(M1, M2)
     print(CONTROLLERNAME, STAGES, REFMODE, SN)
+    """
     gateway = PIUSB()
-    gateway.connect(SN, 0x1024)
-
- #   with GCSDevice(CONTROLLERNAME) as pidevice:
- #       pidevice.ConnectUSB(serialnum=SN)
+    gateway.ConnectUSB(serialnum=SN, pid=0x1001, vid=0x1a72)
     messages = GCSMessages(gateway)
     gcs = GCSCommands(messages)
     print(gcs.qIDN())
     print(gcs.read('*IDN?'))
     axes_of_master = gcs.qSAI()
     print(gcs.qPOS(axes_of_master))
-
     """
+    with GCSDevice(CONTROLLERNAME) as pidevice:
+        pidevice.ConnectUSB(serialnum=SN)
         # pidevice.InterfaceSetupDlg(key='sample')
         print('initialize connected stages...')
         pitools.startup(pidevice, stages=STAGES, refmodes=REFMODE, servostates=True)
-        print('pippo1')
+        #print('pippo1')
         positions = pidevice.qPOS(Axis)
-        print('pippo2')
+        #print('pippo2')
         print(pidevice.qPOS())
         print('position of axis', Axis, '=', positions[Axis])
         # for Axis in pidevice.axes:
         #     print('position of axis {} = {:.2f}'.format(Axis, positions[Axis]))
-    """
 
     return positions[Axis]
 
