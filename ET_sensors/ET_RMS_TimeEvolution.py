@@ -32,6 +32,7 @@ df_path = config['Paths']['sensor_path']
 # Booleans
 out_error = config.getboolean('Bool', 'save_error')
 save_rms_df = config.getboolean('Bool', 'save_rms_df')
+multi_rms = config.getboolean('Bool', 'multi_rms')  # TODO: introduce loop over different sensors
 
 # Instrument
 channel = config['Instrument']['channel']
@@ -90,7 +91,7 @@ def rms_to_df(rms_data):
     sensor_name = glob.glob(data_path + fr"\*")[0].split('.')[1] + glob.glob(data_path + r"\*")[0].split('.')[2]
     rms_df = pd.DataFrame()  # TODO: find a better way to retrieve sensor name
     rms_df['time'] = [x[0] for x in rms_data]
-    rms_df[f'{sensor_name}'] = [x[1] for x in rms_data]
+    rms_df[f'{sensor_name} ({channel})'] = [x[1] for x in rms_data]
     rms_df.to_parquet(df_path + f'{sensor_name}_{channel}_rms_df', compression='brotli', compression_level=9)
 
 
@@ -156,6 +157,7 @@ if __name__ == '__main__':
 
     data = to_rms()
     rms_to_df(data) if save_rms_df else ''
+
     plot_from_df([x[0] for x in data], [x[1] for x in data], ax=ax)
     t1 = time.perf_counter()
     print_on_screen(symbol1='+', symbol2='-', message='RMS evaluation', quantity=t1 - t0)

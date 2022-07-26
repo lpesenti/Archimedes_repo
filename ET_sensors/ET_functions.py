@@ -1,26 +1,27 @@
 __author__ = "Luca Pesenti and Davide Rozza "
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza", "Nikita Levashko"]
-__version__ = "0.8.5"
+__version__ = "0.8.6"
 __maintainer__ = "Luca Pesenti and Davide Rozza"
-__email__ = "l.pesenti6@campus.unimib.it, drozza@uniss.it"
+__email__ = "lpesenti@uniss.it, drozza@uniss.it"
 __status__ = "Prototype"
 
-import numpy as np
-from obspy import UTCDateTime
-from obspy import read, read_inventory, Stream
-from obspy.signal import PPSD
-from obspy.imaging.cm import pqlx
-from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
+import datetime
 import glob
-from matplotlib import mlab
-import matplotlib.pyplot as plt
 from datetime import datetime
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib import mlab
 from matplotlib.dates import date2num, num2date
-import matplotlib.dates as mdates
+from obspy import UTCDateTime
+from obspy import read, read_inventory, Stream
+from obspy.imaging.cm import pqlx
+from obspy.signal import PPSD
+from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
 from scipy.interpolate import interp1d
-import datetime
 
 import ET_common as Ec
 
