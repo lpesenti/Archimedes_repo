@@ -116,10 +116,10 @@ def make_daily():
 
     # TODO: thread or pool? Read: https://superfastpython.com/threadpoolexecutorv-vs-processpoolexecutor/
     with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:  # os.cpu_count()//2
-        for f_index, file in enumerate(filename_list):
-            j1 = (f_index + 1) / len(filename_list)
-            print("\r[%-75s] %g%%" % ('=' * int(75 * j1), round(100 * j1, 3)), end='\n')
-            executor.map(functools.partial(daily_df, startdate, stopdate), filename_list)
+        # for f_index, file in enumerate(filename_list):
+        #     j1 = (f_index + 1) / len(filename_list)
+        #     print("\r[%-75s] %g%%" % ('=' * int(75 * j1), round(100 * j1, 3)), end='\n')
+        executor.map(functools.partial(daily_df, startdate, stopdate), filename_list)
 
 
 def daily_df(startdate, stopdate, file):
@@ -202,6 +202,7 @@ def daily_df(startdate, stopdate, file):
         time = time + TLong
     # print('\t*** Saving data to file ***')
     filename = file.split('.')[-2] + '-' + file.split('.')[-1]
+    print(f'\t*** Saving {filename} to file ***')
 
     temp_df = pd.DataFrame(temp_array, columns=['psd'])
     temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
@@ -209,7 +210,7 @@ def daily_df(startdate, stopdate, file):
     temp_df.to_parquet(daily_path + fr'\{Twindow}_{channel}_{filename}.parquet.brotli', compression='brotli',
                        compression_level=9)
 
-    # print('\t*** Data correctly saved ***')
+    print(f'\t*** {filename} correctly saved ***')
 
 
 def read_daily_df(freq_indeces, filename):
@@ -379,5 +380,5 @@ if __name__ == '__main__':
         t2 = time.perf_counter()
 
         print_on_screen(symbol1='+', symbol2='-', message='Plot building finished in', quantity=t2 - t1)
-        print_on_screen(symbol1='*', message=f'Total time elapsed', quantity=t2 - t0)
+        print_on_screen(symbol1='*', message='Total time elapsed', quantity=t2 - t0)
         plt.show()

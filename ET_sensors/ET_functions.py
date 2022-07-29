@@ -1319,7 +1319,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
             print('\tEvaluating from\t', time, '\tto\t', Tstop)
             tstart = time
             tstop = time + dT - 1 / fsxml
-            st = read(file, starttime=tstart, endtime=tstop)
+            st = read(file, starttime=tstart, endtime=tstop)  # TODO: add sort
 
             t1 = time
             for n in range(0, M):

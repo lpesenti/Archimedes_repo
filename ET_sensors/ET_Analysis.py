@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # ET.new_quantile_plot(XML_path + XML_file, Data_path, network, sensor, location, channel, Twindow, Overlap,
     #                      verbose, unit='ACC', out_path=outfile_path)
 
-    ET.plot_from_df(df_directory=df_dir)
+    ET.plot_from_df(df_directory=df_dir, out_path=outfile_path)
     # ET.et_sens_single_comparison(et_sens_path=et_sens, npz_file=npz_data, nlnm_comparison=False)
     # ET.et_sens_comparison(et_sens_path=et_sens, filexml=XML_path + XML_file, Data_path1=Data_path,
     #                       Data_path2=Data_path2, network=network, sensor1=sensor, sensor2=sensor2, location=location,

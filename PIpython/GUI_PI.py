@@ -39,25 +39,29 @@ def import_NAxis():
 
 def ReadAxisC663():
     global axis0
-    axis0 = PI_functions.fz_ReadAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()))
+    axis0 = PI_functions.fz_ReadAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()),
+                                         str(SN.get()), int(Axis.get()))
     Axis0.set(axis0)
 
 
 def MoveAxisC663():
     global axis1
-    axis1 = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(Targ.get()), float(Vel.get()))
+    axis1 = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()),
+                                         str(SN.get()), int(Axis.get()), float(Targ.get()), float(Vel.get()))
     Axis1.set(axis1)
 
 
 def MoveAxisOPENC663():
     global axis1OPEN
-    axis1OPEN = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(TargOPEN.get()), float(Vel.get()))
+    axis1OPEN = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()),
+                                             str(SN.get()), int(Axis.get()), float(TargOPEN.get()), float(Vel.get()))
     Axis1OPEN.set(axis1OPEN)
 
 
 def MoveAxisCLOSEC663():
     global axis1CLOSE
-    axis1CLOSE = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()), str(SN.get()), int(Axis.get()), float(TargCLOSE.get()), float(Vel.get()))
+    axis1CLOSE = PI_functions.fz_MoveAxisC663(str(CONTROLLERNAME.get()), str(STAGES.get()), str(REFMODE.get()),
+                                              str(SN.get()), int(Axis.get()), float(TargCLOSE.get()), float(Vel.get()))
     Axis1CLOSE.set(axis1CLOSE)
 
 
@@ -79,26 +83,32 @@ tabControl.add(tab3, text='E-872')
 
 frameStart = tk.LabelFrame(tab1, text='PI motor GUI', relief=tk.GROOVE)
 frameStart.grid(row=0, column=0, padx=10, pady=2)
-text= Text(frameStart, width= 100, height= 10, background="gray71",foreground="#fff",font= ('Sans Serif', 13, 'italic bold'))
-#Insert the text at the begining
+text = Text(frameStart, width=100, height=10, background="gray71", foreground="#fff",
+            font=('Sans Serif', 13, 'italic bold'))
+# Insert the text at the begining
 text.insert(INSERT, "This GUI was deployed to connect the PI motors for Archimedes experiment\n\n"
                     "test\n"
                     "\n")
 
-text.pack(expand= 1, fill= BOTH)
+text.pack(expand=1, fill=BOTH)
 
 ########################################################################################
 frame1 = tk.LabelFrame(tab2, text='Read and Write', relief=tk.GROOVE)
 frame1.grid(row=0, column=1, padx=10, pady=2)
 
 xvar = StringVar()
+
+
 def selection():
     xvar = radiobutton_variable.get()
     print("You selected the option " + xvar)
 
+
 radiobutton_variable = StringVar()
-Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS",  variable = radiobutton_variable, value = '021550465', command=selection).grid(row = 0, column = 0)
-Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable = radiobutton_variable, value = '021550449', command=selection).grid(row = 1, column = 0)
+Radiobutton(frame1, text="C-663 SN=021550465 stage @ UNISS", variable=radiobutton_variable, value='021550465',
+            command=selection).grid(row=0, column=0)
+Radiobutton(frame1, text="C-663 SN=021550449 stage @ LULA ", variable=radiobutton_variable, value='021550449',
+            command=selection).grid(row=1, column=0)
 
 CONTROLLERNAME = tk.StringVar(value='C-663.12')
 STAGES = tk.StringVar(value='M-228.10S')  # connect stages to axes

@@ -54,14 +54,14 @@ f_len = 0
 
 def eval_rms(filename, freq_len, psd_len, Twindow, chunk_index):
     temp_df = pd.read_parquet(filename)
-    day_num = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[1].split('-')[1]
-    year = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[1].split('-')[0]
+    day_num = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[2].split('-')[1]
+    year = filename.replace(daily_path + '\\', '').split('.')[0].split('_')[2].split('-')[0]
     # evaluate the integral in the frequency region between i_min and i_max
     rms = temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max].sum()[0] * freq_len
     date = datetime.datetime.strptime(year + "-" + day_num, "%Y-%j") + datetime.timedelta(seconds=psd_len * chunk_index)
     if out_error and rms == 0:
         # print(temp_df.iloc[chunk_index * freq_len:chunk_index * freq_len + freq_len].loc[i_min:i_max])
-        with open(df_path + fr'\RMS-Error_{t_log}.txt', 'a') as text_file:
+        with open(log_path + fr'\RMS-Error_{t_log}.txt', 'a') as text_file:
             print(f'{filename}|{date}|{Twindow}|{channel}', file=text_file)
     return date, rms
 
@@ -80,7 +80,7 @@ def to_rms():
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for f_index, file in enumerate(filename_list):
             j1 = (f_index + 1) / len(filename_list)
-            print("\r[%-75s] %g%%" % ('=' * int(75 * j1), round(100 * j1, 3)), end='\n')
+            print("\r[%-50s] %g%%" % ('=' * int(50 * j1), round(100 * j1, 3)), file, end='\n')
             results = executor.map(functools.partial(eval_rms, file, f_len, psd_length, Twindow), num_asd)
             for res in results:
                 rms_date_lst.append(res)
@@ -156,9 +156,12 @@ if __name__ == '__main__':
     ax = fig.add_subplot()
 
     data = to_rms()
-    rms_to_df(data) if save_rms_df else ''
-
-    plot_from_df([x[0] for x in data], [x[1] for x in data], ax=ax)
     t1 = time.perf_counter()
-    print_on_screen(symbol1='+', symbol2='-', message='RMS evaluation', quantity=t1 - t0)
+    print_on_screen(symbol1='+', symbol2='-', message='RMS evaluation finished in', quantity=t1 - t0)
+    rms_to_df(data) if save_rms_df else ''
+    t2 = time.perf_counter()
+    print_on_screen(symbol1='+', symbol2='-', message='Creation of RMS DataFrame finished in', quantity=t2 - t1)
+    plot_from_df([x[0] for x in data], [x[1] for x in data], ax=ax)
+    t3 = time.perf_counter()
+    print_on_screen(symbol1='*', message='Total time elapsed', quantity=t3 - t0)
     plt.show()
