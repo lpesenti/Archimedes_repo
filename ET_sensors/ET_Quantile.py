@@ -1,6 +1,6 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __maintainer__ = "Luca Pesenti"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
@@ -71,8 +71,9 @@ filexml = config['Paths']['xml_path']
 Data_path = config['Paths']['data_path']
 
 # Quantities
-Twindow = int(config['Quantities']['psd_window'])
+unit = config['Quantities']['unit']
 TLong = int(config['Quantities']['TLong'])
+Twindow = int(config['Quantities']['psd_window'])
 Overlap = float(config['Quantities']['psd_overlap'])  # TODO: check if it is the right way to perform overlap
 quantiles = [float(x) for x in config['Quantities']['quantiles'].split(',')]
 
@@ -83,12 +84,13 @@ location = config['Instrument']['location']
 channel = config['Instrument']['channel']
 
 # Booleans
-verbose = config.getboolean('DEFAULT', 'verbose')
-unit = config['DEFAULT']['unit']  # TODO: enable the VEL option
-only_daily = config.getboolean('DEFAULT', 'only_daily')
-skip_daily = config.getboolean('DEFAULT', 'skip_daily')
-skip_freq_df = config.getboolean('DEFAULT', 'skip_freq_df')
-skip_quant_eval = config.getboolean('DEFAULT', 'skip_quant_eval')
+db_unit = config.getboolean('Bool', 'db_unit')
+verbose = config.getboolean('Bool', 'verbose')
+only_daily = config.getboolean('Bool', 'only_daily')
+skip_daily = config.getboolean('Bool', 'skip_daily')
+skip_freq_df = config.getboolean('Bool', 'skip_freq_df')
+skip_quant_eval = config.getboolean('Bool', 'skip_quant_eval')
+asd_conversion = config.getboolean('Bool', 'asd_conversion')
 
 # Directory check and creation
 freq_df_path = Ec.check_dir(df_path, 'Freq_df')
@@ -123,11 +125,22 @@ def make_daily():
 
 
 def daily_df(startdate, stopdate, file):
+    st = read(file)
+    st = st.sort()
+    Tstop = st[-1:][0].times('timestamp')[-1:][0]
+    Tstop = UTCDateTime(Tstop)
+    time = st[0].times('timestamp')[0]
+    time = UTCDateTime(time)
+
+    _, respamp, fsxml, _ = Ef.read_Inv(filexml, network, sensor, location, channel, time, Twindow,
+                                       verbose=verbose)
+
     dT = TLong + Twindow * Overlap
     M = int((dT - Twindow) / (Twindow * (1 - Overlap)) + 1)
     K = int((stopdate - startdate) / (Twindow * (1 - Overlap)) + 1)
     v = np.empty(K)
-    fsxml = 100
+
+    # print(f'{file}\t Frequency =', fsxml)
     Num = int(Twindow * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
@@ -151,27 +164,19 @@ def daily_df(startdate, stopdate, file):
         print('| Slice length'.ljust(30, '.'), '{0} |'.format(TLong).rjust(56, '.'), sep='')
         print('+', '-' * 84, '+', sep='')
 
-    k = 0
-
-    st = read(file)
-    st = st.sort()
-
-    Tstop = st[-1:][0].times('timestamp')[-1:][0]
-    Tstop = UTCDateTime(Tstop)
-    time = st[0].times('timestamp')[0]
-    time = UTCDateTime(time)
-
-    fxml, respamp, fsxml, gain = Ef.read_Inv(filexml, network, sensor, location, channel, time, Twindow,
-                                             verbose=verbose)
-    if unit.upper() == 'VEL':
+    if unit.upper() == 'STRAIN':
+        w1 = 1
+    elif unit.upper() == 'VEL':
         w1 = 1 / respamp
     elif unit.upper() == 'ACC':
         w1 = w ** 2 / respamp
     else:
         import warnings
-        msg = "Invalid data unit chosen [VEl or ACC], using VEL"
+        msg = "Invalid data unit chosen [STRAIN, VEL or ACC], using STRAIN"
         warnings.warn(msg)
-        w1 = 1 / respamp
+        w1 = 1
+
+    k = 0
 
     while time < Tstop:
         tstart = time
@@ -189,14 +194,14 @@ def daily_df(startdate, stopdate, file):
                 tr1 = tr[0]
                 if tr1.stats.npts == Num:
                     s, _ = mlab.psd(tr1.data, NFFT=Num, Fs=fsxml, detrend="linear")
-                    s = s[1:] * w1
-                    psd_values_db = 10 * np.log10(s)
+                    s = np.sqrt(s[1:] * w1) if asd_conversion else s[1:] * w1
+                    psd_values = 10 * np.log10(s) if db_unit else s
                     v[k] = 0
 
             if np.isnan(v[k]):
                 temp_array = np.append(temp_array, np.repeat(np.nan, f.size))
             else:
-                temp_array = np.append(temp_array, psd_values_db)
+                temp_array = np.append(temp_array, psd_values)
             t1 = t1 + Twindow * Overlap
             k += 1
         time = time + TLong
@@ -207,7 +212,7 @@ def daily_df(startdate, stopdate, file):
     temp_df = pd.DataFrame(temp_array, columns=['psd'])
     temp_df = temp_df.set_index(np.tile(f, int(len(temp_array) / len(f))))
 
-    temp_df.to_parquet(daily_path + fr'\{Twindow}_{channel}_{filename}.parquet.brotli', compression='brotli',
+    temp_df.to_parquet(daily_path + fr'\{Twindow}_{channel}_{filename}.brotli', compression='brotli',
                        compression_level=9)
 
     print(f'\t*** {filename} correctly saved ***')
