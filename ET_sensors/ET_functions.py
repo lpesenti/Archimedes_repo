@@ -64,7 +64,7 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     invxmls = invxml.select(network=network, station=sensor, channel=channel)
     # print(invxmls)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
-    resp = invxmls.get_response(seed_id, t)  # TODO: automatically set the correct time based on first data
+    resp = invxmls.get_response(seed_id, t)
     gain = invxmls.get_response(seed_id, t).instrument_sensitivity.value
     if verbose:
         invxmls.plot_response(1 / 120, label_epoch_dates=True)
@@ -77,10 +77,10 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     fsxml = sa[len(sa)]['output_sampling_rate']
     if verbose:
         print('Sampling rate:', fsxml)
-    Num = int(Twindow * 100)  # TODO: Why fsxml is different from the real sampling rate? See previous TODO
+    Num = int(Twindow * fsxml)
     # Returns frequency response and corresponding frequencies using evalresp
     #                                        time_res,       Npoints,  output
-    sresp, fxml = resp.get_evalresp_response(t_samp=1 / 100, nfft=Num, output="VEL")
+    sresp, fxml = resp.get_evalresp_response(t_samp=1 / fsxml, nfft=Num, output="VEL")
     fxml = fxml[1:]  # remove first value that is 0
     sresp = sresp[1:]  # remove first value that is 0
     # amplitude -> absolute frequency value
