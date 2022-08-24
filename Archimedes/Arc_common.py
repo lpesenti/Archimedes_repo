@@ -1,14 +1,20 @@
 __author__ = "Luca Pesenti"
-__credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.2.1"
-__maintainer__ = "Luca Pesenti"
-__email__ = "l.pesenti6@campus.unimib.it"
+__credits__ = ["Luca Pesenti", "Davide Rozza", "Archimedes collaboration"]
+__version__ = "1.3.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
+__email__ = "lpesenti@uniss.it"
 __status__ = "Production"
 
+r"""
+In this file are stored all the functions that are not strictly related to the Archimedes experiment. However, they are
+used in various methods inside the codes.
+"""
+
 import datetime
+import math
+
 import numpy as np
 import pandas as pd
-import math
 
 h = 6.62607004e-34  # Planck constant
 c = 299792458  # speed of light
@@ -110,7 +116,7 @@ def vectorizer(input_func):
 
 def time_tick_formatter(val, pos=None):
     """
-    Return val reformatted as a human readable date
+    Return val reformatted as a human-readable date
 
     See Also
     --------
@@ -121,13 +127,58 @@ def time_tick_formatter(val, pos=None):
 
 
 def hex_converter(path_to_data):
+    r"""
+    This method should be used only with CHD files produced by the Archimedes experiment. It transforms the sequence of
+    0 and 1 (related to the pumps and valves status) into hex number. This can be used as a filter to obtain only
+    meaningful data.
+
+    :type path_to_data: str
+    :param path_to_data: path to the data directory
+
+    :return: table with values converted to hex number
+
+    See Also
+    --------
+    For further details on CHD files and their structure see `Commissioning and data analysis of the Archimedes
+    experiment and its prototype at the SAR-GRAV laboratory (Chapter 3)
+    <https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing>`_.
+    """
     data = pd.read_table(path_to_data, sep=' ', na_filter=False, low_memory=False, engine='c', usecols=[2, 3, 4],
                          header=None, dtype=str, converters={'conv': lambda x: hex(int(str(x), 2))})
     data[[2, 3, 4]] = data[[2, 3, 4]].applymap(lambda x: hex(int(str(x), 2)))
     return data
 
 
-def shot_noise(laser_wavelength=532e-9, itf_length=0.1, contrast=0.5, photodiode_qeff=0.9, laser_power=3):
+def shot_noise(laser_wavelength=532e-9, itf_length=0.1, contrast=0.5, photodiode_qeff=0.9, laser_power=0.003):
+    r"""
+        This method reproduce the shot noise for an interferometer expressed in rad/Hz^(1/2).
+
+        :type laser_wavelength: float
+        :param laser_wavelength: the wavelength of the laser used
+
+        :type itf_length: float
+        :param itf_length: the interferometer arm length
+
+        :type contrast: float
+        :param contrast: is the contrast evaluated at the working point of the interferometer which is in the
+                         half-fringe for the Archimedes prototype
+
+        :type photodiode_qeff: float
+        :param photodiode_qeff: the quantum efficiency of the photo-diode
+
+        :type laser_power: float
+        :param laser_power: the power of the laser used expressed in Watt.
+
+        :return: the shot noise value
+
+        See Also
+        --------
+        For further details on the  files and their structure see `Commissioning and data analysis of the Archimedes
+        experiment and its prototype at the SAR-GRAV laboratory (Appendix B)
+        <https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing>`_ and
+        `Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site
+        <https://doi.org/10.1140/epjp/s13360-021-01993-w>`_.
+    """
     first_term = laser_wavelength / (2 * np.pi * itf_length)
     second_term = 1 / contrast
     third_term = np.sqrt((h * c) / (laser_wavelength * photodiode_qeff * laser_power))
@@ -135,12 +186,65 @@ def shot_noise(laser_wavelength=532e-9, itf_length=0.1, contrast=0.5, photodiode
 
 
 def radiation_pressure_noise(freq, laser_wavelength=532e-9, itf_length=0.1, mom_inertia=1.3e-2, laser_power=0.003):
+    r"""
+        This method reproduce the shot noise for an interferometer expressed in rad/Hz^(1/2).
+
+        :type freq: numpy.ndarray
+        :param freq: frequency array on which valuate the radiation pressure noise
+
+        :type laser_wavelength: float
+        :param laser_wavelength: the wavelength of the laser used
+
+        :type itf_length: float
+        :param itf_length: the interferometer arm length
+
+        :type mom_inertia: float
+        :param mom_inertia: measuring arm momentum of inertia
+
+        :type laser_power: float
+        :param laser_power: the power of the laser used expressed in Watt.
+
+        :return: the shot radiation pressure noise curve
+
+        See Also
+        --------
+        For further details on the  files and their structure see `Commissioning and data analysis of the Archimedes
+        experiment and its prototype at the SAR-GRAV laboratory (Appendix B)
+        <https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing>`_ and
+        `Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site
+        <https://doi.org/10.1140/epjp/s13360-021-01993-w>`_.
+    """
     first_term = itf_length / (2 * mom_inertia * 4 * np.pi ** 2 * freq ** 2)
     second_term = np.sqrt(laser_power * h / (laser_wavelength * c))
     return first_term * second_term
 
 
 def suspension_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_resonance=0.025):
+    r"""
+        This method reproduce the shot noise for an interferometer expressed in rad/Hz^(1/2).
+
+        :type freq: numpy.ndarray
+        :param freq: frequency array on which valuate the radiation pressure noise
+
+        :type temperature: float
+        :param temperature: temperature of the chamber (?)
+
+        :type mom_inertia: float
+        :param mom_inertia: measuring arm momentum of inertia
+
+        :type arm_resonance: float
+        :param arm_resonance: the frequency resonance of the measuring arm
+
+        :return: the suspension thermal noise curve
+
+        See Also
+        --------
+        For further details on the  files and their structure see `Commissioning and data analysis of the Archimedes
+        experiment and its prototype at the SAR-GRAV laboratory (Appendix B)
+        <https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing>`_ and
+        `Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site
+        <https://doi.org/10.1140/epjp/s13360-021-01993-w>`_.
+    """
     phi_loss = 0.01  # inverse of the Q of the arm resonance
     omega_0 = 2 * np.pi * arm_resonance
     omega = 2 * np.pi * freq
@@ -153,6 +257,31 @@ def suspension_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_reso
 
 
 def internal_thermal_noise(freq, temperature=300, mom_inertia=1.3e-2, arm_resonance=950):
+    r"""
+        This method reproduce the shot noise for an interferometer expressed in rad/Hz^(1/2).
+
+        :type freq: numpy.ndarray
+        :param freq: frequency array on which valuate the radiation pressure noise
+
+        :type temperature: float
+        :param temperature: temperature of the chamber (?)
+
+        :type mom_inertia: float
+        :param mom_inertia: measuring arm momentum of inertia
+
+        :type arm_resonance: float
+        :param arm_resonance: the frequency resonance
+
+        :return: the internal thermal noise curve
+
+        See Also
+        --------
+        For further details on the  files and their structure see `Commissioning and data analysis of the Archimedes
+        experiment and its prototype at the SAR-GRAV laboratory (Appendix B)
+        <https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing>`_ and
+        `Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site
+        <https://doi.org/10.1140/epjp/s13360-021-01993-w>`_.
+    """
     phi_loss = 0.001  # inverse of the Q of the arm resonance
     omega_0 = 2 * np.pi * arm_resonance
     omega = 2 * np.pi * freq

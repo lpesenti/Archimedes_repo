@@ -1,9 +1,19 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti"]
-__version__ = "1.0.0"
-__maintainer__ = "Luca Pesenti"
-__email__ = "l.pesenti6@campus.unimib.it"
+__version__ = "1.1.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
+__email__ = "lpesenti@uniss.it"
 __status__ = "Prototype"
+
+r"""
+This file should be used not only as a prototype for the use of the methods contained in the Arc_functions.py, but also
+because it contains the creation of two logger, DEBUG and INFO level.
+The logs are created in the ./logs folder and each time this script is used they are overwritten.
+It is possible to enable loggers by changing the relative booleans in the Arc_config.ini file (for the email logger, 
+please note that the mail list and the password of the archimedes mail should be updated).
+To change some variable, please refer to the Arc_config.ini before. Inside this file it is possible to change several
+variables without modifying the code directly.
+"""
 
 import configparser
 import logging.handlers
@@ -16,51 +26,84 @@ import matplotlib.pyplot as plt
 
 import Arc_functions as af
 
+# ------------------------
+# Reading the config file
+# ------------------------
 config = configparser.ConfigParser()
-config.read('config.ini')
-mailing_list = [x for x in config['DEFAULT']['mail_list'].split(',')]
+config.read('Arc_config.ini')
 
+# Email
+mailing_list = [x for x in config['Email']['mail_list'].split(',')]
+
+# Paths
+path_to_img = config['Paths']['images_dir']
+
+# Booleans
+info_logger = config.getboolean('Bool', 'info_logger')
+debug_logger = config.getboolean('Bool', 'debug_logger')
+email_logger = config.getboolean('Bool', 'email_logger')
+
+# ------------------------
+# Creation of the root logger
+# ------------------------
 rootLogger = logging.getLogger('data_analysis')
 rootLogger.propagate = False
 rootLogger.setLevel(logging.DEBUG)
+
+# ------------------------
+# Formatting the log output
+# ------------------------
+# Output file
 output_formatter = logging.Formatter(
     "[%(asctime)s | %(filename)s %(funcName)15s(), line %(lineno)d] %(levelname)s: %(message)s", '%d-%m-%y %H:%M:%S')
+
+# System output
 stream_formatter = logging.Formatter('%(levelname)s: %(message)s')
+
+# Mail output
 mail_formatter = logging.Formatter(
     "Process ID - name: %(process)d - %(processName)s \nThread ID - name: %(thread)d - %(threadName)s"
     "\nTime: %(asctime)10s \nDetails: \n\t%(filename)s --> [%(funcName)s():%(lineno)d]\n\t%(levelname)s: %(message)s",
     '%d-%m-%y %H:%M:%S')
 
+# ------------------------
+# Creation of the handlers
+# ------------------------
+# DEBUG
 debug_Handler = logging.FileHandler(r'.\logs\debug.log', mode='w')
 debug_Handler.setLevel(logging.DEBUG)
 debug_Handler.setFormatter(output_formatter)
 
+# INFO
 info_Handler = logging.FileHandler(r'.\logs\info.log', mode='w')
 info_Handler.setLevel(logging.INFO)
 info_Handler.setFormatter(output_formatter)
 
+# SYSTEM
 streamHandler = logging.StreamHandler()
 streamHandler.setLevel(logging.INFO)
 streamHandler.setFormatter(stream_formatter)
 
-now = int(time())
+# EMAIL
 error_mail_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
                                                   fromaddr="archimedes.noreply@gmail.com",
                                                   toaddrs=mailing_list,
-                                                  subject='Log report #' + str(now),
+                                                  subject='Log report #' + str(int(time())),
                                                   credentials=(
-                                                      'archimedes.noreply@gmail.com', config['DEFAULT']['psw']),
+                                                      'archimedes.noreply@gmail.com', config['Email']['password']),
                                                   secure=())
 error_mail_handler.setFormatter(mail_formatter)
 error_mail_handler.setLevel(logging.WARNING)
 
-# rootLogger.addHandler(error_mail_handler)
-rootLogger.addHandler(debug_Handler)
-rootLogger.addHandler(info_Handler)
+# ------------------------
+# Adding handlers to rootLogger
+# ------------------------
+rootLogger.addHandler(error_mail_handler) if email_logger else ''
+rootLogger.addHandler(debug_Handler) if debug_logger else ''
+rootLogger.addHandler(info_Handler) if info_logger else ''
 rootLogger.addHandler(streamHandler)
 
 mpl.rcParams['agg.path.chunksize'] = 5000000
-path_to_img = config['Paths']['images_dir']
 
 if __name__ == '__main__':
     logging.info('Started')

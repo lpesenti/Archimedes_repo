@@ -1,3 +1,10 @@
+__author__ = "Davide Rozza"
+__credits__ = ["Davide Rozza"]
+__version__ = "0.0.1"
+__maintainer__ = "no longer supported"
+__email__ = ""
+__status__ = "Deprecated"
+
 from matplotlib import mlab
 from matplotlib import pyplot as plt
 import matplotlib.dates as mdates

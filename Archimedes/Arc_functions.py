@@ -1,12 +1,16 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Davide Rozza"]
-__version__ = "1.1.4"
-__maintainer__ = "Luca Pesenti"
-__email__ = "l.pesenti6@campus.unimib.it"
+__version__ = "1.2.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
+__email__ = "lpesenti@uniss.it"
 __status__ = "Production"
 
 r"""
-[LAST UPDATE: 7 May 2021 - Luca Pesenti]
+[LAST UPDATE: August 24, 2022 - Luca Pesenti]
+
+! IMPORTANT NOTICE: Some functions (indicated in their description as 'OLD') were made to work with an older version of 
+! the filename and save mode. (see the Readme file for further information).
+! Some bugs should be expected when using them with newer data. However, they should work greatly.
 
 The following functions have been built to work with the data obtained by the Archimedes experiment.
 The experiment save the data in a file .lvm containing 9 columns*,
@@ -17,7 +21,7 @@ The experiment save the data in a file .lvm containing 9 columns*,
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 | ... | ........ | ............... | ..... | .......... | .......... | .......... | ........... | .... |
 
-*data up to 22 November 2020 have only 8 columns, the 'After Noise' has not been saved.
+*data up to November 22, 2020 have only 8 columns, the 'After Noise' has not been saved.
 
 ITF [V]            : signal from the interferometer
 Pick Off [V]       : signal from the laser before the filters
@@ -33,6 +37,29 @@ Time [-]           : every 10 millisecond (100 rows) the system print the dateti
 
 In the current configuration the sampling rate is 1 KHz but can be increased (data saved every millisecond).
 Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
+For a more details see 'Commissioning and data analysis of the Archimedes experiment and its prototype at the SAR-GRAV 
+laboratory (Chapter 3 and 4)' at https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing
+
+The data taken after May 2021 have the following name format: SCI_YY-MM-DD_hhmm.lvm, e.g., SCI_21-05-18_0809.lvm
+
+*** OPTICAL LEVER PART ***
+It is possible to use some methods with the optical lever data. Nevertheless, you need to change the variable 'headers' 
+in the Arc_config.ini file.
+The optical lever data are saved have the following format: OL_YY-MM-DD_hhmm.lvm, e.g., OL_21-05-18_0809.lvm
+
+                    | Dy | Dx | Sum | Time |
+                    |----+----+-----+------|
+                    | .. | .. | ... | .....|
+                    | .. | .. | ... | .....|
+                    | .. | .. | ... | .....|
+
+Dy [V]      : The difference between Up and Down    -> (UL + UR) - (DL + DR)
+Dx [V]      : The difference between Left and Right -> (UL + DL) - (UR + UR)
+Sum [V]     : The sum of the four channels          -> UL + UR + DL + DR
+Time [-]    : every 10 millisecond (100 rows) the system print the datetime in the format
+                     -> 02/19/2021 20:01:11.097734\09
+
+The data taken have the following name format: 
 
 Matplotlib color palette: https://matplotlib.org/stable/gallery/color/named_colors.html
 """
@@ -55,16 +82,28 @@ import Arc_common as ac
 
 # TODO: add matplotlib style (.mplstyle) both for internal meeting and for official plots.
 
+# Initialize the logger
 logger = logging.getLogger('data_analysis.functions')
 
+# ------------------------
+# Reading the config file
+# ------------------------
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('Arc_config.ini')
+
+# lvm properties
 lvm_headers = [x for x in config['lvm_properties']['headers'].split(',')]
 cols = np.array(lvm_headers)
+
+# Paths
 path_to_data = config['Paths']['data_dir']
+
+# Quantities
 freq = int(config['Quantities']['sampling_rate'])
 lambda_laser = float(config['Quantities']['laser_wavelength'])
 distance_mirrors = float(config['Quantities']['distance_mirrors'])
+
+# Comments
 tab_comm = '\t' * int(config['Comments']['num_tab'])
 
 first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate alpha
@@ -72,7 +111,8 @@ first_coef = lambda_laser / (2. * np.pi * distance_mirrors)  # Used to calculate
 
 def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, file_stop=None, verbose=False):
     """
-    Search data present in a specific folder and read only the column associated with the quantity you are interested in
+    (OLD) Search data present in a specific folder and read only the column associated with the quantity you are
+    interested in
 
     Parameters
     ----------
@@ -256,7 +296,7 @@ def read_data(day, month, year, quantity, num_d=1, tevo=False, file_start=None, 
 def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, tevo=True, file_start=None,
                    file_stop=None, verbose=False):
     """
-    Make the plot of time evolution
+    (OLD) Make the plot of time evolution
 
     Parameters
     ----------
@@ -357,8 +397,8 @@ def time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, te
 
 def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
     """
-    The comparison is made by dividing the data in given number of slice and check if the delta between the maximum
-    and the minimum of the slice is greater than threshold or not.
+    (OLD) The comparison is made by dividing the data in given number of slice and check if the delta between the
+    maximum and the minimum of the slice is greater than threshold or not.
     After the comparison it transforms into np.nan values all the data above the threshold from the dataframe.
 
     Parameters
@@ -447,7 +487,8 @@ def th_comparison(data_frame, threshold=0.03, length=10000, verbose=True):
 def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=10000, low_freq=2, high_freq=20,
         psd_len=60, noise_th=0.03, rms_th=1e-11, ax1=None, file_start=None, file_stop=None, verbose=False):
     """
-    Evaluate the asd of a given quantity and confront the result with Virgo data.
+    (OLD) Evaluate the asd of a given quantity and confront the result with Virgo data. The evaluation process can be
+    done by looking at the lowest psd or at the longest one.
 
     Parameters
     ----------
@@ -816,6 +857,64 @@ def psd(day, month, year, quantity, ax, time_interval, mode, ndays=1, length=100
 
 def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, ndays=1, day2=None, ax1=None,
              verbose=False):
+    """
+    (OLD) Evaluate the asd of a given quantity and confront the result with Virgo data.
+
+    Parameters
+    ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        quantity : str
+            The quantity to be read. It must be one of the following:
+
+        ax: ax
+            The ax to be given in order to have a plot
+
+        init_time : str
+            It is the initial time from which starting the evaluation of the psd
+
+        final_time : str
+            It is the final time in which the evaluation of the psd stops
+
+        psd_len : int
+            The length of the psd used expressed in seconds.
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        day2 : int
+            It is used if the data span over two days. By default, is set to None.
+
+        ax1: matplotlib.axes.Axes
+            If not None a secondary plot is given.
+            In particular, the time evolution with the data selected is shown.
+
+        verbose : bool
+            If True the verbosity is enabled.
+    Notes
+    -----
+    *quantity* takes only one of the following parameter:
+        - ITF : the signal from the interferometer expressed in V
+        - Pick Off : the signal from the pick-off expressed in V
+        - Signal injected : the signal from the waveform used expressed in V
+        - Error :
+        - Correction :
+        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
+        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
+        - After Noise :
+        - Time : the timestamp of the data saved every millisecond in human-readable format
+    Returns
+    -------
+    out : tuple
+        A tuple of an axes and two filenames, one for the ASD and the other for the data selected.
+    """
     month_str = '%02d' % month
 
     # data_folder = os.path.join(path_to_data, "SosEnattos_Data_{0}{1}{2}".format(year, month_str, day))
@@ -950,34 +1049,29 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     tevo : bool
         If True the time column will be read.
 
-    file_start : any
+    file_start : int
         The first file to be read.
 
-    file_stop : any
+    file_stop : int
         The last file to be read.
+
+    scitype : str
+        It is the type of scientific data to looking for
 
     verbose : bool
         If True the verbosity is enabled.
 
     Notes
     -----
-    *col_to_save* takes only one of the following parameter:
-        - ITF : the signal from the interferometer expressed in V
-        - Pick Off : the signal from the pick-off expressed in V
-        - Signal injected : the signal from the waveform used expressed in V
-        - Error :
-        - Correction :
-        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
-        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
-        - After Noise :
-        - Time : the timestamp of the data saved every milli second in human-readable format
+    *scitype* takes only one of the following parameter:
+        - SCI : scientific data from the Archimedes experiment
+        - OL : optical lever data
 
     Returns
     -------
     out : tuple
         A tuple of a pandas DataFrame [n-rows x 1-column] containing the data, the index of the column corresponding to
         the quantity selected and the timestamp of the first data expressed in UNIX
-
     """
     try:
         if not 1 <= day <= 31:
@@ -1119,15 +1213,70 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
 def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
             file_stop=None, ax2=None, pick_off=True, label=None, scitype='SCI'):
+    """
+        It evaluates quickly the ASD of given files without adding the correction factor and without performing the
+        conversion from voltage to radians.
+
+        Parameters
+        ----------
+        day : int
+            It refers to the first day of the data to be read
+
+        month : int
+            It refers to the first month of the data to be read
+
+        year : int
+            It refers to the first year of the data to be read
+
+        ax: matplotlib.axes._subplots.AxesSubplot
+            The ax to be given in order to have linear scale on x-axis
+
+        ax1: matplotlib.axes._subplots.AxesSubplot
+            The ax to be given in order to have logarithmic scale on x-axis
+
+        quantity : str
+            The quantity to be read.
+
+        psd_len : int
+            The length of the psd used expressed in seconds.
+
+        ndays : int
+            How many days of data you want to analyze.
+
+        verbose : bool
+            If True the verbosity is enabled.
+
+        file_start : int
+            The first file to be read.
+
+        file_stop : int
+            The last file to be read.
+
+        ax2: matplotlib.axes._subplots.AxesSubplot
+            The ax to be given in order to have the time evolution plot
+
+        pick_off : bool
+            If True the scripts evaluates the mean of the pick-off and multiplies it by the ASD
+
+        label : str
+            It is the label for both ASD plots
+
+        scitype : str
+            It is the type of scientific data to looking for
+
+        Notes
+        -----
+        *scitype* takes only one of the following parameter:
+            - SCI : scientific data from the Archimedes experiment
+            - OL : optical lever data
+
+        Returns
+        -------
+        out : tuple
+            A tuple of matplotlib.axes._subplots.AxesSubplot
+        """
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                          file_stop=file_stop, verbose=verbose, scitype=scitype)
-    if pick_off:
-        df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False, file_start=file_start,
-                                    file_stop=file_stop, verbose=verbose, scitype=scitype)
-        df_po_mean = np.abs(df_po.values.flatten().mean())
-    else:
-        pass
-
     num = int(psd_len * freq)
 
     psd_s, psd_f = mlab.psd(df_qty.values.flatten(), NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
@@ -1135,6 +1284,10 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     psd_f = psd_f[1:]
 
     if pick_off:
+        df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False,
+                                    file_start=file_start,
+                                    file_stop=file_stop, verbose=verbose, scitype=scitype)
+        df_po_mean = np.abs(df_po.values.flatten().mean())
         asd = np.sqrt(psd_s) * df_po_mean
     else:
         asd = np.sqrt(psd_s)
@@ -1184,109 +1337,7 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
     return ax, ax1
 
 
-def soe_time_evolution(day, month, year, quantity, ax, ndays=1, show_extra=False, tevo=True, file_start=None,
-                       file_stop=None, verbose=False):
-    """
-    Make the plot of time evolution
-
-    Parameters
-    ----------
-        day : int
-            It refers to the first day of the data to be read
-
-        month : int
-            It refers to the first month of the data to be read
-
-        year : int
-            It refers to the first year of the data to be read
-
-        quantity : str
-            The quantity to be read. It must be one of the following:
-
-        ax: ax
-            The ax to be given in order to have a plot
-
-        ndays : int
-            How many days of data you want to analyze.
-
-        show_extra : bool
-            If True, data over threshold are displayed with a translation in the same plot.
-
-        tevo : bool
-            If True the time column will be read.
-
-        file_start : any
-            The first file to be read.
-
-        file_stop : any
-            The last file to be read.
-
-        verbose : bool
-            If True the verbosity is enabled.
-    Notes
-    -----
-    *quantity* takes only one of the following parameter:
-        - ITF : the signal from the interferometer expressed in V
-        - Pick Off : the signal from the pick-off expressed in V
-        - Signal injected : the signal from the waveform used expressed in V
-        - Error :
-        - Correction :
-        - Actuator 1 : the output of the actuator 1 before amplification expressed in V
-        - Actuator 2 : the output of the actuator 2 before amplification expressed in V
-        - After Noise :
-        - Time : the timestamp of the data saved every milli second in human-readable format
-    Returns
-    -------
-    out : tuple
-        A tuple of an axes and the relative filename
-    """
-    try:
-        if not ax:
-            raise TypeError("Ax can not be a 'NoneType' object")
-    except TypeError as err:
-        logger.error(err.args[0])
-        raise
-    logger.debug('Parameters: '
-                 '\n{11}day={0}'
-                 '\n{11}month={1}'
-                 '\n{11}year={2}'
-                 '\n{11}quantity={3}'
-                 '\n{11}ax={4}'
-                 '\n{11}ndays={5}'
-                 '\n{11}show_extra={6}'
-                 '\n{11}tevo={7}'
-                 '\n{11}file_start={8}'
-                 '\n{11}file_stop={9}'
-                 '\n{11}verbose={10}'
-                 .format(day, month, year, quantity, ax, ndays, show_extra, tevo, file_start, file_stop, verbose,
-                         tab_comm))
-    df, col_index, t = soe_read_data(day, month, year, quantity, ndays, tevo=tevo, file_start=file_start,
-                                     file_stop=file_stop, verbose=verbose)
-    logger.info("Building plot")
-    if not verbose:
-        pass
-    else:
-        print('Building Time Evolution Plot...')
-    lab = quantity
-    filename = str(year) + str(month) + str(day) + '_' + quantity + '_nDays_' + str(ndays) + 'tEvo'
-    ax.plot(t, df[col_index], linestyle='-', label=lab)
-    if show_extra:
-        logger.info("Building data-cleared plot")
-        lab1 = quantity + ' cleared'
-        data_und_th, _ = th_comparison(df, verbose=verbose)
-        ax.plot(t, data_und_th + 5, linestyle='-', label=lab1)
-        logger.info("Data-cleared plot successfully built")
-    ax.grid(True, linestyle='--')
-    ax.set_ylabel('Voltage [V]', fontsize=24)
-    ax.tick_params(axis='both', which='major', labelsize=22)
-    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
-    ax.legend(loc='best', shadow=True, fontsize=24)
-
-    logger.info("Plot successfully built")
-    return ax, filename
-
-
-# OLD VERSION (TO BE REVIEWED...)
+# DEPRECATED
 def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length=10000, verbose=True):
     """
     Make the derivative plot of a given quantity
@@ -1361,7 +1412,6 @@ def cleared_plot(day, month, year, quantity, ax, threshold=0.03, ndays=1, length
     return ax, filename
 
 
-# WORK IN PROGRESS...
 def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=None, year2=None, samedate=True,
               verbose=True):
     r"""

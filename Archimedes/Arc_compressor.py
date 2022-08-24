@@ -1,9 +1,9 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti"]
-__version__ = "0.0.5"
-__maintainer__ = "Luca Pesenti"
-__email__ = "l.pesenti6@campus.unimib.it"
-__status__ = "Prototype"
+__version__ = "0.0.1"
+__maintainer__ = "no longer supported"
+__email__ = ""
+__status__ = "Deprecated"
 
 import numpy as np
 import pandas as pd
