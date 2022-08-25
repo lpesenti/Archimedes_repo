@@ -40,12 +40,12 @@ Nevertheless, the acquisition tool made with LabVIEW run at 25 KHz.
 For a more details see 'Commissioning and data analysis of the Archimedes experiment and its prototype at the SAR-GRAV 
 laboratory (Chapter 3 and 4)' at https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing
 
-The data taken after May 2021 have the following name format: SCI_YY-MM-DD_hhmm.lvm, e.g., SCI_21-05-18_0809.lvm
+The data taken after May 2021 have the following name format: SCI_yy-mm-dd_HHMM.lvm, e.g., SCI_21-05-18_0809.lvm
 
 *** OPTICAL LEVER PART ***
 It is possible to use some methods with the optical lever data. Nevertheless, you need to change the variable 'headers' 
 in the Arc_config.ini file.
-The optical lever data are saved have the following format: OL_YY-MM-DD_hhmm.lvm, e.g., OL_21-05-18_0809.lvm
+The optical lever data are saved have the following format: OL_yy-mm-dd_HHMM.lvm, e.g., OL_21-05-18_0809.lvm
 
                     | Dy | Dx | Sum | Time |
                     |----+----+-----+------|
@@ -1100,8 +1100,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
     print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
     month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
-    # day = '%02d' % day  # It transforms 1,2,3,... -> 01,02,03,...
-    index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the the col_to_save
+    index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the col_to_save quantity
 
     logger.debug('Column index={0}'.format(index))
 
@@ -1110,7 +1109,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     time_array = []
 
     for i in range(num_d):  # Loop over number of days
-        day = '%02d' % (day + i)
+        day = '%02d' % (day + i) # It transforms 1,2,3,... -> 01,02,03,...
         temp_data = glob.glob(
             os.path.join(path_to_data, "{3}_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day, scitype)))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))

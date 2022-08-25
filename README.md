@@ -1,6 +1,6 @@
-# Archimedes-Sassari
+# Archimedes_repo
 
-Welcome to the GitHub repository of the Archimedes Experiment!
+Welcome to the GitHub repository of the Archimedes Experiment in which are present also scripts for the ET experiment!
 
 ## Archimedes
 
@@ -8,18 +8,62 @@ Welcome to the GitHub repository of the Archimedes Experiment!
 
 ###### Moreover, the directory logs contains all the logs file produced by the functions used.
 
+#### ./logs
+
+* Inside this folder are saved the logs that are automatically produced by several functions in _Arc_functions.py_
+* Note that the logs are saved only if the relative option is enabled in the _Arc_config.ini_ file
+
+#### ./Results
+
+* In this directory are contained three files (_August 25, 2022_):
+    * Arc_article.txt -> Data from
+      the [Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site](https://link.springer.com/article/10.1140/epjp/s13360-021-01993-w)
+      article.
+    * Arc_data.txt -> Results obtained _probably_ by using the 'low interval' mode of the psd() method inside 
+      _Arc_functions.py_. However, the loop correction was not used since it is missing.
+    * Arc_VirgoData_Jul2019.txt -> Data taken with the prototype while at the Virgo site (_July 2021_)
+
+#### Analysis_Archi_lf_fpga.py (_No longer supported or maintained_)
+
+* An old script used to perform PSD/ASD analysis on Archimedes data.
+
+#### Arc_Analysis.py
+
+* This file has to be considered as an example of how _Arc_functions.py_ should be used.
+* This script requires _Arc_functions.py_ in order to work.
+* Be aware to change the value of the ___path_to_img___ to the directory where you want to save your images.
+
+#### Arc_common.py
+
+* This script contains all the common and useful functions that are not strictly related to the data analysis.
+
+#### Arc_compressor.py (_No longer supported or maintained_)
+
+* This script was used to perform some compression test on data taken by the Archimedes prototype. However, it is in an
+  unstable and unreviewed version.
+
+#### Arc_config.ini
+
+* In this file are contained several variables needed for the analysis on the Archimedes experiment data.
+* The values of the variable present must be changed especially the ones related to paths variables.
+
 #### Arc_functions.py
 
-* ___A stable version has been release in 27/04/2021___
-* In this file are stored different useful functions that can be implemented in other script (_for example see
-  Arc_Data_Analysis.py_).
-* At the moment (_27/04/2021_) this package contains several functions. In particular are contained two main functions
-  _psd()_ and  _time_evolution()_ which are used for the preliminary studies of the experiment.
+* ___A stable version has been release on April 27, 2021___
+* Several variables can be changed in the relative _Arc_config.ini_ file contained in the same directory.
+* In this file are stored different useful functions that can be implemented in other script (_see
+  Arc_Data_Analysis.py_). Each of them are fully commented, and they should be self-explaining. However, at the
+  beginning of the scripts there is a short introduction to the data file format and to other useful quantities.
+* Some functions (indicated in their description as 'OLD') were made to work with an older version of
+  the filename. Some bugs should be expected when using them with newer data. However, they should work greatly.
+* After May 2022, the data have the filename SCI_yy-mm-dd_HHMM.lvm or OL_yy-mm-dd_HHMM.lvm. The former refers to data
+  taken by the Archimede experiment, while the latter to the data of the optical lever system. __NOTE__ that the 'OLD'
+  functions have never been tested on the optical lever data.
 * Please note that at the start of the script there are different variables that can be modified in according to the
   analysis you want to perform.
-* Change ___path_to_data___ value, to the correct path to your data folder. The data __MUST__ be saved in the following
-  format!
-    * Data_folder
+* Change ___path_to_data___ in the _Arc_config.ini_ to the correct path to your data folder. The data until May 2022
+  __MUST__ be saved in the following format!
+    * ___path_to_data___
         * _SosEnattos_Data_yyyymmdd_ (1)
             * *.lvm
         * _SosEnattos_Data_yyyymmdd_ (2)
@@ -27,19 +71,17 @@ Welcome to the GitHub repository of the Archimedes Experiment!
         * ...
         * _SosEnattos_Data_yyyymmdd_ (n)
             * *.lvm
-* In the latest updates (_26/04/2022_), two functions were added. Both of them start with _soe..._  and can be used to
+* In the latest updates (_April 26, 2022_), two functions were added. Both of them start with _soe..._  and can be used
+  to
   easily make the plot of the data taken on the Sos Enattos site. The data __DON'T__ need to be saved in a particular
-  folder since it is specified in the config.ini
-
-#### Arc_common.py
-
-* This script contains all the common and useful functions that are not strictly related to the data analysis.
-
-#### Arc_Data_Analysis.py
-
-* This file has to be considered as an example of how _Arc_functions.py_ should be used.
-* This script requires _Arc_functions.py_ in order to work.
-* Be aware to change the value of the ___path_to_img___ to the directory where you want to save your images.
+  folder since it is specified in the _Arc_config.ini_. In fact, the ___path_to_data___ variable refers to the directory
+  in which are contained the data as:
+    * ___path_to_data___
+        * _SCI/OL_yy-mm-dd_HHMM.lvm_ (1)
+        * _SCI/OL_yy-mm-dd_HHMM.lvm_ (2)
+        * ...
+        * _SCI/OL_yy-mm-dd_HHMM.lvm_ (n)
+* Note that the _soe..._ functions can distinguish SCI files from OL files through the 'scitype' attribute.
 
 #### Arc_grapher.py
 
@@ -47,16 +89,6 @@ Welcome to the GitHub repository of the Archimedes Experiment!
   the [Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site](https://link.springer.com/article/10.1140/epjp/s13360-021-01993-w)
   article.
 * Manually can be uncommented the plot relative to the main sources of noise of the Archimedes prototype.
-
-#### Arc_compressor.py
-
-* This script was used to perform some compression test on data taken by the Archimedes prototype. However, it is in an
-  unstable and unreviewed version.
-
-#### config.ini
-
-* In this file are contained several variables needed for the analysis on the Archimedes experiment data.
-* The values of the variable present must be changed especially the ones related to paths variables.
 
 ## ET_sensors
 

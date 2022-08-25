@@ -14,16 +14,14 @@ laboratory (Chapter 3 and 4)' (https://drive.google.com/file/d/1tyJ8PX4Giby3LttX
 (https://doi.org/10.1140/epjp/s13360-021-01993-w9.
 """
 
-import Arc_common as ac
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 
-arc_x, arc_y = np.loadtxt(r'.\Results\Arc_article.txt',
-                          unpack=True, usecols=[0, 1], skiprows=1)
-virgo_x, virgo_y = np.loadtxt(
-    r'.\Results\Arc_VirgoData_Jul2019.txt', unpack=True,
-    usecols=[0, 1])
+import Arc_common as ac
+
+arc_x, arc_y = np.loadtxt(r'.\Results\Arc_article.txt', unpack=True, usecols=[0, 1], skiprows=1)
+virgo_x, virgo_y = np.loadtxt(r'.\Results\Arc_VirgoData_Jul2019.txt', unpack=True, usecols=[0, 1])
 x_crio, y_crio = np.loadtxt(r'D:\Archimedes\Data\cRIO\ADCnoise_1kHz.txt', unpack=True, usecols=[0, 1])
 
 # x_sn = np.arange(arc_x.min(), arc_x.max())
