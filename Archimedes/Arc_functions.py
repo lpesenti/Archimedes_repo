@@ -1024,8 +1024,8 @@ def easy_psd(day, month, year, quantity, ax, init_time, final_time, psd_len=60, 
     return ax, filename1, filename2
 
 
-def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_start=None, file_stop=None,
-                  verbose=False, scitype='SCI'):
+def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_start=None, file_stop=None, nrows=1e9,
+                  seconds_to_skip=0, verbose=False, scitype='SCI'):
     """
     Search data present in a specific folder and read only the column associated with the quantity you are interested in
 
@@ -1057,6 +1057,12 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
     scitype : str
         It is the type of scientific data to looking for
+
+    nrows : float
+        If specified, it reads and evaluates only the first 'n' rows of data files
+
+    seconds_to_skip : int
+         If specified, it skips the first 'n' rows of data before reading
 
     verbose : bool
         If True the verbosity is enabled.
@@ -1099,7 +1105,6 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
                  .format(day, month, year, quantity, num_d, tevo, file_start, file_stop, verbose, tab_comm))
 
     print('#### Reading', day, '/', month, '/', year, '-', quantity, 'data ####') if verbose else ''
-    month = '%02d' % month  # It transforms 1,2,3,... -> 01,02,03,...
     index = np.where(cols == quantity.lower())[0][0] + 1  # Find the index corresponding to the col_to_save quantity
 
     logger.debug('Column index={0}'.format(index))
@@ -1109,9 +1114,9 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     time_array = []
 
     for i in range(num_d):  # Loop over number of days
-        day = '%02d' % (day + i) # It transforms 1,2,3,... -> 01,02,03,...
-        temp_data = glob.glob(
-            os.path.join(path_to_data, "{3}_{0}-{1}-{2}*.lvm".format(int(str(year)[-2:]), month, day, scitype)))
+        date = datetime.datetime(year=year, month=month, day=day)
+        date += datetime.timedelta(days=i)
+        temp_data = glob.glob(os.path.join(path_to_data, "{0}_{1}*.lvm".format(scitype, date.strftime('%y-%m-%d'))))
         temp_data.sort(key=lambda f: int(re.sub('\D', '', f)))
         all_data += temp_data
     i = 1
@@ -1125,7 +1130,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             # Read only the column of interest -> [index]
             a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
-                              header=None)
+                              header=None, nrows=nrows, skiprows=[i for i in range(int(seconds_to_skip * freq))])
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
 
@@ -1145,7 +1150,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             # Read only the column of interest -> [index]
             a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
-                              header=None)
+                              header=None, nrows=nrows, skiprows=[i for i in range(int(seconds_to_skip * freq))])
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
 
@@ -1166,7 +1171,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
 
             # Read only the column of interest -> [index]
             a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
-                              header=None)
+                              header=None, nrows=nrows, skiprows=[i for i in range(int(seconds_to_skip * freq))])
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
 
@@ -1183,7 +1188,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
             print(round(i / len(all_data) * 100, 1), '%') if verbose else ''
             # Read only the column of interest -> [index]
             a = pd.read_table(data, sep='\t', na_filter=False, low_memory=False, engine='c', usecols=[index],
-                              header=None)
+                              header=None, nrows=nrows, skiprows=[i for i in range(int(seconds_to_skip * freq))])
             # At the end we have a long column with all data
             final_df = pd.concat([final_df, a], axis=0, ignore_index=True)
 
@@ -1210,8 +1215,85 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     return final_df, index, time_array
 
 
+def soe_tevo(day, month, year, ax, quantity='Error', ndays=1, verbose=False, file_start=None,
+             file_stop=None, first_nseconds=1e9, seconds_to_skip=0, scitype='SCI'):
+    r"""
+    It evaluates quickly the time evolution of a specified quantity.
+
+    Parameters
+    ----------
+    day : int
+        It refers to the first day of the data to be read
+
+    month : int
+        It refers to the first month of the data to be read
+
+    year : int
+        It refers to the first year of the data to be read
+
+    ax: matplotlib.axes._subplots.AxesSubplot
+        The ax to be given in order to have linear scale on x-axis
+
+    quantity : str
+        The quantity to be read.
+
+    ndays : int
+        How many days of data you want to analyze.
+
+    verbose : bool
+        If True the verbosity is enabled.
+
+    file_start : int
+        The first file to be read.
+
+    file_stop : int
+        The last file to be read.
+
+    first_nseconds : float
+        If specified, it reads and evaluates only the first 'n' seconds of data
+
+    seconds_to_skip : int
+         If specified, it skips the first 'n' seconds of data before reading
+
+    scitype : str
+        It is the type of scientific data to looking for
+
+    Notes
+    -----
+    *scitype* takes only one of the following parameter:
+        - SCI : scientific data from the Archimedes experiment
+        - OL : optical lever data
+        - TEM : temperature data from the sensor inside the prototype balance
+
+    Returns
+    -------
+    ax : matplotlib.axes._subplots.AxesSubplot
+        An axes containing the time evolution of the selected quantity
+    """
+    df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
+                                         file_stop=file_stop, nrows=int(first_nseconds * freq),
+                                         seconds_to_skip=seconds_to_skip, verbose=verbose, scitype=scitype)
+
+    df_tot = pd.DataFrame()
+    df_tot['time'] = t
+    if scitype.lower() == 'tem':
+        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float').abs() / 0.025 - 273.15  # From Volt to °C
+        df_tot[::1000].plot(kind='scatter', x='time', y='qty', legend=True, xlabel=None,
+                            ax=ax)  # TODO: change if sample rate is reduced
+    else:
+        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float')
+        df_tot.plot(kind='scatter', x='time', y='qty', legend=True, xlabel=None, ax=ax)
+
+    ax.xaxis.set_major_formatter(ac.time_tick_formatter)
+    ax.set_ylabel(r"Temperature [°C]", fontsize=20)
+    ax.tick_params(axis='both', labelsize=20, which='both')
+    ax.grid(True, linestyle='--', which='both')
+    ax.legend([f'Time evolution of {quantity}'], loc='best', shadow=True, fontsize='xx-large')
+    return ax
+
+
 def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, verbose=False, file_start=None,
-            file_stop=None, ax2=None, pick_off=True, label=None, scitype='SCI'):
+            file_stop=None, ax2=None, pick_off=True, label=None, first_nseconds=1e9, seconds_to_skip=0, scitype='SCI'):
     """
         It evaluates quickly the ASD of given files without adding the correction factor and without performing the
         conversion from voltage to radians.
@@ -1260,6 +1342,12 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
         label : str
             It is the label for both ASD plots
 
+        first_nseconds : float
+            If specified, it reads and evaluates only the first 'n' seconds of data
+
+        seconds_to_skip : int
+             If specified, it skips the first 'n' seconds of data before reading
+
         scitype : str
             It is the type of scientific data to looking for
 
@@ -1268,6 +1356,7 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
         *scitype* takes only one of the following parameter:
             - SCI : scientific data from the Archimedes experiment
             - OL : optical lever data
+            - TEM : temperature data from the sensor inside the prototype balance
 
         Returns
         -------

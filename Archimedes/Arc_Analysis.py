@@ -124,12 +124,11 @@ if __name__ == '__main__':
     # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=True, ax=ax0)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=False, ax=ax1)
-    af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Dy',
-               psd_len=100, pick_off=False, label=r'$\Delta x$', scitype='OL')
-    af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Dx',
-               psd_len=100, pick_off=False, label=r'$\Delta y$', scitype='OL')
-    af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Sum',
-               psd_len=100, pick_off=False, label=r'$\Sigma$', scitype='OL')
+    af.soe_tevo(day=31, month=8, year=2022, ax=ax0, ndays=2, quantity='temperature', scitype='TEM')
+    # af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Dx',
+    #            psd_len=100, pick_off=False, label=r'$\Delta y$', scitype='OL')
+    # af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Sum',
+    #            psd_len=100, pick_off=False, label=r'$\Sigma$', scitype='OL')
     # af.soe_asd(day=6, month=5, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=116, file_stop=116, quantity='ITF',
     #            psd_len=200, pick_off=False, label='Laser ON - no tubo')
     # af.soe_asd(day=6, month=5, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=823, file_stop=823, quantity='ITF',
