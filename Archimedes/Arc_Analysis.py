@@ -112,6 +112,13 @@ if __name__ == '__main__':
     fig0 = plt.figure(figsize=(19.2, 10.8))
     fig1 = plt.figure(figsize=(19.2, 10.8))
     fig2 = plt.figure(figsize=(19.2, 10.8))
+    fig, axs = plt.subplots(nrows=2,
+                            ncols=1, sharex=True)
+    fig3, axs1 = plt.subplots(nrows=2,
+                              ncols=2, sharex=True)
+    # fig3, axs1 = plt.subplots(2)
+    # fig.suptitle('Temperature control')
+    # fig1.suptitle('Loop control')
     # fig0.suptitle('Data from 18/05/2021')
     # fig1.suptitle('Data from 18/05/2021')
     ax0 = fig0.add_subplot()
@@ -122,11 +129,22 @@ if __name__ == '__main__':
     # mng.window.state('zoomed')
     # ax2 = fig2.add_subplot()
     # af.psd(day=22, month=11, year=2020, quantity='Error', ax=ax0, ax1=ax1, time_interval=300, mode='low noise', rms_th=7e-12, psd_len=60, low_freq=2, high_freq=20)
-    # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=True, ax=ax0)
+    # af.time_evolution(day=2, month=9, year=2022, quantity='itf', show_extra=False, ax=ax0)
     # af.time_evolution(day=22, month=11, year=2020, quantity='itf', file_stop=191, show_extra=False, ax=ax1)
-    af.soe_tevo(day=31, month=8, year=2022, ax=ax0, ndays=2, quantity='temperature', scitype='TEM')
-    # af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Dx',
-    #            psd_len=100, pick_off=False, label=r'$\Delta y$', scitype='OL')
+    # af.soe_tevo(day=2, month=9, year=2022, ax=ax0, ndays=1, file_start=1807, file_stop=1807, quantity='temperature', scitype='TEM')
+    af.soe_tevo(day=4, month=9, year=2022, ax=axs1[0, 0], ndays=1, quantity='itf', scitype='SCI', file_start=1100)
+    af.soe_tevo(day=4, month=9, year=2022, ax=axs1[1, 0], ndays=1, quantity='correction', scitype='SCI',
+                file_start=1100)
+    # af.soe_tevo(day=3, month=9, year=2022, ax=axs1[0], ndays=1, quantity='correction', scitype='SCI', file_start=1713,
+    #             file_stop=1803)
+    # af.soe_tevo(day=3, month=9, year=2022, ax=ax1, ndays=1, quantity='actuator 1', scitype='SCI', file_start=1130)
+    # af.soe_tevo(day=3, month=9, year=2022, ax=axs1[1], ndays=1, quantity='actuator 2', scitype='SCI', file_start=1130)
+    af.soe_tevo(day=4, month=9, year=2022, ax=axs1[0, 1], ndays=1, quantity='temperature', scitype='TEM',
+                file_start=1052)
+    af.soe_tevo(day=4, month=9, year=2022, ax=axs1[1, 1], ndays=1, quantity='thermal correction', scitype='TEM',
+                file_start=1052)
+    # af.soe_asd(day=4, month=9, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1300, file_stop=1400, quantity='correction',
+    #            psd_len=1000, pick_off=False, label=r'Error', scitype='SCI')
     # af.soe_asd(day=15, month=6, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=1534, file_stop=1539, quantity='Sum',
     #            psd_len=100, pick_off=False, label=r'$\Sigma$', scitype='OL')
     # af.soe_asd(day=6, month=5, year=2022, ax=ax0, ax1=ax1, ax2=ax2, file_start=116, file_stop=116, quantity='ITF',
@@ -145,8 +163,12 @@ if __name__ == '__main__':
     # fig0.savefig(os.path.join(path_to_img, fname1))
     # fig1.savefig(os.path.join(path_to_img, fname2))
     # pkl.dump(fig1, open(os.path.join(path_to_img, r'20201122_ASD.pickle'), 'wb'))
+    # fig.tight_layout()
     fig0.tight_layout()
+    fig.tight_layout()
     fig1.tight_layout()
+    fig2.tight_layout()
+    fig3.tight_layout()
     # fig0.savefig(os.path.join(path_to_img, 'tEvo.png'), dpi=1200)
     # fig0.savefig(os.path.join(path_to_img, 'tEvo.pdf'), dpi=1200)
     # fig1.savefig(os.path.join(path_to_img, 'tEvo_wclear.png'), dpi=1200)

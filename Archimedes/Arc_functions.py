@@ -99,7 +99,7 @@ cols = np.array(lvm_headers)
 path_to_data = config['Paths']['data_dir']
 
 # Quantities
-freq = int(config['Quantities']['sampling_rate'])
+freq = float(config['Quantities']['sampling_rate'])
 lambda_laser = float(config['Quantities']['laser_wavelength'])
 distance_mirrors = float(config['Quantities']['distance_mirrors'])
 
@@ -1270,22 +1270,32 @@ def soe_tevo(day, month, year, ax, quantity='Error', ndays=1, verbose=False, fil
     ax : matplotlib.axes._subplots.AxesSubplot
         An axes containing the time evolution of the selected quantity
     """
+    if scitype.lower() == 'tem':
+        global cols, freq
+        cols = np.array(['temperature', 'thermal correction', 'time'])
+        freq = 1
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
                                          file_stop=file_stop, nrows=int(first_nseconds * freq),
                                          seconds_to_skip=seconds_to_skip, verbose=verbose, scitype=scitype)
 
     df_tot = pd.DataFrame()
     df_tot['time'] = t
-    if scitype.lower() == 'tem':
-        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float').abs() / 0.025 - 273.15  # From Volt to °C
-        df_tot[::1000].plot(kind='scatter', x='time', y='qty', legend=True, xlabel=None,
-                            ax=ax)  # TODO: change if sample rate is reduced
+
+    if quantity.lower() == 'temperature':
+        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float', errors='coerce').dropna().abs() / 0.025 - 273.15  # From Volt to °C
+        df_tot.plot(kind='line', x='time', y='qty', legend=True, xlabel=None,
+                    ax=ax)
+        ax.set_ylabel(r"Temperature [°C]", fontsize=20)
+    elif scitype.lower() == 'sci':
+        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float', errors='coerce').dropna()
+        df_tot[::1000].plot(kind='line', x='time', y='qty', legend=True, xlabel=None, ax=ax)
+        ax.set_ylabel(r"Voltage [V]", fontsize=20)
     else:
-        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float')
-        df_tot.plot(kind='scatter', x='time', y='qty', legend=True, xlabel=None, ax=ax)
+        df_tot['qty'] = pd.to_numeric(df_qty[col_index], downcast='float', errors='coerce').dropna()
+        df_tot.plot(kind='line', x='time', y='qty', legend=True, xlabel=None, ax=ax)
+        ax.set_ylabel(r"Voltage [V]", fontsize=20)
 
     ax.xaxis.set_major_formatter(ac.time_tick_formatter)
-    ax.set_ylabel(r"Temperature [°C]", fontsize=20)
     ax.tick_params(axis='both', labelsize=20, which='both')
     ax.grid(True, linestyle='--', which='both')
     ax.legend([f'Time evolution of {quantity}'], loc='best', shadow=True, fontsize='xx-large')
@@ -1364,7 +1374,13 @@ def soe_asd(day, month, year, ax, ax1, quantity='Error', psd_len=60, ndays=1, ve
             A tuple of matplotlib.axes._subplots.AxesSubplot
         """
     df_qty, col_index, t = soe_read_data(day, month, year, quantity, num_d=ndays, tevo=True, file_start=file_start,
-                                         file_stop=file_stop, verbose=verbose, scitype=scitype)
+                                         file_stop=file_stop, nrows=int(first_nseconds * freq),
+                                         seconds_to_skip=seconds_to_skip, verbose=verbose, scitype=scitype)
+
+    df_po, _, _ = soe_read_data(day, month, year, quantity='Pick Off', num_d=ndays, tevo=False, file_start=file_start,
+                                file_stop=file_stop, nrows=int(first_nseconds * freq), seconds_to_skip=seconds_to_skip,
+                                verbose=verbose)
+
     num = int(psd_len * freq)
 
     psd_s, psd_f = mlab.psd(df_qty.values.flatten(), NFFT=num, Fs=freq, detrend="linear", noverlap=int(num / 2))
