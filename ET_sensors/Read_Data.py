@@ -1,3 +1,10 @@
+__author__ = "Davide Rozza"
+__credits__ = ["Davide Rozza"]
+__version__ = "0.1.0"
+__maintainer__ = "no longer supported"
+__email__ = ""
+__status__ = "Deprecated"
+
 from obspy import read, read_inventory
 from obspy import UTCDateTime
 from matplotlib import mlab

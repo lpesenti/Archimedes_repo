@@ -1,9 +1,16 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti", "Daniele Dell'Aquila"]
-__version__ = "0.0.7"
-__maintainer__ = "Luca Pesenti"
+__version__ = "0.1.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
+
+r"""
+This script contains two methods (August 29, 2022) that are used to develop a ML model to predict the RMS value of a
+seismometer.
+For further information see 'A Machine Learning approach for seismic analysis' at 
+https://docs.google.com/presentation/d/1dGBIvaTinZ9yRlQbHvqnxKXBgPIFWWQ1/edit?usp=sharing&ouid=102833711495125222214&rtpof=true&sd=true
+"""
 
 import configparser
 import glob
@@ -26,6 +33,14 @@ ML = config.getboolean('Bool', 'ML_analysis')
 
 
 def correlation():
+    r"""
+    This function is used to merge all the seismometer DataFrame given in the ML_config.ini file with the data from the
+    weather station. In addition, it plots the correlation matrix of these quantities.
+
+    Note
+    -----
+    To use the ML_analysis() method it is necessary to have the DataFrame created with this method.
+    """
     df_list = [config['DataFrames'][df] for df in config['DataFrames']]
     rms_merged = pd.read_parquet(df_list[0])
     for dataframe in df_list:
@@ -71,6 +86,20 @@ def correlation():
 
 
 def ML_analysis():
+    r"""
+    In this function is performed the ML analysis on a target variable specified in the ML_config.ini file.
+    This function automatically organize the DataFrame parsed to have the following format:
+
+    | Feature 1 | Feature 2 | ... | Feature N | Target variable |
+    |-----------+-----------+-----+-----------+-----------------|
+    | ......... | ......... | ... | ......... | ............... |
+    | ......... | ......... | ... | ......... | ............... |
+    | ......... | ......... | ... | ......... | ............... |
+
+    Note
+    ------
+    The DataFrame format used for the analysis is the same produced by the correlation() method above
+    """
     config = configparser.ConfigParser()
     config.read('ML_config.ini')
     data_path = config['Paths']['full_df']
@@ -145,6 +174,53 @@ def ML_analysis():
     print("Score all", scoreAll)
 
     xgb_model.save_model(config['Paths']['out_model'])
+
+    fig0 = plt.figure(figsize=(19.2, 10.8))
+    fig1 = plt.figure(figsize=(19.2, 10.8))
+    fig2 = plt.figure(figsize=(19.2, 10.8))
+    ax0 = fig0.add_subplot()
+    ax1 = fig1.add_subplot()
+    ax2 = fig2.add_subplot()
+
+    ax0.set_title(r'$\frac{\mathrm{Train} - \mathrm{Pred Train}}{\mathrm{Train} + \mathrm{Pred Train}}$', fontsize=30)
+    ax1.set_title(r'$\frac{\mathrm{Test} - \mathrm{Pred Test}}{\mathrm{Test} + \mathrm{Pred Test}}$', fontsize=30)
+    ax2.set_title(r'$\frac{\mathrm{All} - \mathrm{Pred All}}{\mathrm{All} + \mathrm{Pred All}}$', fontsize=30)
+
+    ax0.scatter(np.arange(len(ytrain)), (ytrain - ypredTrain) / (ytrain + ypredTrain) * 100)
+    ax1.scatter(np.arange(len(ytest)), (ytest - ypredTest) / (ytest + ypredTest) * 100)
+    ax2.scatter(np.arange(len(Y)), (Y - ypredAll) / (Y + ypredAll) * 100)
+
+    ax0.set_xlabel("Instance number", fontsize=24)
+    ax1.set_xlabel("Instance number", fontsize=24)
+    ax2.set_xlabel("Instance number", fontsize=24)
+
+    ax0.set_ylabel(r"Percentage %", fontsize=24)
+    ax1.set_ylabel(r"Percentage %", fontsize=24)
+    ax2.set_ylabel(r"Percentage %", fontsize=24)
+
+    ax0.tick_params(axis='both', which='both', labelsize=22)
+    ax1.tick_params(axis='both', which='both', labelsize=22)
+    ax2.tick_params(axis='both', which='both', labelsize=22)
+
+    ax0.set_ylim([-100, 100])
+    ax1.set_ylim([-100, 100])
+    ax2.set_ylim([-100, 100])
+
+    ax0.axhline(y=10, color='tab:red', linestyle='--')
+    ax0.axhline(y=-10, color='tab:red', linestyle='--')
+    ax1.axhline(y=10, color='tab:red', linestyle='--')
+    ax1.axhline(y=-10, color='tab:red', linestyle='--')
+    ax2.axhline(y=10, color='tab:red', linestyle='--')
+    ax2.axhline(y=-10, color='tab:red', linestyle='--')
+
+    ax0.grid(True, linestyle='--', which='both', axis='both')
+    ax1.grid(True, linestyle='--', which='both', axis='both')
+    ax2.grid(True, linestyle='--', which='both', axis='both')
+
+    fig0.tight_layout()
+    fig1.tight_layout()
+    fig2.tight_layout()
+    plt.show()
 
 
 if __name__ == '__main__':

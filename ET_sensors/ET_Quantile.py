@@ -1,37 +1,19 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
 __version__ = "0.2.1"
-__maintainer__ = "Luca Pesenti"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
 
-import concurrent.futures
-import configparser
-import functools
-import glob
-import os
-import time
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from matplotlib import mlab
-from obspy import UTCDateTime
-from obspy import read
-from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
-
-import ET_common as Ec
-import ET_functions as Ef
-
 r"""
-[LAST UPDATE: 25 May 2022 - Luca Pesenti]
+[LAST UPDATE: May 25, 2022 - Luca Pesenti]
 
 !!! BEFORE CHANGING ANY PART OF THE CODE, PLEASE CONTACT THE MAINTAINER !!!
 
 This is a self-contained script and to use it, please change only the relative config file (Quantile_config.ini).
 For further information see the README file in this repository
 
-The following functions have been built to work with the data obtained by the seismometer used at the Sos Enattos site
+The following functions have been built to work with the data obtained by the seismometers used at the Sos Enattos site
 and uploaded to the et-repo.
 The data are stored in daily file with the name-format: 
 
@@ -58,6 +40,24 @@ The logic of the code is:
            
     4. Plot results         
 """
+
+import concurrent.futures
+import configparser
+import functools
+import glob
+import os
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import mlab
+from obspy import UTCDateTime
+from obspy import read
+from obspy.signal.spectral_estimation import get_nhnm, get_nlnm
+
+import ET_common as Ec
+import ET_functions as Ef
 
 # TODO: add check on python packages and add option for installing them
 # TODO: add sensibility of the seismometer (e.g. x_lim = 1/240s)

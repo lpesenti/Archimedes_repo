@@ -1,8 +1,21 @@
+__author__ = "Luca Pesenti"
+__credits__ = ["Luca Pesenti", "Davide Rozza", "ET collaboration"]
+__version__ = "0.0.5"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
+__email__ = "lpesenti@uniss.it"
+__status__ = "Production"
+
+r"""
+In this file are stored all the functions that are not strictly related to the Archimedes experiment. However, they are
+used in various methods inside the codes.
+"""
+
+# TODO: should we merge this file with Arc_common.py? Maybe it is better to have only one file with 'common' functions
+
 import os
 
 import numpy as np
 import pandas as pd
-import datetime
 
 
 def NLNM(unit):
@@ -10,13 +23,12 @@ def NLNM(unit):
     The Peterson model represents an ensemble of seismic spectra measured in a worldwide network (Peterson 1993,
     U.S. Geol. Surv. Rept. 2 93–322 https://pubs.er.usgs.gov/publication/ofr93322). In this way it is
     possible to define a low noise model (NLNM) and an high noise model (NHNM) representing respectively the minimum and
-     the maximum natural seismic background that can be found on Earth. Here we define these two curves.
+    the maximum natural seismic background that can be found on Earth. Here we define these two curves.
 
-    :param unit:
-        unit = 1 displacement, = 2 spped
+    :type unit: int
+    :param unit: 1 = displacement, 2 = speed
 
-    :return:
-        A tuple for frequency, NLNM, freq, NHNM
+    :return: A tuple of numpy.ndarray: [NLNM frequencies, NLNM values, NHNM frequencies, NHNM values]
     """
     PL = np.array([0.1, 0.17, 0.4, 0.8, 1.24, 2.4, 4.3, 5, 6, 10, 12, 15.6, 21.9, 31.6, 45, 70,
                    101, 154, 328, 600, 10000])
@@ -48,16 +60,41 @@ def NLNM(unit):
     return fl, lownoise, fh, highnoise
 
 
-def check_dir(path1, name_dir):
-    new_path = path1 + name_dir
+def check_dir(path, name_dir):
+    r"""
+    This function checks whether the folder exists in the path. If it exists, it does nothing, while instead it creates
+    a new folder in the specific path with the given name.
+
+    :type path: str
+    :param path: the path where you want to create the folder
+
+    :type name_dir: str
+    :param name_dir: the name of the directory you want to create
+
+    :return: the full path to the new directory
+    """
+    new_path = path + name_dir
     if not os.path.exists(new_path):
         os.mkdir(new_path)
     return new_path
 
 
 # work in progress ...
-def check_df(path1, df_name):
-    new_path = path1 + df_name + '.parquet.brotli'
+def check_df(path, df_name):
+    r"""
+    This function does something similar to the check_dir(). However, in this case it checks for the existence of a
+    DataFrame. If it exists, it does nothing, while instead it creates a new DataFrame in the specific path with the
+    specified name. The DataFrame will be created as a 'parquet' file with level 9 'brotli' compression.
+
+    :type path: str
+    :param path: the path where you want to create the DataFrame
+
+    :type df_name: str
+    :param df_name: the name of the DataFrame you want to create
+
+    :return: the DataFrame found or created
+    """
+    new_path = path + df_name + '.parquet.brotli'
     if not os.path.exists(new_path):
         df = pd.DataFrame()
         df.to_parquet(new_path, compression='brotli', compression_level=9)

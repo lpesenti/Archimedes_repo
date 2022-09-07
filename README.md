@@ -19,7 +19,7 @@ Welcome to the GitHub repository of the Archimedes Experiment in which are prese
     * Arc_article.txt -> Data from
       the [Picoradiant tiltmeter and direct ground tilt measurements at the Sos Enattos site](https://link.springer.com/article/10.1140/epjp/s13360-021-01993-w)
       article.
-    * Arc_data.txt -> Results obtained _probably_ by using the 'low interval' mode of the psd() method inside 
+    * Arc_data.txt -> Results obtained _probably_ by using the 'low interval' mode of the psd() method inside
       _Arc_functions.py_. However, the loop correction was not used since it is missing.
     * Arc_VirgoData_Jul2019.txt -> Data taken with the prototype while at the Virgo site (_July 2021_)
 
@@ -90,15 +90,64 @@ Welcome to the GitHub repository of the Archimedes Experiment in which are prese
   article.
 * Manually can be uncommented the plot relative to the main sources of noise of the Archimedes prototype.
 
+## Characterization
+
+###### In this folder are contained useful data
+
+#### ./Noise
+
+* In this folder there are subdirectories (at the moment _August 25, 2022_ only one is present) containing data relative
+  to the noise of the Optical Lever Shield (OLS). Each subdirectory refers to a different sampling frequency.
+* The name format is the following:
+    * OL_(room lights)(OP27 model)(where)(UPS or not)(PSD coverage)(sampling frequency).lvm
+        * OL : Optical Lever
+        * Dark/Light : the measurement has been performed in a dark room or with the lights on
+        * EPZ/GPZ : the OP27 model used
+        * SoE/UniSS : where the measurement has been made, Sos Enattos (SoE) or University of Sassari (UniSS)
+        * noUPS/UPS : the OLS was connected or not to a UPS
+        * Open/ClosePSD : the PhotoSensitiveDiode (PSD) was covered or not
+        * 1kHz : the sampling frequency
+
+#### ./Sensitivities
+
+* This folder contains (_August 25, 2022_) three files whose are the data needed to reproduce the main GW detectors
+  sensitivities expressed in strain units, 1/Hz^(-1/2):
+    * et_sensitivity.txt : Einstein Telescope sensitivity
+    * LIGO-P1200087-v18-AdV_DESIGN.txt : Advanced Virgo sensitivity for the P1200087 event (data taken from the _lal_
+      package)
+    * LIGO-P1200087-v18-aLIGO_DESIGN.txt : Advanced LIGO sensitivity for the P1200087 event (data taken from the _lal_
+      package)
+
+## ET-NoiseBudget-master
+
+###### In this folder are contained several functions and classes needed to reproduce the ET sensitivity.
+
+###### All the scripts contained were not made by the team from University of Sassari.
+
+###### For the up-to-date version check the official GitHub page of this project.
+
+###### This version has been cloned in May 2022
+
 ## ET_sensors
 
 ###### This folder contains different script used for the characterization of the Sardinia site of ET.
+
+#### Analysis.py (_No longer supported or maintained_)
+
+* This module contains different functions used for the analysis of the seismometer.
+* See _GUI_Analysis.py_ in which this module is used.
+
+#### cjunkk_ETScope_1.xml
+
+* It is the .xml file needed to retrieve information about the seismometer used such as _response_, _gain_, _sample
+  frequency_, etc.
+* It can be downloaded from the et-repo.
 
 #### ET_Analysis.py
 
 * This script has to be used as a prototype to launch the functions contained in _ET_functions.py_. However, it is
   perfectly working.
-* This script needs the _config.ini_ file contained it this folder which has all the variables settings.
+* This script needs the _ET_config.ini_ file contained it this folder which has all the variables settings.
 
 #### ET_functions.py
 
@@ -166,17 +215,12 @@ Welcome to the GitHub repository of the Archimedes Experiment in which are prese
         * _integral_min_ (float): The lower limit of the integral
         * _integral_max_ (float): The upper limit of the integral
 
-#### config.ini
+#### ET_config.ini
 
 * In this file are contained several variables needed for the seismic analysis.
 * The values of the variable present must be changed especially the ones related to paths variables.
 
-#### Analysis.py
-
-* This module contains different functions used for the analysis of the seismometer.
-* See _GUI_Analysis.py_ in which this module is used.
-
-#### GUI_Analysis.py
+#### GUI_Analysis.py (_No longer supported or maintained_)
 
 * This is the Gui used fo the analysis of the sensors placed in the site.
 * Please note that this script requires _Analysis.py_ in order to work.

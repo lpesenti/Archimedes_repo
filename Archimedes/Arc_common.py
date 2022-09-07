@@ -9,6 +9,7 @@ r"""
 In this file are stored all the functions that are not strictly related to the Archimedes experiment. However, they are
 used in various methods inside the codes.
 """
+# TODO: should we merge this file with ET_common.py? Maybe it is better to have only one file with 'common' functions
 
 import datetime
 import math

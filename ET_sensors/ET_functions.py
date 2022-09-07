@@ -1,9 +1,33 @@
 __author__ = "Luca Pesenti and Davide Rozza "
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza", "Nikita Levashko"]
-__version__ = "0.8.6"
-__maintainer__ = "Luca Pesenti and Davide Rozza"
+__version__ = "0.9.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
 __email__ = "lpesenti@uniss.it, drozza@uniss.it"
 __status__ = "Prototype"
+
+r"""
+[LAST UPDATE: August 25, 2022 - Luca Pesenti]
+
+This file contains several useful functions for the seismic data analysis. To see some example of their functioning,
+see the ET_Analysis.py script.
+
+Since the large number of methods inside this script a detailed explanation can not be given here. A series of short
+videos explaining in more details the functioning of these function is planned to be realized in the near future. As 
+soon as it will be done, the link to them will be added here. However, some general information can be given. 
+The following functions have been built to work with the data obtained by the seismometers used at the Sos Enattos site
+and uploaded to the et-repo (see 'A Machine Learning approach for seismic analysis' at 
+https://docs.google.com/presentation/d/1dGBIvaTinZ9yRlQbHvqnxKXBgPIFWWQ1/edit?usp=sharing&ouid=102833711495125222214&rtpof=true&sd=true
+for further information). The data are stored in daily file with the name format: 
+
+    {NETWORK}.{SENSOR}.{LOCATION}.{CHANNEL}.D.{YEAR}.{FILE_NUMBER} ---e.g.---> ET.P2.00.HHZ.D.2022.001
+
+To modify several parameters of the functions, like the length of the psd computed, the information about the 
+seismometer, and then the file, please refer to the ET_config.ini file.
+
+It is known that most of them are not optimized and sometimes they can take a long time of execution. Some improvement
+was done but older functions were not optimized nor reviewed since months (they still working great!!).
+
+"""
 
 import datetime
 import glob
@@ -30,25 +54,31 @@ def read_Inv(filexml, network, sensor, location, channel, t, Twindow, verbose):
     """
     Read Inventory (xml file) of the sensor
 
-    :param filexml:
-        path and name of the xml file to be read
-    :param network:
-        sensor network
-    :param sensor:
-        name of the sensor
-    :param location:
-        location of the sensor
-    :param channel:
-        channel to be analysed
-    :param t:
-        UTC time of the analysis
-    :param Twindow:
-        time range for PSD
-    :param verbose:
-        If True the verbosity is enabled
+    :type filexml: str
+    :param filexml: path and name of the xml file to be read
 
-    :return:
-        A tuple for frequency and sensor's response, the sample frequency
+    :type network: str
+    :param network: sensor network
+
+    :type sensor: str
+    :param sensor: name of the sensor
+
+    :type location: str
+    :param location: location of the sensor
+
+    :type channel: str
+    :param channel: channel to be analysed
+
+    :type t: obspy.core.utcdatetime.UTCDateTime
+    :param t: UTC time of the analysis
+
+    :type Twindow: int
+    :param Twindow: time range for PSD
+
+    :type verbose: bool
+    :param verbose: If True the verbosity is enabled
+
+    :return: A tuple for frequency and sensor's response, the sample frequency
     """
 
     # read inventory
@@ -95,32 +125,40 @@ def extract_stream(filexml, Data_path, network, sensor, location, channel, tstar
     """
     Extract the stream from data file
 
-    :param filexml:
-        path and name of the xml file to be read
-    :type filexml:
-        str
-    :param Data_path:
-        path of the data file to be read
-    :param network:
-        sensor network
-    :param sensor:
-        name of the sensor
-    :param location:
-        location of the sensor
-    :param channel:
-        channel to be analysed
-    :param tstart:
-        UTC start
-    :param tstop:
-        UTC stop
-    :param Twindow:
-        time range for PSD
-    :param verbose:
-        If True the verbosity is enabled
+    :type filexml: str
+    :param filexml: path and name of the xml file to be read
 
-    :return:
-        A tuple for frequency and sensor's PSD
+    :type Data_path: str
+    :param Data_path: path of the data file to be read
+
+    :type network: str
+    :param network: sensor network
+
+    :type sensor: str
+    :param sensor: name of the sensor
+
+    :type location: str
+    :param location: location of the sensor
+
+    :type channel: str
+    :param channel: channel to be analysed
+
+    :type tstart: obspy.core.utcdatetime.UTCDateTime
+    :param tstart: UTC start
+
+    :type tstop: obspy.core.utcdatetime.UTCDateTime
+    :param tstop: UTC stop
+
+    :type Twindow: int
+    :param Twindow: time range for PSD
+
+    :type verbose: bool
+    :param verbose: If True the verbosity is enabled
+
+    :return: A tuple for frequency and sensor's PSD
     """
+
+    # TODO: automatically find the tstart from the filename as in ET_Quantile.py in make_daily() method
 
     # Time interval
     yi = str(tstart.year)
@@ -155,19 +193,25 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap, temporal=False):
     """
     Make PPSD plot
 
-    :param stream:
-        stream of data
-    :param filexml:
-        path and name of the xml file to be read
-    :param sensor:
-        name of the sensor
-    :param Twindow:
-        time range for PSD
-    :param Overlap:
-        PSD overlap should be lower than 50 %
+    :type stream: obspy.core.stream.Stream
+    :param stream: stream of data
 
-    :return:
-        PPSD plot with NoiseModel
+    :type filexml: str
+    :param filexml: path and name of the xml file to be read
+
+    :type sensor: str
+    :param sensor: name of the sensor
+
+    :type Twindow: int
+    :param Twindow: time range for PSD
+
+    :type Overlap: float
+    :param Overlap: PSD overlap should be lower than 50 %
+
+    :type temporal: bool
+    :param temporal: enable the spectrogram plot of a PSD selected period (set to 1). NEVER WELL TESTED!
+
+    :return: PPSD plot with NoiseModel
     """
 
     invxml = read_inventory(filexml)
@@ -189,40 +233,73 @@ def ppsd(stream, filexml, sensor, Twindow, Overlap, temporal=False):
 
 def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, Twindow, Overlap, mean_number,
                    verbose, out):  # , ax, ax1):
-    """
-    Best PSD and RMS finder function
+    r"""
+    Best PSD and RMS finder function. To find the best psd, i.e. the lowest one, the script split the data in chunks of
 
-    :param stream:
-        data stream
-    :param filexml:
-        path and name of the xml file to be read
-    :param network:
-        sensor network
-    :param sensor:
-        name of the sensor
-    :param location:
-        location of the sensor
-    :param channel:
-        channel to be analysed
-    :param tstart:
-        UTC start
-    :param Twindow:
-        time range for PSD
-    :param Overlap:
-        PSD overlap should be lower than 50 %
+    .. math::
 
-    :return:
-        PSD and RMS plots
+        Length_{chunk} = \text{PSD}_{TimeWindow} \times \text{Frequency}_{Sampling}
+
+    Then it performs a PSD on each chunk, and after it evaluates the integral under the curve between 1 and 10 Hz.
+    The chunk with the lowest value of the integral is selected. After that, on this data is evaluated a PSD but with a
+    given number of means. Summarizing,
+
+    Full data ---> split process ---> | chunk 1 | chunk 2 | ... | chunk n | ---> 1st PSD + integral --->
+    chunk lowest noise selection ---> 2nd PSD ---> PSD evaluated on the selected chunk with given number of means
+
+    Lot of parts are commented since it was tried to make an optimization of the code but has not been tested yet.
+
+    See Also
+    --------
+    plot_maker: this method is called to make the plot of the data.
+    output: this method is used to save data and information about the parameter used
+
+    :type stream: obspy.core.stream.Stream
+    :param stream: data stream
+
+    :type filexml: str
+    :param filexml: path and name of the xml file to be read
+
+    :type network: str
+    :param network: sensor network
+
+    :type sensor: str
+    :param sensor: name of the sensor
+
+    :type location: str
+    :param location: location of the sensor
+
+    :type channel: str
+    :param channel: channel to be analysed
+
+    :type tstart: obspy.core.utcdatetime.UTCDateTime
+    :param tstart: UTC start
+
+    :type Twindow: int
+    :param Twindow: time range for PSD
+
+    :type Overlap: float
+    :param Overlap: PSD overlap expressed in percentage, it should be lower than 50 %
+
+    :type mean_number: int
+    :param mean_number: the number of means in the second PSD evaluation.
+
+    :type verbose: bool
+    :param verbose: if True enable more verbosity
+
+    :type out: bool
+    :param out: if True the script saves a .txt file containing some details on the parameters used and the data
+                relative to the evaluation, i.e. frequency array, PSD array, RMS array.
+
+    :return: a tuple of the frequencies array relative to the best chunk, the psd values array of the best psd,
+             the frequency sampling, an array of the integral values under the PSDs, and the id of the seismometer
     """
     _, _, _, gain = read_Inv(filexml, network, sensor, location, channel, tstart, Twindow, verbose=False)
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     data = np.array([])
     vec_rms = np.array([])
-    """for itrace in range(len(stream)):
-        data = np.append(data, np.array(stream[itrace]) / gain)"""
     fs = stream[0].stats.sampling_rate
     Num = int(Twindow * fs)
-    # data_split = np.array_split(data, len(data) / Num)
     _, f_s = mlab.psd(np.ones(Num), NFFT=Num, Fs=fs, noverlap=int(Overlap / 100 * Num))
     f_s = f_s[1:]
     start = np.where(f_s == 1)[0][0]
@@ -231,35 +308,23 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
     best_time = []
     rms_time = np.array([])
 
-    # Num = int(Twindow * fs)
-
     for itrace in range(len(stream)):
-        data = np.array(stream[itrace]) / gain
-        time = stream[itrace].times('timestamp')
-        data_split = np.array_split(data, len(data) / Num)
-        for index, chunk in enumerate(data_split):
-            chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
-            chunk_s = chunk_s[1:]
-            integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
-            vec_rms = np.append(vec_rms, integral)
-            rms_time = np.append(rms_time, time[index * len(chunk):len(chunk) + index * len(chunk)][0])
-            if integral < integral_min:
-                integral_min = integral
-                data = chunk
-                best_time = time[index * len(chunk):len(chunk) + index * len(chunk)]
-    # data = np.array([])
-    """for index, chunk in enumerate(data_split):
-        chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=Overlap)
-        chunk_s = chunk_s[1:]
-        integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
-        vec_rms = np.append(vec_rms, integral)
-        if integral < integral_min:
-            integral_min = integral
-            data = chunk
-            t = tstart.datetime
-            if verbose:
-                print(time.strftime('%d/%m/%y %H:%M:%S',
-                                    time.gmtime((t - datetime.datetime(1970, 1, 1)).total_seconds() + index * Twindow)))"""
+        if not stream[itrace].stats.npts == 0:
+            data = np.array(stream[itrace]) / gain
+            time = stream[itrace].times('timestamp')
+            data_split = np.array_split(data, len(data) / Num)  # split data in array of length = Num
+            for index, chunk in enumerate(data_split):
+                chunk_s, _ = mlab.psd(chunk, NFFT=Num, Fs=fs, detrend="linear", noverlap=int(Overlap / 100 * Num))
+                chunk_s = chunk_s[1:]
+                integral = sum(chunk_s[start:stop] / len(chunk_s[start:stop]))  # * (f_s[1]-f_s[0]))
+                vec_rms = np.append(vec_rms, integral)
+                rms_time = np.append(rms_time, time[index * len(chunk):len(chunk) + index * len(chunk)][0])
+                if integral < integral_min:
+                    integral_min = integral
+                    data = chunk
+                    best_time = time[index * len(chunk):len(chunk) + index * len(chunk)]
+                    print(datetime.fromtimestamp(best_time[0]), 'to:',
+                          datetime.fromtimestamp(best_time[-1:])) if verbose else ''
     best_psd, f_best = mlab.psd(data, NFFT=int(Num / mean_number), Fs=fs, detrend="linear",
                                 noverlap=int(Overlap / 100 * Num / mean_number))
     f_best = f_best[1:]
@@ -276,6 +341,26 @@ def psd_rms_finder(stream, filexml, network, sensor, location, channel, tstart, 
 
 
 def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
+    r"""
+    This function is used to make the plot of given PSD data and a histogram of RMS (i.e. integral values under the PSD
+    curve) data.
+
+    :type frequency_data: numpy.ndarray
+    :param frequency_data: frequency array
+
+    :type psd_data: numpy.ndarray
+    :param psd_data: PSD array
+
+    :type rms_data: numpy.ndarray
+    :param rms_data: RMS array, i.e. integral values under the PSD curve
+
+    :type sampling_rate: float
+    :param sampling_rate: sampling rate of the seismometer
+
+    :type sensor_id: str
+    :param sensor_id: full name of the sensor {NETWORK}.{SENSOR}.{LOCATION}.{CHANNEL}
+    """
+
     fl, nlnm, fh, nhnm = Ec.NLNM(2)
 
     fig0 = plt.figure()
@@ -300,19 +385,32 @@ def plot_maker(frequency_data, psd_data, rms_data, sampling_rate, sensor_id):
     ax0.set_title(sensor_id, fontsize=20)
     ax0.legend(loc='best', shadow=True, fontsize='medium')
 
-    # fig1 = plt.figure()
-    # ax1 = fig1.add_subplot()
-    # ax1.tick_params(axis='both', which='both', labelsize=15)
-    # ax1.hist(rms_data, bins=100)
-    # ax1.grid(True, linestyle='--')
-    # ax1.set_yscale("log")
-    # ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
-    # ax1.set_ylabel(r'Counts', fontsize=20)
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot()
+    ax1.tick_params(axis='both', which='both', labelsize=15)
+    ax1.hist(rms_data, bins=100)
+    ax1.grid(True, linestyle='--')
+    ax1.set_yscale("log")
+    ax1.set_xlabel(r'Integral [$(m/s)^2$]', fontsize=20)
+    ax1.set_ylabel(r'Counts', fontsize=20)
 
     plt.show()
 
 
 def rms_plotter(rms_time, rms_data):
+    r"""
+    This function makes the plot of the RMS time evolution. In particular, it shows both the RMS time evolution and the
+    plots for the RMS in three different time bands:
+
+    00:00 - 07:00 | 08:00 - 15:00 | 16:00 - 23:00
+
+    :type rms_time: numpy.ndarray
+    :param rms_time: time array of the RMS data
+
+    :type rms_data: numpy.ndarray
+    :param rms_data: RMS array
+    """
+
     def myfromtimestampfunction(timestamp):
         return datetime.fromtimestamp(timestamp)
 
@@ -323,6 +421,7 @@ def rms_plotter(rms_time, rms_data):
         return output_func
 
     import matplotlib.dates as mdates
+    import pandas as pd
 
     fig0 = plt.figure()
     ax0 = fig0.add_subplot()
@@ -335,8 +434,6 @@ def rms_plotter(rms_time, rms_data):
     ax0.set_xlabel('time', fontsize=20)
     ax0.set_ylabel(r'RMS', fontsize=20)
     ax0.legend(loc='best', shadow=True, fontsize='medium')
-
-    import pandas as pd
 
     df = pd.DataFrame({'rms': rms_data}, index=pd.to_datetime(rms_time, unit='s'))
     data_0_7 = df.loc[(df.index.hour >= 0) & (df.index.hour <= 7)]
@@ -367,13 +464,38 @@ def rms_plotter(rms_time, rms_data):
 
 
 def output(freq_data=np.array([]), psd_data=np.array([]), rms_data=np.array([]), sampling_rate=None):
+    r"""
+    This method produces two output file, one containing parameter information and the other containing frequency array
+    with psd array.
+    Parameter information is read from the ET_config.ini file.
+
+    Note
+    -------
+    This script should not be used alone. It was made to work with psd_rms_finder function in which it is possible to
+    enable the 'out' parameter.
+
+    See Also
+    -------
+    psd_rms_finder: this method calls the output function
+
+    :type freq_data: numpy.ndarray
+    :param freq_data: frequency array
+
+    :type psd_data: numpy.ndarray
+    :param psd_data: PSD array
+
+    :type rms_data: numpy.ndarray
+    :param rms_data: RMS array, i.e. integral values under the PSD curve
+
+    :type sampling_rate: float
+    :param sampling_rate: sampling rate fo the seismometer
+    """
     import configparser
-    from obspy import UTCDateTime
     import datetime
 
     now = datetime.datetime.now()
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('ET_config.ini')
     out_path = config['Paths']['outfile_path']
 
     outfile = out_path + 'Results_' + now.strftime('%y-%m-%d_%H-%M-%S') + '.txt'
@@ -406,7 +528,6 @@ def output(freq_data=np.array([]), psd_data=np.array([]), rms_data=np.array([]),
 {'': <10}{'Sensor:' : <20}{sensor : <15}
 {'': <10}{'Location:' : <20}{location : <15}
 {'': <10}{'Channel:' : <20}{channel : <15}
-{'': <10}{'Start date:' : <20}{str(UTCDateTime(config['Quantities']['start_date'])) : <15}
 {'': <10}{'PSD window:' : <20}{config['Quantities']['psd_window'] : <15}
 {'': <10}{'Overlap:' : <20}{config['Quantities']['psd_overlap'] : <15}
 {'': <10}{'Number of means:' : <20}{config['Quantities']['number_of_means'] : <15}
@@ -427,7 +548,7 @@ Both frequency and PSD data has been saved in {outfile_data}
 
 #  THE FOLLOWING FUNCTIONS WORK BUT ARE NEITHER IN A OPTIMIZE VERSION NOR IN A RELEASE STATE.
 
-def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, verbose,
+def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, Overlap, TLong, verbose,
                 save_csv=False, save_img=False, linearplot=True, xscale='linear', show_plot=True):
     r"""
     It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
@@ -455,7 +576,7 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
     :type tstart: str, :class: 'obspy.UTCDateTime'
     :param tstart: Start time to get the response from the seismometer (?)
 
-    :type Twindow: float
+    :type Twindow: int
     :param Twindow: Time windows used to evaluate the PSD.
 
     :type Overlap: float
@@ -463,8 +584,12 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
         which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
         the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
 
+    :type TLong:
+    :param TLong: the seismometer data are split in slices of TLong (expressed in seconds) length. In each slice it is
+        performed the ASD evaluation with its specific parameters.
+
     :type verbose: bool
-    :param verbose: Needed for verobsity
+    :param verbose: Needed for verbosity
 
     :type save_csv: bool
     :param save_csv: If you want to save the data analyzed ina .csv format
@@ -506,13 +631,10 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
 
     df = pd.DataFrame(columns=['frequency', 'timestamp', 'psd_value'], dtype=float)
 
-    T = Twindow
-    Ovl = Overlap
-    TLong = 6 * 3600
-    dT = TLong + T * Ovl
-    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+    dT = TLong + Twindow * Overlap
+    M = int((dT - Twindow) / (Twindow * (1 - Overlap)) + 1)
 
-    K = int((stopdate - startdate) / (T * (1 - Ovl)) + 1)
+    K = int((stopdate - startdate) / (Twindow * (1 - Overlap)) + 1)
 
     print('K: ', K)
     print('M: ', M)
@@ -520,7 +642,7 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
     v = np.empty(K)
 
     fsxml = 100
-    Num = int(T * fsxml)
+    Num = int(Twindow * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
     f = f[1:]
@@ -564,7 +686,7 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
             t1 = time
             for n in range(0, M):
                 v[k] = np.nan
-                tr = st.slice(t1, t1 + T - 1 / fsxml)
+                tr = st.slice(t1, t1 + Twindow - 1 / fsxml)
                 if tr.get_gaps() == [] and len(tr) > 0:
                     tr1 = tr[0]
                     if tr1.stats.npts == Num:
@@ -585,7 +707,7 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
                 data_to_save = np.concatenate((f, time_measure, psd_values))  # , w1))
                 data_to_save = np.reshape(data_to_save, (3, np.size(f))).T
                 df = df.append(pd.DataFrame(data_to_save, columns=df.columns), ignore_index=True)
-                t1 = t1 + T * Ovl
+                t1 = t1 + Twindow * Overlap
                 k += 1
             time = time + TLong
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
@@ -754,7 +876,45 @@ def spectrogram(filexml, Data_path, network, sensor, location, channel, tstart, 
 
 
 def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow, verbose):
-    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+    r"""
+    This method evaluates the RMS for a given seismometer sensor.
+
+    See Also
+    --------
+    rms_comparison: in this method, the rms function is used to read data
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: obspy.core.utcdatetime.UTCDateTime
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: int
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type verbose: bool
+    :param verbose: if True enables more verbosity
+
+    :return: a DataFrame containing three columns, the first one with the dates, the second with the RMS value, and the
+             last one with the station name.
+    """
+
+    # TODO: add Overlap, TLong and other variable accessible from outside the scope
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
 
@@ -763,22 +923,20 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
     filename_list = glob.glob(Data_path + seed_id + "*")
     filename_list.sort()
 
-    print('THIS IS THE GAIN!!!!!', seed_id, gain)
-
     df = pd.DataFrame(columns=['timestamp', 'rms_value', 'Station_Name'])
 
-    T = 600
-    Ovl = 0.5
+    T = Twindow
+    Overlap = 0.5
     TLong = 6 * 3600
-    dT = TLong + T * Ovl
-    M = int((dT - T) / (T * (1 - Ovl)) + 1)
+    dT = TLong + T * Overlap
+    M = int((dT - T) / (T * (1 - Overlap)) + 1)
 
     print('M: ', M)
 
     rms_val = np.array([])
     dates = np.array([])
 
-    fsxml = 100
+    # fsxml = 100
     Num = int(T * fsxml)
 
     _, f = mlab.psd(np.ones(Num), NFFT=Num, Fs=fsxml)
@@ -823,7 +981,7 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
 
                         dates = np.append(dates, date2num(t1.datetime))
 
-                t1 = t1 + T * Ovl
+                t1 = t1 + T * Overlap
                 k += 1
             time = time + TLong
         # rms_val = 10 * np.log10(rms_val)  # to dB
@@ -842,7 +1000,52 @@ def rms(filexml, Data_path, network, sensor, location, channel, tstart, Twindow,
 
 def rms_comparison(filexml, Data_path1, Data_path2, network, sensor1, sensor2, location, channel, tstart, Twindow,
                    verbose, ratio=True, save_img=False, hline=False):
-    # TODO: add descriptions and comments. This is an alpha version of the function but already working
+    r"""
+    This method is used to make the comparison between the RMS time evolution of two seismic sensors.
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path1: str
+    :param Data_path1: Path to the data of the first sensor
+
+    :type Data_path2: str
+    :param Data_path2: Path to the data of the second sensor
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor1: str
+    :param sensor1: Name of the first sensor
+
+    :type sensor2: str
+    :param sensor2: Name of the second sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: obspy.core.utcdatetime.UTCDateTime
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type Twindow: int
+    :param Twindow: Time windows used to evaluate the PSD.
+
+    :type verbose: bool
+    :param verbose: if True enables more verbosity
+
+    :type ratio: bool
+    :param ratio: if True it is performed the ratio between the RMS
+
+    :type save_img: bool
+    :param save_img: if True the plots are saved
+
+    :type hline: bool
+    :param hline: if True on the plot is drawn a horizontal line at ratio=1
+    """
+    # TODO: add Overlap, TLong and other variable accessible from outside the scope. Same for the image output path
     df = rms(filexml, Data_path1, network, sensor1, location, channel, tstart, Twindow, verbose)
     if sensor1 == 'P2' or sensor1 == 'P3' and location == '00':
         df1 = rms(filexml, Data_path2, network, sensor2, '01', channel, tstart, Twindow, verbose)
@@ -939,6 +1142,17 @@ def rms_comparison(filexml, Data_path1, Data_path2, network, sensor1, sensor2, l
 
 
 def asd_from_csv(path_to_csv):
+    r"""
+    UNSTABLE VERSION, NEVER WELL TESTED!
+    This method read a .csv file and make the plot of a column.
+
+    Note
+    ------
+    This function is not a stable release, the TODOs for more information.
+
+    :type path_to_csv: str
+    :param path_to_csv: .csv file path
+    """
     df = pd.read_csv(path_to_csv)
     # fl, nlnm, fh, nhnm = Ec.NLNM(1)
     # w_fl = 2.0 * np.pi * fl
@@ -964,6 +1178,9 @@ def asd_from_csv(path_to_csv):
     # print(df.tail())
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
+
+    # TODO: replace df.iloc[:,42] with a way of selecting the day and time.
+    #  The number '42' comes from The Hitchhiker's Guide to the Galaxy
     label = pd.to_datetime(df.iloc[:, 42].name, unit='ns').strftime('%d %b %H:%M:%S')
     # datetime.datetime.strptime(df.iloc[:, 1].name, '%Y-%m-%d %H:%M:%S').strftime('%d %b %H:%M')
     # psd_vals = 10 ** (df.iloc[:, 42] / 5)
@@ -996,6 +1213,21 @@ def asd_from_csv(path_to_csv):
 
 
 def comparison_from_csv(path_to_csv1, path_to_csv2):
+    r"""
+    This method makes the ratio between the average value of the asd between 2 and 20 Hz of two DataFrames (contained in
+    two .csv files). These DataFrames must have a particular structure, refers to 'See Also' for further details.
+
+    See Also
+    --------
+    spectrogram: inside this method through the save_csv option it is possible to create the .csv file with the
+    characteristics required by this method
+
+    :type path_to_csv1: str
+    :param path_to_csv1: path to the first .csv file
+
+    :type path_to_csv2: str
+    :param path_to_csv2: path to the second .csv file
+    """
     df1 = pd.read_csv(path_to_csv1)
     df2 = pd.read_csv(path_to_csv2)
 
@@ -1014,6 +1246,29 @@ def comparison_from_csv(path_to_csv1, path_to_csv2):
 
 def heatmap_from_csv(path_to_file=r'D:\ET\SOE0-HHZ_20210326-20210410_ACC_3600.csv', path_to_csvs=None, multi_csv=False,
                      save_img=False):
+    r"""
+    UNSTABLE VERSION, NEVER WELL TESTED!
+    This function is just an attempt in the creation of a method that can merge .csv files and make a heatmap. The idea
+    was to create an automatic algorithm that creates daily .csv files and then using this kind of method merge them to
+    make the spectrogram. However, this project was not pursued due to lack of time.
+
+    Note
+    ------
+    This method can also be used with single .csv file to reproduce the heatmap. It works and should be used instead of
+    launching spectrogram().
+
+    :type path_to_file: str
+    :param path_to_file: path to a single .csv file
+
+    :type path_to_csvs: str
+    :param path_to_csvs: path to the directory containing multiple .csv files
+
+    :type multi_csv: bool
+    :param multi_csv: if True the function merges all the .csv file contained in the path_to_csvs
+
+    :type save_img: bool
+    :param save_img: if True the plot is saved
+    """
     if not multi_csv:
         df = pd.read_csv(path_to_file)
         freq_indeces = df['frequency']
@@ -1051,6 +1306,46 @@ def heatmap_from_csv(path_to_file=r'D:\ET\SOE0-HHZ_20210326-20210410_ACC_3600.cs
 
 
 def csv_creators(filexml, Data_path, network, sensor, location, channel, tstart, T, Ovl, verbose):
+    r"""
+    This method creates .csv files with several columns, the first one contains frequency values, while the others
+    contain the ASD values evaluated at specific datetime.
+
+    See Also
+    --------
+    spectrogram: this function works as the spectrogram() method with the save_csv=True without making plots
+
+    :type filexml: str
+    :param filexml: The .xml needed to read the seismometer response
+
+    :type Data_path: str
+    :param Data_path: Path to the data.
+
+    :type network: str
+    :param network: Sensor network
+
+    :type sensor: str
+    :param sensor: Name of the sensor
+
+    :type location: str
+    :param location: Location of the sensor
+
+    :type channel: str
+    :param channel: Channel to be analysed
+
+    :type tstart: str, :class: 'obspy.UTCDateTime'
+    :param tstart: Start time to get the response from the seismometer (?)
+
+    :type T: int
+    :param T: Time windows used to evaluate the PSD.
+
+    :type Ovl: float
+    :param Ovl: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
+
+    :type verbose: bool
+    :param verbose: Needed for verbosity
+    """
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
     # Read Inventory and get freq array, response array, sample freq.
     fxml, respamp, fsxml, gain = read_Inv(filexml, network, sensor, location, channel, tstart, T, verbose=verbose)
@@ -1166,9 +1461,13 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
                   save_img=False, xscale='log', show_plot=True, save_npz=False, q1=0.1, q2=0.5, q3=0.9, unit='VEL',
                   img_path=None):
     r"""
-    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
-    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
-    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+    This function evaluates three given quantiles of the ASD distribution of a given seismometer detector. It stores
+    the distribution, i.e. all the ASD evaluated, in a temporary DataFrame which is split in two: daytime and nighttime.
+    
+    See Also
+    --------
+    ET_Quantile.py: This script was built to improve the performance of this script and it is HIGHLY recommended to use
+    it
 
     :type filexml: str
     :param filexml: The .xml needed to read the seismometer response
@@ -1191,7 +1490,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
     :type tstart: str, :class: 'obspy.UTCDateTime'
     :param tstart: Start time to get the response from the seismometer (?)
 
-    :type Twindow: float
+    :type Twindow: int
     :param Twindow: Time windows used to evaluate the PSD.
 
     :type Overlap: float
@@ -1200,26 +1499,34 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
         the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
 
     :type verbose: bool
-    :param verbose: Needed for verobsity
-
-    :type save_csv: bool
-    :param save_csv: If you want to save the data analyzed ina .csv format
+    :param verbose: Needed for verbosity
 
     :type save_img: bool
-    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
-        on True if more than 5 days of data are considered.
-
-    :type linearplot: bool
-    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
-        nighttime. This type of plot shows the mean with one sigma of confidence interval
+    :param save_img: if True the plots are saved
 
     :type xscale: str
-    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
-        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+    :param xscale: the scale of the x-axis of the plots. I can be 'log', 'linear' or 'both'
 
     :type show_plot: bool
-    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
-        be shown especially if the analysis is done on more than 5 days.
+    :param show_plot: if True the plots are shown
+
+    :type save_npz: bool
+    :param save_npz: if True the data of the quantile curves are saved in a .npz file
+
+    :type q1: float
+    :param q1: first quantile to be evaluated
+
+    :type q2: float
+    :param q2: second quantile to be evaluated
+
+    :type q3: float
+    :param q3: third quantile to be evaluated
+
+    :type unit: str
+    :param unit: unit of the ASD. Only VEL or ACC are available
+
+    :type img_path: str
+    :param img_path: path to save image
     """
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
@@ -1350,7 +1657,7 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
             time = time + TLong
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')  # , format='%d-%b %H:%M')
     print(df.head())
-    df['psd_value'] = 10 * np.log10(df['psd_value'])
+    df['psd_value'] = 10 * np.log10(df['psd_value'])  # to dB
     print(df.head())
     print(df.info())
     df['frequency'] = df['frequency'].astype(float)
@@ -1605,6 +1912,24 @@ def quantile_plot(filexml, Data_path, network, sensor, location, channel, tstart
 
 
 def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
+    r"""
+    This method is used to perform a comparison between ET sensitivity curve and ASD evaluated from seismometer. The
+    data must be saved in a .npz file. The comparison is made by counting the number of points under or above the ET
+    sensitivity curve.
+
+    Note
+    -------
+    This function is base on the works made by Nikita Levashko, ask for his presentation.
+
+    :type et_sens_path: str
+    :param et_sens_path: path to the ET sensitivity curve file
+
+    :type npz_file: str
+    :param npz_file: path to the .npz file with the ASD evaluated from the seismometer
+
+    :type nlnm_comparison: bool
+    :param nlnm_comparison: if True the comparison is made with the NLNM instead of ET sensitivity curve (BETA)
+    """
     G = 6.673e-11  # Gravitational constant
     rho = 2800  # density of the rock around the detector
     L = 10000  # Arm length of the interferometer
@@ -1688,12 +2013,11 @@ def et_sens_single_comparison(et_sens_path, npz_file, nlnm_comparison=False):
 def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, channel, Twindow, Overlap, TLong,
                  verbose, unit='VEL', q1=0.9, lower_lim=1, upper_lim=5, time_evo=False, terziet=False):
     r"""
-    It performs the spectrogram of given data. The spectrogram is a two-dimensional plot with on the y-axis the
-    frequencies, on the x-axis the dates and on virtual z-axis the ASD value expressed
-    in :math:`ms^{-2}/\sqrt{Hz}\:[dB]`.
+    This function reads and evaluates the data of a seismometer, then makes the comparison between the quantile curve
+    chosen of the seismometer data and the ET sensitivity curve in a given frequency range [version of May 19, 2022].
 
-    :type filexml: str
-    :param filexml: The .xml needed to read the seismometer response
+    :type
+    :param et_sens_path:
 
     :type Data_path: str
     :param Data_path: Path to the data.
@@ -1713,7 +2037,7 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
     :type tstart: str, :class: 'obspy.UTCDateTime'
     :param tstart: Start time to get the response from the seismometer (?)
 
-    :type Twindow: float
+    :type Twindow: int
     :param Twindow: Time windows used to evaluate the PSD.
 
     :type Overlap: float
@@ -1721,27 +2045,37 @@ def et_sens_read(et_sens_path, filexml, Data_path, network, sensor, location, ch
         which depends on this parameter. For example 10' of data are trasnlated by DEFAULT of 10', but with Overlap=0.5,
         the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
 
+    :type TLong:
+    :param TLong: the seismometer data are split in slices of TLong (expressed in seconds) length. In each slice it is
+        performed the ASD evaluation with its specific parameters.
+
     :type verbose: bool
-    :param verbose: Needed for verobsity
+    :param verbose: Needed for verbosity
 
-    :type save_csv: bool
-    :param save_csv: If you want to save the data analyzed ina .csv format
+    :type unit: str
+    :param unit: unit of the ASD. Only VEL or ACC are available
 
-    :type save_img: bool
-    :param save_img: If you want to save the images produce. Please note that it is highly recommended setting the value
-        on True if more than 5 days of data are considered.
+    :type q1: float
+    :param q1: quantile to be evaluated
 
-    :type linearplot: bool
-    :param linearplot: If you want to create the linear plot of the data with the distinction between daytime and
-        nighttime. This type of plot shows the mean with one sigma of confidence interval
+    :type lower_lim: float
+    :param lower_lim: lower limit of the frequency region in which the comparison is performed.
 
-    :type xscale: str
-    :param xscale: It represents the scale of the lineplot produced. It can be one of 'linear', 'log' or 'both'. Please
-        note that setting the variable on 'both' it will produce both linear and logarithmic x-scale plots.
+    :type upper_lim: float
+    :param upper_lim: upper limit of the frequency region in which the comparison is performed.
 
-    :type show_plot: bool
-    :param show_plot: If you want to show the plot produced. Please note that the spectrogram requires lot of memory to
-        be shown especially if the analysis is done on more than 5 days.
+    :type time_evo: bool
+    :param time_evo: if True the information about time is stored in an array. It is needed to see for how many hours
+        the data were below/above the ET sensitivy curve
+
+    :type terziet: bool
+    :param terziet: NOT DEVELOPED YET. Makes the comparison between Terziet data and ET sensitivity curve in addition to
+        the seismometer data
+
+    :return: a Tuple of six quantities: the first two are two arrays containing the number of points below and above the
+        ET sensitivity curve respectively; the third quantity is the ET sensitivity curve interpolated over the
+        frequencies; the fourth and fifth quantities are relative to the startdate and stopdate of the data used, and
+        finally the last is the time array.
     """
 
     seed_id = network + '.' + sensor + '.' + location + '.' + channel
@@ -1905,8 +2239,8 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
                        terziet=False, time_evo=False, out_path=None):
     """
     This function make the comparison between the seismometer data chosen and the ET sensitivity curve in a given
-    frequency range [version of 19/05/2022]. The results of this comparison are shown in a bar plot in which is reported
-    the amount of hours in which the seismometer data are below or above the ET sensitivity curve.
+    frequency range [version of May 19, 2022]. The results of this comparison are shown in a bar plot in which is
+    reported the amount of hours in which the seismometer data are below or above the ET sensitivity curve.
 
     :type et_sens_path: str
     :param et_sens_path: The path to the .txt file of the ET sensitivity curve
@@ -1915,37 +2249,39 @@ def et_sens_comparison(et_sens_path, filexml, Data_path1, Data_path2, network, s
     :param filexml: The .xml needed to read the seismometer response
 
     :type Data_path1: str
-    :param Data_path1: Path to the data.
+    :param Data_path1: Path to the data of the first sensor
 
     :type Data_path2: str
-    :param Data_path2:
+    :param Data_path2: Path to the data of the second sensor
 
     :type network: str
-    :param network:
+    :param network: Sensor network
 
     :type sensor1: str
-    :param sensor1:
+    :param sensor1: Name of the first sensor
 
     :type sensor2: str
-    :param sensor2:
+    :param sensor2: Name of the second sensor
 
     :type location: str
-    :param location:
+    :param location: Location of the first sensor
 
     :type location2: str
-    :param location2:
+    :param location2: Location of the second sensor
 
     :type channel: str
-    :param channel:
+    :param channel: Channel to be analysed
 
     :type Twindow: int
-    :param Twindow:
+    :param Twindow: Time windows used to evaluate the PSD.
 
     :type Overlap: float
-    :param Overlap:
+    :param Overlap: The overlap expressed as a number, i.e. 0.5 = 50%. The data read is translated of a given quantity
+        which depends on this parameter. For example 10' of data are translated by DEFAULT of 10', but with Overlap=0.5,
+        the data will be translated by 5'. Therefore, it will achieve 5' of Overlap.
 
     :type verbose: bool
-    :param verbose:
+    :param verbose: if True enables more verbosity
 
     :type TLong: int
     :param TLong:

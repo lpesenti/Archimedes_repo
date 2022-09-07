@@ -1,17 +1,17 @@
+__author__ = "Davide Rozza"
+__credits__ = ["Davide Rozza"]
+__version__ = "0.1.0"
+__maintainer__ = "no longer supported"
+__email__ = ""
+__status__ = "Deprecated"
+
+import math
+
+import numpy as np
 from matplotlib import mlab
 from matplotlib import pyplot as plt
-from matplotlib.dates import date2num
-import matplotlib.dates as mdates
-import datetime as dt
-import time
-import numpy as np
-import math
-from scipy import signal
-import scipy.io
-import scipy.fftpack
-from obspy import read, read_inventory
 from obspy import UTCDateTime
-from obspy import Stream
+from obspy import read, read_inventory
 
 
 def Read_Inv(filexml, ch, sensor, t, Twindow, verbose):

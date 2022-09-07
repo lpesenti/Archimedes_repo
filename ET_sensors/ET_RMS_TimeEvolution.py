@@ -1,9 +1,27 @@
 __author__ = "Luca Pesenti"
 __credits__ = ["Sara Anzuinelli", "Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
 __version__ = "0.1.2"
-__maintainer__ = "Luca Pesenti"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
 __email__ = "lpesenti@uniss.it"
 __status__ = "Development"
+
+r"""
+[LAST UPDATE: September 7, 2022 - Luca Pesenti]
+
+!!! BEFORE CHANGING ANY PART OF THE CODE, PLEASE CONTACT THE MAINTAINER !!!
+
+This is a self-contained script and to use it, please change only the relative config file (RMS_time_config.ini).
+For further information see the README file in this repository
+
+The following functions have been built to work with the data obtained by the seismometers used at the Sos Enattos site
+and uploaded to the et-repo.
+The data are stored in daily file with the name-format: 
+
+                {NETWORK}.{SENSOR}.{LOCATION}.{CHANNEL}.D.{YEAR}.{FILE_NUMBER}      
+                
+This script is used to evaluate the RMS (i.e., integral under the PSD or ASD) of daily DataFrame (see ET_Quantile.py).
+After the evaluation it shows the results in a plot
+"""
 
 import concurrent.futures
 import configparser

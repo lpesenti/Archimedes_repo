@@ -1,3 +1,10 @@
+__author__ = "Davide Rozza"
+__credits__ = ["Davide Rozza"]
+__version__ = "0.1.0"
+__maintainer__ = "no longer supported"
+__email__ = ""
+__status__ = "Deprecated"
+
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter import *
