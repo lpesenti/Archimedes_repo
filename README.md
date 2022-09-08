@@ -96,10 +96,10 @@ Welcome to the GitHub repository of the Archimedes Experiment in which are prese
 
 #### ./Noise
 
-* In this folder there are subdirectories (at the moment _August 25, 2022_ only one is present) containing data relative
+* In this folder there are subdirectories (at the moment _August 25, 2022,_ only one is present) containing data relative
   to the noise of the Optical Lever Shield (OLS). Each subdirectory refers to a different sampling frequency.
 * The name format is the following:
-    * OL_(room lights)(OP27 model)(where)(UPS or not)(PSD coverage)(sampling frequency).lvm
+    * OL_{room lights}{OP27 model}{where}{UPS or not}{PSD coverage}{sampling frequency}.lvm
         * OL : Optical Lever
         * Dark/Light : the measurement has been performed in a dark room or with the lights on
         * EPZ/GPZ : the OP27 model used
@@ -159,71 +159,112 @@ Welcome to the GitHub repository of the Archimedes Experiment in which are prese
 
 * This script contains all the common and useful functions that are not strictly related to the data analysis.
 
+#### ET_config.ini
+
+* In this file are contained several variables needed for the seismic analysis.
+* The values of the variable present must be changed especially the ones related to paths variables.
+
 #### ET_Quantile.py
 
 * This script is used to evaluate the quantile curve of a given seismometer dataset.
 * This is a completely ___self-contained___ script which should not be modified.
-    * All the variable that must be modified are contained in the relative config file (see _Quantile_config.ini_)
+* All the variable that must be modified are contained in the relative config file (see _Quantile_config.ini_)
 
 #### ET_RMS_TimeEvolution.py
 
 * This script is used to evaluate the integral under the asd evaluated by the _ET_Quantile.py_ and then plot the time
   evolution of this quantity.
 * This is a completely ___self-contained___ script which should not be modified.
-    * All the variable that must be modified are contained in the relative config file (see _RMS_time_config.ini_)
+  * All the variable that must be modified are contained in the relative config file (see _RMS_time_config.ini_)
 
 #### Quantile_config.ini
 
 * In this file are contained several variables needed for the _ET_Quantile.py_ file.
 * Below is a description of the variables contained in the file:
-    * [DEFAULT]
-        * _verbose_ (Bool):  If True enable more verbosity
-        * _only_daily_ (Bool): If True the script simply create daily dataframe without doing anything else
-        * _skip_daily_ (Bool): If True the script does not create the daily dataframe (use it only if the code has
-          already run before)
-        * _skip_freq_df_ (Bool): If True the script does not create the frequency dataframe (use it only if the code has
-          already run before)
-        * _skip_quant_eval_ (Bool): If True the script does not evaluate the quantile curves (use it only if the code
-          has
-          already run before)
-        * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1 only the 'ACC' option is supported)
-    * [Paths]
-        * _xml_path_ (str): It is the path to the .xml file used to read the inventory in which is contained the
-          response amplitude and other information
-        * _data_path_ (str): The data path on which to perform the analysis
-        * _outDF_path_ (str): The path to the directory in which the script will store the DataFrame created
-    * [Instrument]
-        * _network_ (str): The network of the seismometer considered on which perform the analysis
-        * _sensor_ (str): The name of the sensor on which perform the analysis
-        * _location_ (str): The location of the sensor on which perform the analysis
-        * _channel_ (str): The channel of the sensor on which perform the analysis
-    * [Quantities]
-        * _psd_window_ (int): Length of the PSD expressed in seconds
-        * _TLong_ (int): The time windows in which the data will be divided to speed up PSD evaluation expressed in
-          seconds (this quantity must be greater or equal to the _psd_window_ parameter)
-        * _psd_overlap_ (float): The overlap used in the PSD evaluation (from 0 to 1)
-        * _quantiles_ (list): The list of quantiles you wish to calculate
+  * [DEFAULT]
+    * _verbose_ (Bool):  If True enable more verbosity
+    * _only_daily_ (Bool): If True the script simply create daily dataframe without doing anything else
+    * _skip_daily_ (Bool): If True the script does not create the daily dataframe (use it only if the code has
+      already run before)
+    * _skip_freq_df_ (Bool): If True the script does not create the frequency dataframe (use it only if the code has
+      already run before)
+    * _skip_quant_eval_ (Bool): If True the script does not evaluate the quantile curves (use it only if the code
+      has
+      already run before)
+    * _unit_ (str): It could be 'ACC' or 'VEL' (up to version 0.1 only the 'ACC' option is supported)
+  * [Paths]
+    * _xml_path_ (str): It is the path to the .xml file used to read the inventory in which is contained the
+      response amplitude and other information
+    * _data_path_ (str): The data path on which to perform the analysis
+    * _outDF_path_ (str): The path to the directory in which the script will store the DataFrame created
+  * [Instrument]
+    * _network_ (str): The network of the seismometer considered on which perform the analysis
+    * _sensor_ (str): The name of the sensor on which perform the analysis
+    * _location_ (str): The location of the sensor on which perform the analysis
+    * _channel_ (str): The channel of the sensor on which perform the analysis
+  * [Quantities]
+    * _psd_window_ (int): Length of the PSD expressed in seconds
+    * _TLong_ (int): The time windows in which the data will be divided to speed up PSD evaluation expressed in
+      seconds (this quantity must be greater or equal to the _psd_window_ parameter)
+    * _psd_overlap_ (float): The overlap used in the PSD evaluation (from 0 to 1)
+    * _quantiles_ (list): The list of quantiles you wish to calculate
 
 #### RMS_time_config.ini
 
 * In this file are contained several variables needed for the _ET_RMS_TimeEvolution.py_ file.
 * Below is a description of the variables contained in the file:
-    * [Paths]
-        * _outDF_path_ (str): The path to the directory in which the script will store the DataFrame created
-    * [Quantities]
-        * _psd_window_ (int): Length of the PSD expressed in seconds
-        * _integral_min_ (float): The lower limit of the integral
-        * _integral_max_ (float): The upper limit of the integral
-
-#### ET_config.ini
-
-* In this file are contained several variables needed for the seismic analysis.
-* The values of the variable present must be changed especially the ones related to paths variables.
+  * [Paths]
+    * _outDF_path_ (str): The path to the directory in which the script will store the DataFrame created
+  * [Quantities]
+    * _psd_window_ (int): Length of the PSD expressed in seconds
+    * _integral_min_ (float): The lower limit of the integral
+    * _integral_max_ (float): The upper limit of the integral
 
 #### GUI_Analysis.py (_No longer supported or maintained_)
 
 * This is the Gui used fo the analysis of the sensors placed in the site.
 * Please note that this script requires _Analysis.py_ in order to work.
+
+## GW_Article
+
+###### In this folder is contained a function needed to work on GW data.
+
+## LabVIEW
+
+###### In this folder are contained all the LabVIEW project used on the cRIO for the Archimedes experiment
+
+## Optical_Lever
+
+###### In this folder are contained several functions needed for the Optical Lever (OL) analysis of the Archimedes experiment
+
+#### OL_Analysis.py
+
+* This script has to be used as a prototype to launch the functions contained in _OL_functions.py_. However, it is
+  perfectly working.
+* This script needs the _OL_config.ini_ file contained it this folder which has all the variables settings.
+
+#### OL_config.ini
+
+* In this file are contained several variables needed for the OL analysis.
+* The values of the variable present must be changed especially the ones related to paths variables.
+
+#### OL_functions.py
+
+* In this are stored several functions needed to perform OL analysis. All the functions contained are fully
+  commented.
+
+#### OL_noise.py
+
+* This script contains several functions but should be used alone, however the functions inside can be used outside this
+  file.
+* It contains the functions needed for the OP27 electronic noise level analysis.
+
+#### OL_Rasp_controller.py
+
+* It contains just a prototype of the functions needed to perform real-time PSD of OP27 operational amplifier using a
+  a Raspberry Pi. This was the basis of the construction of a device that would monitor the health status of the Optical
+  Lever Shield (OLS)
+
 
 
 

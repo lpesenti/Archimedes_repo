@@ -26,7 +26,6 @@ seismometer, and then the file, please refer to the ET_config.ini file.
 
 It is known that most of them are not optimized and sometimes they can take a long time of execution. Some improvement
 was done but older functions were not optimized nor reviewed since months (they still working great!!).
-
 """
 
 import datetime

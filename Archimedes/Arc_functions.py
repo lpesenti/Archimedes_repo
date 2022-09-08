@@ -1072,6 +1072,7 @@ def soe_read_data(day, month, year, quantity='Error', num_d=1, tevo=False, file_
     *scitype* takes only one of the following parameter:
         - SCI : scientific data from the Archimedes experiment
         - OL : optical lever data
+        - TEM : temperature data from the sensor inside the prototype balance
 
     Returns
     -------
@@ -1529,10 +1530,10 @@ def coherence(sign1, sign2, day, month, year, ax, ndays=1, day2=None, month2=Non
     Parameters
     ----------
         sign1 : str
-            It is the the first quantity used to evaluate the coherence.
+            It is the first quantity used to evaluate the coherence.
 
         sign2 : str
-            It is the the first quantity used to evaluate the coherence.
+            It is the first quantity used to evaluate the coherence.
 
         day : int
             It refers to the first day of the data to be read

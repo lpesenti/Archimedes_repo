@@ -1,7 +1,7 @@
 __author__ = "Luca Pesenti and Davide Rozza "
 __credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
 __version__ = "0.2.5"
-__maintainer__ = "Luca Pesenti and Davide Rozza"
+__maintainer__ = "Luca Pesenti (until September 30, 2022) and Davide Rozza"
 __email__ = "lpesenti@uniss.it, drozza@uniss.it"
 __status__ = "Prototype"
 

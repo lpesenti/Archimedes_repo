@@ -5,18 +5,19 @@ __maintainer__ = "Luca Pesenti"
 __email__ = "l.pesenti6@campus.unimib.it"
 __status__ = "Prototype"
 
-import pandas as pd
-import numpy as np
-from matplotlib import mlab
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-import matplotlib.gridspec as gridspec
-from sqlalchemy.testing import rowset
-from win32com.makegw.makegwparse import error_not_supported
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import mlab
 
 
 def old():
+    r"""
+    Old function no longer supported
+    """
     # FREQUENCY AND PSD WINDOW
     fs = 1000  # if using oscilloscope read first row and do "1 / 2.000000e-04"
     time_window = 60  # in sec
@@ -239,45 +240,49 @@ def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, mean
                   offset=1,
                   max_length=600):
     r"""
-        The data read are split in chunk of equal size using the formula:
-        ..math: #_{chunks} = \frac{maximum length}{PSD window}
-        For each chunk a psd is performed with the window specified and with the number of means specified.
-        The function returns a DataFrame containing three columns (asd_data, freq_data and Channels),the
-        psd window and the means used (necessary to evaluate the minimum frequency achieved)
-        and the sample frequency applied.
+    The data read are split in chunk of equal size using the formula,
 
-        :param file_directory: The directory where the file is stored
-        :type file_directory: str
+    .. math::
 
-        :param filename: The name of the file
-        :type filename: str
+        #_{chunks} = \frac{maximum length}{PSD window}
 
-        :param samp_freq: The sampling frequency used
-        :type samp_freq: int
+    For each chunk a psd is performed with the window specified and with the number of means specified.
+    The function returns a DataFrame containing three columns (asd_data, freq_data and Channels),the
+    psd window and the means used (necessary to evaluate the minimum frequency achieved)
+    and the sample frequency applied.
 
-        :param psd_window: Represents the length, in seconds, of the psd
-        :type psd_window: int
+    :param file_directory: The directory where the file is stored
+    :type file_directory: str
 
-        :param channel: One of the three channel acquired by the OL-shield. It MUST BE one of the following: Dy, Dx or
-         Sum
-        :type channel: str
+    :param filename: The name of the file
+    :type filename: str
 
-        :param means_number: Specify how many means for each psd evaluation you want to perform
-        :type means_number: int
+    :param samp_freq: The sampling frequency used
+    :type samp_freq: int
 
-        :param final_df: Already existing DataFrame to which you want to append the new data
-        :type final_df: pandas.DataFrame
+    :param psd_window: Represents the length, in seconds, of the psd
+    :type psd_window: int
 
-        :param offset: If you want to apply a vertical translation to the data
-        :type offset: float
+    :param channel: One of the three channel acquired by the OL-shield. It MUST BE one of the following: Dy, Dx or
+     Sum
+    :type channel: str
 
-        :param max_length: Specify the maximum length of the data, in seconds, to be used. It is used to uniform the
-         length between the channels
-        :type max_length: int
+    :param means_number: Specify how many means for each psd evaluation you want to perform
+    :type means_number: int
 
-        :return: A tuple of: a DataFrame containing three columns (asd_data, freq_data and Channels) the ratio between
-         the psd window and the means used (necessary to evaluate the minimum frequency achieved)
-         and the sample frequency applied
+    :param final_df: Already existing DataFrame to which you want to append the new data
+    :type final_df: pandas.DataFrame
+
+    :param offset: If you want to apply a vertical translation to the data
+    :type offset: float
+
+    :param max_length: Specify the maximum length of the data, in seconds, to be used. It is used to uniform the
+     length between the channels
+    :type max_length: int
+
+    :return: A tuple of: a DataFrame containing three columns (asd_data, freq_data and Channels) the ratio between
+     the psd window and the means used (necessary to evaluate the minimum frequency achieved)
+     and the sample frequency applied
     """
     Num = samp_freq * psd_window
     last_index = max_length * samp_freq
@@ -308,7 +313,37 @@ def asd_extractor(file_directory, filename, samp_freq, psd_window, channel, mean
 
 
 def ratio(first_df, second_df, lower_quantile, upper_quantile, estimator='mean'):
-    # TODO: Add function description
+    r"""
+    This method performs the ratio between two DataFrame, in particular it does the ratio between the mean (or median)
+    of the two DataFrame. Then it does the same thing for the lower and upper quantiles chosen.
+    The DataFrame must have the following columns:
+        * asd_data
+        * freq_data
+        * Channels
+
+    See Also
+    --------
+    * asd_extractor(): the output of this function contains a DataFrame of the form used for the ratio operation
+
+    :type first_df: pandas.core.frame.DataFrame
+    :param first_df: the first DataFrame on which perform the ratio
+
+    :type second_df: pandas.core.frame.DataFrame
+    :param second_df: the second DataFrame on which perform the ratio
+
+    :type lower_quantile: float
+    :param lower_quantile: the lower quantile on which perform the ratio
+
+    :type upper_quantile: float
+    :param upper_quantile: the upper quantile on which perform the ratio
+
+    :type estimator: str
+    :param estimator: it could be one between mean or median
+
+    :return: A tuple of: a numpy.ndarray containing frequency data, a numpy.ndarray containing the estimator ratio data,
+     a numpy.ndarray containing the lower quantile ratio data, a numpy.ndarray containing the upper quantile ratio data,
+     and the label relative to the ratio quantities needed for a plot
+    """
     try:
         if estimator.lower() == 'mean':
             first_estim = first_df.groupby(['freq_data'])['asd_data'].mean()
@@ -354,7 +389,45 @@ def ratio(first_df, second_df, lower_quantile, upper_quantile, estimator='mean')
 
 
 def ratio_std(first_df, second_df, num_std=1, estimator='mean'):
-    # TODO: Add function description
+    r"""
+    This method performs the ratio between two DataFrame, in particular it does the ratio between the mean (or median)
+    of the two DataFrame. Then it evaluates the ratio between the two DataFrame to the specified number of standard
+    deviations from the mean. The DataFrame must have the following columns:
+        * asd_data
+        * freq_data
+        * Channels
+
+    Note
+    ------
+    The formula used is,
+
+    .. math::
+        estimator_{ratio} = \frac{estimator_1}{estimator_2}
+    .. math::
+        lower_{std} = \frac{mean_1 - n \cdot \sigma}{mean_2 - n \cdot \sigma}
+    .. math::
+        upper_{std} = \frac{mean_1 + n \cdot \sigma}{mean_2 + n \cdot \sigma}
+
+    See Also
+    --------
+    * asd_extractor(): the output of this function contains a DataFrame of the form used for the ratio operation
+
+    :type first_df: pandas.core.frame.DataFrame
+    :param first_df: the first DataFrame on which perform the ratio
+
+    :type second_df: pandas.core.frame.DataFrame
+    :param second_df: the second DataFrame on which perform the ratio
+
+    :type num_std: float
+    :param num_std: the number of standard deviations on which perform the ratio
+
+    :type estimator: str
+    :param estimator: it could be one between mean or median
+
+    :return: A tuple of: a numpy.ndarray containing frequency data, a numpy.ndarray containing the estimator ratio data,
+     a numpy.ndarray containing the lower standard deviations ratio data, a numpy.ndarray containing the upper standard
+     deviations ratio data, and the label relative to the ratio quantities needed for a plot
+    """
     # TODO: Create mean variable as default because in ratio it is performed (mean1 +- n*std)/(mean2 +- n*std)
     try:
         if estimator.lower() == 'mean':
@@ -374,9 +447,9 @@ def ratio_std(first_df, second_df, num_std=1, estimator='mean'):
 
     # Evaluate the ratio between the quantities
     std_estim = first_estim / second_estim
-    std_low_quantile = (first_df.groupby(['freq_data'])['asd_data'].mean() + num_std * first_std) / (
+    std_low_std = (first_df.groupby(['freq_data'])['asd_data'].mean() + num_std * first_std) / (
             second_df.groupby(['freq_data'])['asd_data'].mean() + num_std * second_std)
-    std_up_quantile = (first_df.groupby(['freq_data'])['asd_data'].mean() - num_std * first_std) / (
+    std_up_std = (first_df.groupby(['freq_data'])['asd_data'].mean() - num_std * first_std) / (
             second_df.groupby(['freq_data'])['asd_data'].mean() - num_std * second_std)
 
     # Frequencies are the indeces of the DataFrame because of groupby()
@@ -384,18 +457,48 @@ def ratio_std(first_df, second_df, num_std=1, estimator='mean'):
 
     # Convert the DataFrame in numpy array
     std_estim_array = std_estim.to_numpy()
-    std_low_quantile_array = std_low_quantile.to_numpy()
-    std_up_quantile_array = std_up_quantile.to_numpy()
+    std_low_std_array = std_low_std.to_numpy()
+    std_up_std_array = std_up_std.to_numpy()
 
     label_1 = first_df['Channels'][0].split(' ')[1].replace('(', '').replace(')', '')
     label_2 = second_df['Channels'][0].split(' ')[1].replace('(', '').replace(')', '')
     ratio_label = label_1 + '/' + label_2
 
-    return frequency_array, std_estim_array, std_low_quantile_array, std_up_quantile_array, ratio_label
+    return frequency_array, std_estim_array, std_low_std_array, std_up_std_array, ratio_label
 
 
 def difference(first_df, second_df, lower_quantile, upper_quantile, estimator='mean'):
-    # TODO: Add function description
+    r"""
+    This method performs the difference between two DataFrame, in particular it does the difference between the mean
+    (or median) of the two DataFrame. Then it does the same thing for the lower and upper quantiles chosen.
+    The DataFrame must have the following columns:
+        * asd_data
+        * freq_data
+        * Channels
+
+    See Also
+    --------
+    * asd_extractor(): the output of this function contains a DataFrame of the form used for the ratio operation
+
+    :type first_df: pandas.core.frame.DataFrame
+    :param first_df: the first DataFrame on which perform the difference
+
+    :type second_df: pandas.core.frame.DataFrame
+    :param second_df: the second DataFrame on which perform the difference
+
+    :type lower_quantile: float
+    :param lower_quantile: the lower quantile on which perform the difference
+
+    :type upper_quantile: float
+    :param upper_quantile: the upper quantile on which perform the difference
+
+    :type estimator: str
+    :param estimator: it could be one between mean or median
+
+    :return: A tuple of: a numpy.ndarray containing frequency data, a numpy.ndarray containing the estimator difference
+     data, a numpy.ndarray containing the lower quantile difference data, a numpy.ndarray containing the upper quantile
+     difference data, and the label relative to the difference quantities needed for a plot
+    """
     try:
         if estimator.lower() == 'mean':
             first_estim = first_df.groupby(['freq_data'])['asd_data'].mean()
@@ -441,6 +544,42 @@ def difference(first_df, second_df, lower_quantile, upper_quantile, estimator='m
 
 
 def distr_plot(first_df, second_df, lower_quantile, upper_quantile, estimator, num_plot):
+    r"""
+    This function was made since the ratio between the quantiles curve not works properly. It happens that, for example,
+    the ratio between 0.9 quantiles was less than the 0.1 quantile ratio. This not only creates artifacts on the plots
+    but should also be studied thoroughly to verify the correctness of the procedure both mathematically and
+    computationally.
+
+    In particular, this function makes a given number of histograms in which shows the lower and upper quantile for both
+    DataFrame.
+
+    The DataFrame must have the following columns:
+        * asd_data
+        * freq_data
+        * Channels
+
+    See Also
+    --------
+    * asd_extractor(): the output of this function contains a DataFrame of the form used for the ratio operation
+
+    :type first_df: pandas.core.frame.DataFrame
+    :param first_df: the first DataFrame on which perform the difference
+
+    :type second_df: pandas.core.frame.DataFrame
+    :param second_df: the second DataFrame on which perform the difference
+
+    :type lower_quantile: float
+    :param lower_quantile: the lower quantile on which perform the difference
+
+    :type upper_quantile: float
+    :param upper_quantile: the upper quantile on which perform the difference
+
+    :type estimator: str
+    :param estimator: it could be one between mean or median
+
+    :type num_plot: int
+    :param num_plot: the number of plots to be evaluated
+    """
     length = 10
     for i in range(num_plot):
         test_df1 = first_df.sort_values('freq_data')[i * length:length + i * length]['asd_data']
@@ -500,130 +639,131 @@ def distr_plot(first_df, second_df, lower_quantile, upper_quantile, estimator, n
                      ha='center', va='center')
 
 
-df_1, t_w, f_samp = asd_extractor(
-    file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
-    filename=r'OL_Dark_GPZ_SoE_noUPS_Open_1kHz.lvm',
-    samp_freq=2000,
-    psd_window=60,
-    means_number=5,
-    channel='Dx')
+if __name__ == '__main__':
+    df_1, t_w, f_samp = asd_extractor(
+        file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
+        filename=r'OL_Dark_GPZ_SoE_noUPS_Open_1kHz.lvm',
+        samp_freq=2000,
+        psd_window=60,
+        means_number=5,
+        channel='Dx')
 
-df_2, _, _ = asd_extractor(
-    file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
-    filename=r'OL_Dark_EPZ_SoE_noUPS_Open_1kHz.lvm',
-    samp_freq=2000,
-    psd_window=60,
-    means_number=5,
-    channel='Dx')
+    df_2, _, _ = asd_extractor(
+        file_directory=r'C:\Users\lpese\PycharmProjects\Archimedes_repo\Characterization\Noise\1_kHz',
+        filename=r'OL_Dark_EPZ_SoE_noUPS_Open_1kHz.lvm',
+        samp_freq=2000,
+        psd_window=60,
+        means_number=5,
+        channel='Dx')
 
-# PLOT THE DISTRIBUTION OF THE ASD FOR THE FIRST num_plot FREQUENCIES
-# distr_plot(first_df=df_1,
-#            second_df=df_2,
-#            lower_quantile=0.1,
-#            upper_quantile=0.9,
-#            estimator='median',
-#            num_plot=6)
-# df_2['asd_data'].hist(by=df_2['freq_data'])
-# test_df.plot.hist(bins=5, alpha=0.5)
+    # PLOT THE DISTRIBUTION OF THE ASD FOR THE FIRST num_plot FREQUENCIES
+    # distr_plot(first_df=df_1,
+    #            second_df=df_2,
+    #            lower_quantile=0.1,
+    #            upper_quantile=0.9,
+    #            estimator='median',
+    #            num_plot=6)
+    # df_2['asd_data'].hist(by=df_2['freq_data'])
+    # test_df.plot.hist(bins=5, alpha=0.5)
 
-f_data, ratio_data, ratio_low, ratio_up, ratio_lab = ratio(first_df=df_1,
-                                                           second_df=df_2,
-                                                           lower_quantile=0.1,
-                                                           upper_quantile=0.9,
-                                                           estimator='mean')
+    f_data, ratio_data, ratio_low, ratio_up, ratio_lab = ratio(first_df=df_1,
+                                                               second_df=df_2,
+                                                               lower_quantile=0.1,
+                                                               upper_quantile=0.9,
+                                                               estimator='mean')
 
-# TO MAKE RATIO USING STANDARD DEVIATIONS
-# _, std_data, std_low, std_up, std_lab = ratio_std(first_df=df_1,
-#                                                   second_df=df_2,
-#                                                   num_std=2,
-#                                                   estimator='median')
+    # TO MAKE RATIO USING STANDARD DEVIATIONS
+    # _, std_data, std_low, std_up, std_lab = ratio_std(first_df=df_1,
+    #                                                   second_df=df_2,
+    #                                                   num_std=2,
+    #                                                   estimator='median')
 
-# TO MAKE DIFFERENCE BETWEEN SIGNALS
-# _, diff_data, diff_low, diff_up, diff_lab = difference(first_df=df_1,
-#                                                        second_df=df_2,
-#                                                        lower_quantile=0.1,
-#                                                        upper_quantile=0.9,
-#                                                        estimator='median')
+    # TO MAKE DIFFERENCE BETWEEN SIGNALS
+    # _, diff_data, diff_low, diff_up, diff_lab = difference(first_df=df_1,
+    #                                                        second_df=df_2,
+    #                                                        lower_quantile=0.1,
+    #                                                        upper_quantile=0.9,
+    #                                                        estimator='median')
 
-# MAKING PSD PLOT WITH 95% CONFIDENCE LEVEL
-fig_psd_confidence = plt.figure(figsize=(10, 5))
+    # MAKING PSD PLOT WITH 95% CONFIDENCE LEVEL
+    fig_psd_confidence = plt.figure(figsize=(10, 5))
 
-# TO USE PARTICULAR LAYOUTS UNCOMMENT FOLLOWING LINES
-# outer_grid = gridspec.GridSpec(3, 1, width_ratios=[1],
-#                                height_ratios=[3.5, 3.5, 1])  # gridspec with two adjacent horizontal cells
-# upper_cell = outer_grid[0, 0]  # the left SubplotSpec within outer_grid
-#
-# inner_grid = gridspec.GridSpecFromSubplotSpec(1, 2, upper_cell)
-#
-# # From here we can plot using inner_grid's SubplotSpecs
-# ax1 = plt.subplot(outer_grid[0, 0])
-# ax2 = plt.subplot(outer_grid[1, 0])
-# ax3 = plt.subplot(outer_grid[2, 0])
+    # TO USE PARTICULAR LAYOUTS UNCOMMENT FOLLOWING LINES
+    # outer_grid = gridspec.GridSpec(3, 1, width_ratios=[1],
+    #                                height_ratios=[3.5, 3.5, 1])  # gridspec with two adjacent horizontal cells
+    # upper_cell = outer_grid[0, 0]  # the left SubplotSpec within outer_grid
+    #
+    # inner_grid = gridspec.GridSpecFromSubplotSpec(1, 2, upper_cell)
+    #
+    # # From here we can plot using inner_grid's SubplotSpecs
+    # ax1 = plt.subplot(outer_grid[0, 0])
+    # ax2 = plt.subplot(outer_grid[1, 0])
+    # ax3 = plt.subplot(outer_grid[2, 0])
 
-# TO MAKE THREE VERTICAL PLOTS UNCOMMENT NEXT LINES
-gs = fig_psd_confidence.add_gridspec(3, hspace=0.15, width_ratios=[1], height_ratios=[3, 3, 1.5])
-ax = gs.subplots(sharex=True)
+    # TO MAKE THREE VERTICAL PLOTS UNCOMMENT NEXT LINES
+    gs = fig_psd_confidence.add_gridspec(3, hspace=0.15, width_ratios=[1], height_ratios=[3, 3, 1.5])
+    ax = gs.subplots(sharex=True)
 
-# DATA PLOT USING SEABORN
-# ci: Size of the confidence interval to draw when aggregating with an estimator.
-# “sd” means to draw the standard deviation of the data. Setting to None will skip bootstrapping.
-# See: https://seaborn.pydata.org/generated/seaborn.lineplot.html
-sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:blue'], ci='sd', data=df_1, ax=ax[0])
-sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange'], ci='sd', data=df_2, ax=ax[1])
+    # DATA PLOT USING SEABORN
+    # ci: Size of the confidence interval to draw when aggregating with an estimator.
+    # “sd” means to draw the standard deviation of the data. Setting to None will skip bootstrapping.
+    # See: https://seaborn.pydata.org/generated/seaborn.lineplot.html
+    sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:blue'], ci='sd', data=df_1, ax=ax[0])
+    sns.lineplot(x="freq_data", y="asd_data", hue='Channels', palette=['tab:orange'], ci='sd', data=df_2, ax=ax[1])
 
-# PLOT RATIO
-# ax[2].fill_between(f_data, ratio_low, ratio_up, alpha=.5, color='tab:green', linewidth=0)
-ax[2].plot(f_data, ratio_data, linewidth=2, color='tab:green', label=ratio_lab + ' (Mean)')
-# ax[2].scatter(f_data, ratio_up, linewidth=1, color='tab:red', label='90%')
-# ax[2].scatter(f_data, ratio_low, linewidth=1, color='tab:blue', label='10%')
+    # PLOT RATIO
+    # ax[2].fill_between(f_data, ratio_low, ratio_up, alpha=.5, color='tab:green', linewidth=0)
+    ax[2].plot(f_data, ratio_data, linewidth=2, color='tab:green', label=ratio_lab + ' (Mean)')
+    # ax[2].scatter(f_data, ratio_up, linewidth=1, color='tab:red', label='90%')
+    # ax[2].scatter(f_data, ratio_low, linewidth=1, color='tab:blue', label='10%')
 
-# PLOT DIFFERENCE
-# ax[2].fill_between(f_data, diff_low, diff_up, alpha=.5, color='tab:green', linewidth=0)
-# ax[2].plot(f_data, diff_data, linewidth=2, color='tab:green', label=diff_lab)
+    # PLOT DIFFERENCE
+    # ax[2].fill_between(f_data, diff_low, diff_up, alpha=.5, color='tab:green', linewidth=0)
+    # ax[2].plot(f_data, diff_data, linewidth=2, color='tab:green', label=diff_lab)
 
-# sns.lineplot(x="freq_data", y="ratio", hue='Channels', palette=['tab:green'], ci='sd', data=df_3, ax=ax[2])
+    # sns.lineplot(x="freq_data", y="ratio", hue='Channels', palette=['tab:green'], ci='sd', data=df_3, ax=ax[2])
 
-# DEFINING VARIABLES TO CONTROL X/Y LIMIT IN PLOTS
-x_limit_inf = 1 / t_w  # minimum frequency achieved
-x_limit_sup = f_samp / 2  # Nyquist's theorem
-y_limit_inf_asd = 1e-6  # set by user
-y_limit_sup_asd = 8e-5  # set by user
-y_limit_inf_ratio = 0  # set by user
-y_limit_sup_ratio = 4  # set by user
+    # DEFINING VARIABLES TO CONTROL X/Y LIMIT IN PLOTS
+    x_limit_inf = 1 / t_w  # minimum frequency achieved
+    x_limit_sup = f_samp / 2  # Nyquist's theorem
+    y_limit_inf_asd = 1e-6  # set by user
+    y_limit_sup_asd = 8e-5  # set by user
+    y_limit_inf_ratio = 0  # set by user
+    y_limit_sup_ratio = 4  # set by user
 
-# IF NOT USING VERTICAL LAYOUTS CHANGE ax[0], ax[1], ax[2] ---> ax1, ax2, ax3
-ax[0].set_xlabel('Frequency [Hz]', fontsize=24)
-ax[0].set_xscale("log")
-ax[0].set_yscale("log")
-ax[0].set_xlim([x_limit_inf, x_limit_sup])
-ax[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
-ax[0].tick_params(axis='both', labelsize=22, which='both')
-ax[0].grid(True, linestyle='--', axis='both', which='both')
-ax[0].legend(loc='best', shadow=True, fontsize='xx-large')
+    # IF NOT USING VERTICAL LAYOUTS CHANGE ax[0], ax[1], ax[2] ---> ax1, ax2, ax3
+    ax[0].set_xlabel('Frequency [Hz]', fontsize=24)
+    ax[0].set_xscale("log")
+    ax[0].set_yscale("log")
+    ax[0].set_xlim([x_limit_inf, x_limit_sup])
+    ax[0].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
+    ax[0].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
+    ax[0].tick_params(axis='both', labelsize=22, which='both')
+    ax[0].grid(True, linestyle='--', axis='both', which='both')
+    ax[0].legend(loc='best', shadow=True, fontsize='xx-large')
 
-ax[1].set_xlabel('Frequency [Hz]', fontsize=24)
-ax[1].set_xscale("log")
-ax[1].set_yscale("log")
-ax[1].set_xlim([x_limit_inf, x_limit_sup])
-ax[1].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
-ax[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
-ax[1].tick_params(axis='both', labelsize=22, which='both')
-ax[1].grid(True, linestyle='--', axis='both', which='both')
-ax[1].legend(loc='best', shadow=True, fontsize='xx-large')
+    ax[1].set_xlabel('Frequency [Hz]', fontsize=24)
+    ax[1].set_xscale("log")
+    ax[1].set_yscale("log")
+    ax[1].set_xlim([x_limit_inf, x_limit_sup])
+    ax[1].set_ylim([y_limit_inf_asd, y_limit_sup_asd])
+    ax[1].set_ylabel(r'ASD [V/$\sqrt{Hz}$]', fontsize=24)
+    ax[1].tick_params(axis='both', labelsize=22, which='both')
+    ax[1].grid(True, linestyle='--', axis='both', which='both')
+    ax[1].legend(loc='best', shadow=True, fontsize='xx-large')
 
-ax[2].set_xlabel('Frequency [Hz]', fontsize=24)
-ax[2].set_xscale("log")
-ax[2].set_xlim([x_limit_inf, x_limit_sup])
-ax[2].set_ylim([y_limit_inf_ratio, y_limit_sup_ratio])
-ax[2].set_ylabel(r'a/b [a.u.]', fontsize=24)
-ax[2].tick_params(axis='both', labelsize=22, which='both')
-ax[2].grid(True, linestyle='--', axis='both', which='both')
-ax[2].legend(loc='upper left', shadow=True, fontsize='xx-large')
-ax[2].yaxis.set_label_coords(-0.059, 0.5)
-ax[2].set_yticks(np.arange(y_limit_sup_ratio - y_limit_inf_ratio + 1))
-ax[2].set_yticklabels(np.arange(5))
+    ax[2].set_xlabel('Frequency [Hz]', fontsize=24)
+    ax[2].set_xscale("log")
+    ax[2].set_xlim([x_limit_inf, x_limit_sup])
+    ax[2].set_ylim([y_limit_inf_ratio, y_limit_sup_ratio])
+    ax[2].set_ylabel(r'a/b [a.u.]', fontsize=24)
+    ax[2].tick_params(axis='both', labelsize=22, which='both')
+    ax[2].grid(True, linestyle='--', axis='both', which='both')
+    ax[2].legend(loc='upper left', shadow=True, fontsize='xx-large')
+    ax[2].yaxis.set_label_coords(-0.059, 0.5)
+    ax[2].set_yticks(np.arange(y_limit_sup_ratio - y_limit_inf_ratio + 1))
+    ax[2].set_yticklabels(np.arange(5))
 
-print(np.mean(ratio_data), np.std(ratio_data))
+    print(np.mean(ratio_data), np.std(ratio_data))
 
-plt.show()
+    plt.show()

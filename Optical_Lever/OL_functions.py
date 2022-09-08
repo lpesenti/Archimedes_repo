@@ -1,3 +1,24 @@
+__author__ = "Luca Pesenti"
+__credits__ = ["Domenico D'Urso", "Luca Pesenti", "Davide Rozza"]
+__version__ = "0.1.0"
+__maintainer__ = "Luca Pesenti (until September 30, 2022)"
+__email__ = "lpesenti@uniss.it"
+__status__ = "Prototype"
+
+r"""
+[LAST UPDATE: August 25, 2022 - Luca Pesenti]
+
+This file contains several useful functions for the analysis of the Optical Lever (OL) system data. This device was built
+at the University of Sassari as a control tool for the Archimedes experiment. For further information see 'Commissioning
+and data analysis of the Archimedes experiment and its prototype at the SAR-GRAV  laboratory Chapter 4' at 
+https://drive.google.com/file/d/1tyJ8PX4Giby3LttXn6AAxVaf7s0vkJkp/view?usp=sharing
+ 
+The functions contained in this file can be used to reproduce the plot shown in the .pdf linked above but also can be
+used to analyze the OL data taken.
+
+NOTE: These function were made to work with specific data file and are neither optimized nor in a stable version 
+"""
+
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as colors
@@ -12,6 +33,15 @@ from scipy.stats import stats
 
 
 def plot_3d_oscilloscope(data_file, qty):
+    r"""
+    This method makes the 3d plot of data acquired with the Teledyne oscilloscope at University of Sassari
+
+    :type data_file: str
+    :param data_file: the path to the data file
+
+    :type qty: str
+    :param qty: the quantity on which perform the analysis
+    """
     df = pd.read_table(data_file, names=['x', 'y', 'dy', 'sum', 'dx'])
     df = df.sort_values(by=['x', 'y'])
     x = np.array(df['x'])
@@ -65,6 +95,18 @@ def plot_3d_oscilloscope(data_file, qty):
 
 
 def plot_3d_crio(file_path, file_prefix):
+
+    r"""
+    This function uses the data acquired with the cRIO device (produced by National Instruments) to make a 3D plot
+    of a specified quantity.
+
+    :type file_path: str
+    :param file_path: path to the data
+
+    :type file_prefix: str
+    :param file_prefix: prefix of the data you want to analyze
+    """
+
     # DEFINING VARIABLES
     file_number = len(glob.glob(file_path + '*'))
     x_labels = np.arange(-4.5, 5, 0.5)
@@ -334,10 +376,24 @@ def plot_3d_crio(file_path, file_prefix):
 
 
 def eval_mean(data_file):
+    r"""
+    It is used to evaluate the mean of a list of .csv files
+
+    See Also
+    ---------
+    * linearity(): in this method the user must pass an array with means and another one containing standard deviation.
+    See OL.Analysis.py in which these are used together.
+
+    :type data_file: str
+    :param data_file: path to the data
+
+    :return: a tuple of two unidimensional numpy.ndarray: the former with the evaluated means, while the latter with the
+             relative standard deviation.
+    """
     mean_val = np.array([])
     std_val = np.array([])
     for i in range(19):
-        if i < 10:
+        if i < 10:  # TODO: replace with zfill()
             data_file1 = data_file + '0{0}.csv'.format(i)  # + file_type
         else:
             data_file1 = data_file + '{0}.csv'.format(i)  # + file_type
@@ -352,6 +408,21 @@ def eval_mean(data_file):
 
 
 def linearity(mean, std):
+    r"""
+    This function is used to plot the mean values and their relative standard deviation to check the linearity between
+    a known signal and the one read at the 'Sum' channel of the Optical Lever Shield (OLS).
+
+    See Also
+    --------
+    * eval_mean(): in this method the user must pass a path to the data on which perform the means and standard
+    deviation evaluation. See OL.Analysis.py in which these are used together.
+
+    :type mean: numpy.ndarray
+    :param mean: an array containing the mean values evaluated for the sum channel
+
+    :type std: numpy.ndarray
+    :param std: an array containing the standard deviation values evaluated for the sum channel
+    """
     fig = plt.figure(figsize=(19.2, 10.8))
     ax = fig.add_subplot()
 
@@ -427,6 +498,20 @@ def linearity(mean, std):
 
 
 def ols_saturation(colorregion=False, limitlines=False):
+    r"""
+    This method makes the plot of the voltage read at the sum channel of the Optical Lever Shield (OLS) against the
+    supply current of the SLED used. However, this function is made to work with a set of measure taken in October 2021.
+    This measurement was made without looking at the errors on the voltage values, then a random error factor is
+    inserted to be reasonable.
+
+    :type colorregion: bool
+    :param colorregion: if True, two coloured region are added on the plot, one for the OP27 saturation region and the
+                         other for the cRIO saturation region
+
+    :type limitlines: bool
+    :param limitlines: if True, two horizontal lines are added on the plot, one for the OP27 saturation limit and the
+                        other for the cRIO saturation limit
+    """
     v_sum = np.array([0, 30, 70, 140, 320, 760, 1500, 2920, 5600, 9300, 13800, 14100, 14100, 14100])  # mVolt
     v_sum = v_sum / 1000  # convert to Volt
 
@@ -468,6 +553,10 @@ def ols_saturation(colorregion=False, limitlines=False):
 
 
 def sled_p_to_i():
+    r"""
+    Similarly to the precious function, this one makes a plot relative to the power read on a power meter while varying
+    the supply current of the SLED. As before, the data used are the ones taken in October 2021.
+    """
     i_sled = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 105, 110, 120, 130, 140, 150])
     power_data1 = np.array(
         [0, 0.001, 0.004, 0.009, 0.019, 0.041, 0.076, 0.142, 0.243, 0.473, 0.564, 0.802, 1.079, 1.380, 1.720])

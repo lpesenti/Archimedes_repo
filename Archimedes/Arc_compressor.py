@@ -2,7 +2,7 @@ __author__ = "Luca Pesenti"
 __credits__ = ["Luca Pesenti"]
 __version__ = "0.0.1"
 __maintainer__ = "no longer supported"
-__email__ = ""
+__email__ = "lpesenti@uniss.it"
 __status__ = "Deprecated"
 
 import numpy as np
