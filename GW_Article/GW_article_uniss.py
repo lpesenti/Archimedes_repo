@@ -201,22 +201,10 @@ def read_psd(fs, T_obs, f_cutoff, path):
     lal_psd = lal.CreateREAL8FrequencySeries(None, lal.LIGOTimeGPS(0), 0.0, df, lal.HertzUnit, N // 2 + 1)
     
     freq_array = np.arange(0.0, (N // 2 + 1) * df, df)
-    print(f'{time.asctime()}: N // 2 +1 -> {N//2+1}')
-    print(f'{time.asctime()}: Length of empty frequency array -> {len(lal_psd.data.data)}')
-    print(f'{time.asctime()}: Length of created frequency array -> {freq_array.size}')
+    # print(f'{time.asctime()}: N // 2 +1 -> {N//2+1}')
+    # print(f'{time.asctime()}: Length of empty frequency array -> {len(lal_psd.data.data)}')
+    # print(f'{time.asctime()}: Length of created frequency array -> {freq_array.size}')
     lalsimulation.SimNoisePSDFromFile(lal_psd, f_cutoff, path)
-    # else:
-    #     if det.lower() == 'ligo':
-    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 10.0, path_to_ligo)  # frequency series | freq_cut-off | path/to/file
-    #     elif det.lower() == 'virgo':
-    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 10.0, path_to_virgo)  # frequency series | freq_cut-off | path/to/file
-    #     elif det.lower() == 'et':
-    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 2, path_to_et)  # frequency series | freq_cut-off | path/to/file
-    #     else:
-    #         import warnings
-    #         msg = f"{time.asctime()}: Invalid detector chosen [Ligo, Virgo and ET], using ET"
-    #         warnings.warn(msg)
-    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 2, path_to_et)  # frequency series | freq_cut-off | path/to/file
 
     return freq_array, lal_psd
         
@@ -296,7 +284,18 @@ def gen_bbh_new(fs, T_obs, psd, dist, dets, beta=[0.75, 0.95], par=None):
     intsnr.append(get_snr(ts, T_obs, fs, psd, par.fmin))
 
     # normalise the waveform using either integrated or peak SNR
-    intsnr = np.array(intsnr)
+    intsnr = np.array(intsnr)    # else:
+    #     if det.lower() == 'ligo':
+    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 10.0, path_to_ligo)  # frequency series | freq_cut-off | path/to/file
+    #     elif det.lower() == 'virgo':
+    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 10.0, path_to_virgo)  # frequency series | freq_cut-off | path/to/file
+    #     elif det.lower() == 'et':
+    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 2, path_to_et)  # frequency series | freq_cut-off | path/to/file
+    #     else:
+    #         import warnings
+    #         msg = f"{time.asctime()}: Invalid detector chosen [Ligo, Virgo and ET], using ET"
+    #         warnings.warn(msg)
+    #         lalsimulation.SimNoisePSDFromFile(lal_psd, 2, path_to_et)  # frequency series | freq_cut-off | path/to/f
     # print('{}: computed the network SNR = {}'.format(time.asctime(), snr))
 
     return np.sqrt(intsnr)
@@ -560,8 +559,10 @@ def main_NEW():
     # desired_snr = 8
     # m12, mc, eta = gen_masses(m_min=5.0,M_max=100.0,mdist='astro');
     
-    dets = ['ET', 'LIGO', 'VIRGO']
-
+    # dets = ['ET', 'LIGO', 'VIRGO']
+    dets = [det_name.upper() for det_name in config['Quantities']['dets'].split(',')]
+    print(f'{time.asctime()}: Detector(s) selected {dets}')
+    
     path_lst = [config['Paths'][path] for path in config['Paths']]
     freq_co_lst = [float(x) for x in config['Quantities']['cutoff_frequencies'].split(',')]
 
@@ -599,7 +600,13 @@ def main_NEW():
     
     
     m12_list = [[80, 80]]  # , [80, 50], [80, 80]]
-    distances = np.linspace(1e6, 1e9, 500)
+    
+    num_dist = int(config['Quantities']['number_of_distances'])
+    min_d = float(config['Quantities']['minimum_distance']) * 1e6
+    max_d = float(config['Quantities']['maximum_distance']) * 1e6
+    
+    distances = np.linspace(min_d, max_d, num_dist)
+    
     print(f'{time.asctime()}: Minimum distance {distances.min()}')
     print(f'{time.asctime()}: Maximum distance {distances.max()}')
     print(f'{time.asctime()}: Number of distances computed {distances.size}')
